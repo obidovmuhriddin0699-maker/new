@@ -1,0 +1,57 @@
+import pytest
+from pydantic import ValidationError
+
+from app.core.config import Settings, get_settings
+
+
+def test_settings_load_from_env():
+    s = get_settings()
+    assert s.app_env == "test"
+    assert s.ai_model == "qwen2.5:3b"
+    assert s.meta_login_mode == "instagram"
+    assert s.meta_dry_run is True
+
+
+def test_sqlite_fallback_when_database_url_empty(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "")
+    s = Settings(_env_file=None)
+    assert s.effective_database_url.startswith("sqlite:///")
+    assert s.is_sqlite
+
+
+def test_cors_origins_comma_separated(monkeypatch):
+    monkeypatch.setenv("CORS_ORIGINS", "http://a.test, http://b.test")
+    assert Settings(_env_file=None).cors_origins == ["http://a.test", "http://b.test"]
+
+
+def test_ai_model_is_configurable(monkeypatch):
+    monkeypatch.setenv("AI_MODEL", "llama3.2:3b")
+    assert Settings(_env_file=None).ai_model == "llama3.2:3b"
+
+
+def test_production_rejects_insecure_defaults(monkeypatch):
+    for key in ("JWT_SECRET_KEY", "TOKEN_ENCRYPTION_KEYS", "DATABASE_URL"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("APP_ENV", "production")
+    with pytest.raises(ValidationError) as exc:
+        Settings(_env_file=None)
+    msg = str(exc.value)
+    assert "JWT_SECRET_KEY" in msg
+    assert "TOKEN_ENCRYPTION_KEYS" in msg
+    assert "DATABASE_URL" in msg
+
+
+def test_production_accepts_proper_config(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET_KEY", "x" * 48)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/x")
+    monkeypatch.setenv("CORS_ORIGINS", "https://panel.example.com")
+    s = Settings(_env_file=None)
+    assert s.app_env == "production"
+
+
+def test_secrets_are_masked_in_repr():
+    s = get_settings()
+    text = repr(s)
+    assert s.jwt_secret_key.get_secret_value() not in text
+    assert s.token_encryption_keys.get_secret_value() not in text

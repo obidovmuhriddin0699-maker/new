@@ -85,7 +85,7 @@ frontend/                   # Next.js (App Router) + TypeScript + Tailwind
   app/(dashboard)/...       # overview, queue, calendar, media, instagram, analytics, ...
   lib/api.ts
   e2e/                      # Playwright
-tests/                      # pytest: unit/, integration/, api/, security/, workflows/
+backend/tests/              # pytest (PHASE 1: backend testlari backend/ ichida)
 docker/                     # Dockerfile.backend, Dockerfile.frontend, nginx/
 docs/                       # ARCHITECTURE.md, META_API.md, SECURITY.md
 scripts/                    # dev setup, seed, backup
