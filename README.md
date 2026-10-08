@@ -24,3 +24,8 @@ RSVP posts JSON to `rsvp.endpoint` when it is set; otherwise answers are stored 
 
 DataLoader · Theme engine (bindings + SEO) · SkyEngine (WebGL clouds) · CloudSprites/CloudBanks ·
 Particles · AudioEngine · Countdown (Asia/Tashkent) · Film · Story · Gallery + Lightbox · Map · RSVP · Motion (reveal/parallax).
+
+## Single-file version
+
+`python3 tools/build_standalone.py` → `dist/index.html` (~7 MB). All photos, videos and music are
+embedded, so this one file opens correctly on its own (phone, Telegram, file://) without `assets/`.
