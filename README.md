@@ -9,7 +9,7 @@ index.html            Cloud Palace theme (markup + CSS + runtime, self-contained
 data/wedding.json     Wedding data (overrides inline data when served over HTTP)
 assets/video/         Optimised clips (H.264, no audio, faststart)
 assets/images/        Posters and stills (JPG + WebP + AVIF), og-cover.jpg
-assets/audio/         Put "Asadov Silencio.m4a" here
+assets/audio/         Background music (dilbarjon.mp3)
 assets/icons/         favicon, PWA icons
 manifest.json, sw.js  PWA
 ```
