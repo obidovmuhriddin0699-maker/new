@@ -86,7 +86,7 @@ def main():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     # drop external CSS/JS, manifest and preloads — everything is inline now
     html = re.sub(r'\s*<link rel="(stylesheet|preload|manifest)"[^>]*>', "", html)
-    html = re.sub(r'\s*<script type="module"[^>]*></script>', "", html)
+    html = re.sub(r'\s*<script (type="module"|defer) src="js/[^"]+"></script>', "", html)
     html = html.replace('href="assets/icons/favicon.svg"', f'href="{data_uri("assets/icons/favicon.svg")}"')
     html = html.replace('href="assets/icons/apple-touch-icon.png"', f'href="{data_uri("assets/icons/apple-touch-icon.png")}"')
     # hero media is written straight into the markup so nothing relative is requested

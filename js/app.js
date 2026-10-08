@@ -139,6 +139,7 @@ function heroVideo() {
 
 /* ---------- boot ---------- */
 async function boot() {
+  document.documentElement.classList.add("app-ok");
   const hero = run("hero-video", heroVideo);
   run("clouds", initClouds);
   run("hero", initHero);

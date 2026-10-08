@@ -42,8 +42,15 @@
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/responsive.css">
 
-  <script>document.documentElement.classList.replace("no-js", "js");</script>
-  <script type="module" src="js/app.js"></script>
+  <script>
+    /* animations are enabled only while the app script is running; if it has not started
+       within 5 s (very old or restricted in-app browser) everything is simply shown */
+    (function (r) {
+      r.className = r.className.replace("no-js", "js");
+      setTimeout(function () { if (!/\bapp-ok\b/.test(r.className)) r.className = r.className.replace(/\bjs\b/, "no-js"); }, 5000);
+    })(document.documentElement);
+  </script>
+  <script defer src="js/app.bundle.js"></script>
 
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"Event","name":"Muxriddin & Umida — to‘y","startDate":"2026-10-06T16:00:00+05:00",

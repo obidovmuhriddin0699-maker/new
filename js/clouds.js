@@ -8,6 +8,7 @@
    Only transform and opacity are animated; veils are removed afterwards.
    ========================================================================== */
 import { reducedMotion } from "./data.js";
+import { onceInView } from "./inview.js";
 
 const VEIL =
   '<span class="veil__fog"></span>' +
@@ -18,7 +19,7 @@ const VEIL =
 export function initClouds() {
   const sections = [...document.querySelectorAll("[data-clouds]")];
   if (!sections.length) return;
-  if (reducedMotion || !("IntersectionObserver" in window)) {
+  if (reducedMotion) {
     sections.forEach((s) => s.classList.add("is-parted"));
     return;
   }
@@ -49,14 +50,8 @@ export function initClouds() {
     }
   }
 
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      part(e.target);
-      io.unobserve(e.target);
-    });
-  }, { rootMargin: "0px 0px -18% 0px", threshold: 0 });
-  sections.filter((s) => s !== hero).forEach((s) => io.observe(s));
+  // sections skipped by a fast fling or a menu jump are opened too (see inview.js)
+  onceInView(sections.filter((s) => s !== hero), part, 0.82);
 
   initDrift();
 }

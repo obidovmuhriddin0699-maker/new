@@ -74,7 +74,7 @@ Musiqa sahifa ochilganda **o‘chiq** turadi (brauzerlar ovozni avtomatik yoqish
 
 ## 4. Rasm va videolar
 
-* Rasmlar: `assets/images/{id}-{kenglik}.avif` va `.webp` (masalan `twirl-480.webp`, `twirl-960.webp`). Yangi rasm qo‘shish uchun shu nomlash bilan saqlang va `gallery` ga yozing.
+* Rasmlar: `assets/images/{id}-{kenglik}.webp` (masalan `touch-480.webp`, `touch-720.webp`). Yangi rasm qo‘shish uchun shu nomlash bilan saqlang va `gallery` ga yozing.
 * Videolar: `assets/video/{nom}.mp4` + `.webm` + `{nom}-poster.webp`. Bosh sahifa videosi (dengiz bo‘yida quyosh botishi) `index.html` da, “oy” lavhasi `films` da.
 * **Har bir surat va video saytda faqat bir marta ishlatilgan** — 12 ta video va atirgul suratining har biridan bittadan lavha olingan.
 * Bulutlar: `assets/clouds/` (chap va o‘ng bulut massasi + pastki bulut tasmasi). Ular `css/clouds.css` va `js/clouds.js` orqali ishlaydi.
@@ -98,7 +98,15 @@ Hamma narsani (CSS, JS, shriftlar, bulutlar, rasm, video, musiqa) bitta ~12 MB f
 
 ---
 
-## 7. Tuzilma
+## 7. JavaScript'ni o‘zgartirsangiz
+
+Sayt eski va ilova ichidagi brauzerlarda ham ishlashi uchun `js/` dagi modullar bitta `js/app.bundle.js` fayliga yig‘ilgan. `js/*.js` fayllarini o‘zgartirgandan keyin uni qayta yig‘ing (`data/wedding.json` uchun bu shart emas):
+
+```bash
+npx esbuild@0.24.0 js/app.js --bundle --format=iife --minify --target=es2017,safari12,chrome61 --outfile=js/app.bundle.js
+```
+
+## 8. Tuzilma
 
 ```
 modern-love-uz/

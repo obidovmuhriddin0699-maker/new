@@ -3,6 +3,7 @@
    and the subtle desktop cursor.
    ========================================================================== */
 import { reducedMotion } from "./data.js";
+import { onceInView } from "./inview.js";
 
 /** Hero: wait for fonts + poster so the reveal never starts on a blank frame. */
 export function initHero() {
@@ -25,27 +26,20 @@ export function initHero() {
 /** Reveal anything with .reveal / .event / .tile / .program__item / .photo[data-cine] / .film */
 export function initReveals(scope = document) {
   const selector = ".reveal, .event, .tile, .program__item, .photo[data-cine], .film";
-  const items = scope.querySelectorAll(selector);
-  if (reducedMotion || !("IntersectionObserver" in window)) {
+  const items = [...scope.querySelectorAll(selector)].filter((el) => !el.classList.contains("is-in"));
+  if (reducedMotion) {
     items.forEach((el) => el.classList.add("is-in"));
     return;
   }
   // A fully clipped element (mask reveals) never reports as intersecting,
   // so those are triggered by their parent instead.
-  const targets = new Map();
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (!e.isIntersecting) return;
-      (targets.get(e.target) || []).forEach((el) => el.classList.add("is-in"));
-      io.unobserve(e.target);
-    });
-  }, { rootMargin: "0px 0px -12% 0px", threshold: 0.08 });
+  const groups = new Map();
   items.forEach((el) => {
-    if (el.classList.contains("is-in")) return;
     const watch = el.dataset.reveal === "mask" && el.parentElement ? el.parentElement : el;
-    if (!targets.has(watch)) { targets.set(watch, []); io.observe(watch); }
-    targets.get(watch).push(el);
+    if (!groups.has(watch)) groups.set(watch, []);
+    groups.get(watch).push(el);
   });
+  onceInView([...groups.keys()], (watch) => groups.get(watch).forEach((el) => el.classList.add("is-in")));
 }
 
 /** Desktop-only cursor: small ring, grows on interactive elements, "View" over photos. */

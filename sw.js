@@ -1,11 +1,11 @@
 /* ==========================================================================
-   sw.js — offline shell. Cache-first for the app shell, network-first for
-   wedding.json (so edits show up), images cached on first view.
+   sw.js — offline shell. Network-first for pages, code and wedding.json (edits always
+   show up), cache-first for images and fonts.
    Video and audio are never cached here: browsers request them with Range
    headers, which a simple cache cannot answer correctly.
    Bump VERSION after changing files to refresh every guest's cache.
    ========================================================================== */
-const VERSION = "sevgi-bulutlari-v1";
+const VERSION = "sevgi-bulutlari-v2";
 const SHELL = [
   "./",
   "index.html",
@@ -16,18 +16,7 @@ const SHELL = [
   "css/clouds.css",
   "css/animations.css",
   "css/responsive.css",
-  "js/app.js",
-  "js/data.js",
-  "js/navigation.js",
-  "js/scroll.js",
-  "js/animations.js",
-  "js/countdown.js",
-  "js/gallery.js",
-  "js/lightbox.js",
-  "js/audio.js",
-  "js/rsvp.js",
-  "js/clouds.js",
-  "js/sparkles.js",
+  "js/app.bundle.js",
   "data/wedding.json",
   "assets/fonts/InstrumentSerif-normal-latin.woff2",
   "assets/fonts/InstrumentSerif-italic-latin.woff2",
@@ -59,26 +48,22 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET" || url.origin !== location.origin) return;
   if (req.headers.has("range") || /\.(mp4|webm|m4a|mp3)$/i.test(url.pathname)) return;
 
-  // wedding.json: network first, cached copy offline
-  if (url.pathname.endsWith("/data/wedding.json")) {
+  // images and fonts never change → cache first
+  if (/\.(webp|png|jpg|svg|woff2)$/i.test(url.pathname)) {
     e.respondWith(
-      fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(VERSION).then((c) => c.put(req, copy));
+      caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+        if (res.ok && res.type === "basic") { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
         return res;
-      }).catch(() => caches.match(req))
+      }))
     );
     return;
   }
 
-  // everything else: cache first, then network (and remember it)
+  // pages, code and wedding.json → always the newest from the network, cache only offline
   e.respondWith(
-    caches.match(req, { ignoreSearch: true }).then((hit) => hit || fetch(req).then((res) => {
-      if (res.ok && res.type === "basic") {
-        const copy = res.clone();
-        caches.open(VERSION).then((c) => c.put(req, copy));
-      }
+    fetch(req).then((res) => {
+      if (res.ok && res.type === "basic") { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
       return res;
-    }))
+    }).catch(() => caches.match(req, { ignoreSearch: true }))
   );
 });

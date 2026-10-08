@@ -89,7 +89,7 @@ export function derive(data) {
 }
 
 /**
- * Responsive <picture>: AVIF + WebP srcsets from assets/images/{id}-{w}.{ext}.
+ * Responsive <picture>: WebP srcset from assets/images/{id}-{w}.webp (works in every current browser).
  * In the single-file build only the largest WebP is embedded.
  */
 export function picture(item, { sizes = "100vw", eager = false, alt } = {}) {
@@ -105,7 +105,6 @@ export function picture(item, { sizes = "100vw", eager = false, alt } = {}) {
   }
   const set = (ext) => widths.map((w) => `${src(w, ext)} ${w}w`).join(", ");
   return `<picture>` +
-    `<source type="image/avif" srcset="${set("avif")}" sizes="${sizes}">` +
     `<source type="image/webp" srcset="${set("webp")}" sizes="${sizes}">` +
     `<img src="${src(max, "webp")}" alt="${text}" width="${max}" height="${h}" ${loading} decoding="async">` +
     `</picture>`;
