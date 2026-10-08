@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="uz" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <!-- SEO (standart qiymatlar — sahifa ochilganda data/wedding.json asosida yangilanadi) -->
+  <title>Muxriddin &amp; Umida — to‘yga taklifnoma</title>
+  <meta name="description" content="Muxriddin va Umidaning to‘y kechasiga marhamat qiling — 06.10.2026, Versal to‘yxonasi, Farg‘ona.">
+  <link rel="canonical" href="https://obidovmuhriddin0699-maker.github.io/new/">
+  <meta name="theme-color" content="#f8f4f1">
+  <meta name="color-scheme" content="light">
+
+  <!-- Open Graph / Twitter: Telegram, WhatsApp, Instagram ko‘rinishi -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://obidovmuhriddin0699-maker.github.io/new/">
+  <meta property="og:title" content="Muxriddin &amp; Umida — to‘yga taklifnoma">
+  <meta property="og:description" content="06.10.2026 · Versal to‘yxonasi, Farg‘ona. Sizni intiqlik bilan kutamiz.">
+  <meta property="og:image" content="https://obidovmuhriddin0699-maker.github.io/new/assets/images/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="uz_UZ">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Muxriddin &amp; Umida — to‘yga taklifnoma">
+  <meta name="twitter:description" content="06.10.2026 · Versal to‘yxonasi, Farg‘ona.">
+  <meta name="twitter:image" content="https://obidovmuhriddin0699-maker.github.io/new/assets/images/og-image.jpg">
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preload" href="assets/fonts/InstrumentSerif-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/GreatVibes-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/video/beach-poster.webp" as="image" type="image/webp">
+  <link rel="preload" href="assets/clouds/cloud-left.webp" as="image" type="image/webp">
+  <link rel="preload" href="assets/clouds/cloud-right.webp" as="image" type="image/webp">
+
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/clouds.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <script>document.documentElement.classList.replace("no-js", "js");</script>
+  <script type="module" src="js/app.js"></script>
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"Event","name":"Muxriddin & Umida — to‘y","startDate":"2026-10-06T16:00:00+05:00",
+   "eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled",
+   "location":{"@type":"Place","name":"Versal to‘yxonasi","address":"Farg‘ona shahri, O‘zbekiston"},"image":["assets/images/og-image.jpg"]}
+  </script>
+</head>
+
+<body>
+  <a class="skip-link" href="#intro">Asosiy qismga o‘tish</a>
+
+  <!-- ===================== brend, menyu, progress, musiqa, kursor ===================== -->
+  <header class="chrome" aria-label="Sayt">
+    <a class="brand" href="#home" aria-label="Boshiga qaytish"><span data-bind="initials">M&amp;U</span></a>
+    <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Menyuni ochish">
+      <span class="menu-toggle__label">Menyu</span>
+      <span class="menu-toggle__icon" aria-hidden="true"><i></i><i></i></span>
+    </button>
+  </header>
+
+  <nav class="menu" id="menu" aria-label="Asosiy menyu" hidden>
+    <div class="menu__inner">
+      <ol class="menu__list">
+        <li><a href="#home"><small>01</small>Bosh sahifa</a></li>
+        <li><a href="#story"><small>02</small>Bizning tariximiz</a></li>
+        <li><a href="#date"><small>03</small>Sana</a></li>
+        <li><a href="#venue"><small>04</small>Manzil</a></li>
+        <li><a href="#gallery"><small>05</small>Galereya</a></li>
+        <li><a href="#rsvp"><small>06</small>Taklifga javob</a></li>
+      </ol>
+      <div class="menu__meta">
+        <p class="menu__names" data-bind="namesInline">Muxriddin &amp; Umida</p>
+        <p><span data-bind="dateDots">06.10.2026</span> · <span data-bind="time">16:00</span></p>
+        <p><span data-bind="venueName">Versal to‘yxonasi</span>, <span data-bind="venueCity">Farg‘ona shahri</span></p>
+      </div>
+    </div>
+  </nav>
+
+  <div class="progress" aria-hidden="true"><span class="progress__bar"></span></div>
+
+  <button class="sound" id="sound" type="button" aria-pressed="false" aria-label="Musiqani yoqish" disabled>
+    <span class="sound__bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <span class="sound__label">Musiqa o‘chiq</span>
+  </button>
+  <audio id="audio" loop preload="none"></audio>
+
+  <div class="cursor" aria-hidden="true"><span class="cursor__label">Ko‘rish</span></div>
+
+  <main id="main">
+
+    <!-- ===================== 01 BOSH SAHIFA ===================== -->
+    <section class="hero" id="home" aria-labelledby="hero-names" data-clouds="hero">
+      <div class="hero__media">
+        <img class="hero__poster" src="assets/video/beach-poster.webp" alt="" fetchpriority="high" decoding="async">
+        <video class="hero__video" muted loop playsinline preload="auto" aria-hidden="true" disablepictureinpicture disableremoteplayback>
+          <source src="assets/video/beach.mp4" type="video/mp4">
+          <source src="assets/video/beach.webm" type="video/webm">
+        </video>
+        <span class="hero__shade"></span>
+      </div>
+      <canvas class="sparkles" data-sparkles="lights petals" aria-hidden="true"></canvas>
+      <div class="hero__clouds" aria-hidden="true"><span></span><span></span></div>
+      <div class="hero__content">
+        <p class="meta hero__date" data-bind="dateDots">06.10.2026</p>
+        <h1 class="hero__names" id="hero-names">
+          <span class="line line--groom"><span class="line__inner" data-bind="groomTitle">Muxriddin</span></span>
+          <span class="line line--amp"><span class="line__inner">&amp;</span></span>
+          <span class="line line--bride"><span class="line__inner" data-bind="brideTitle">Umida</span></span>
+        </h1>
+        <p class="hero__eyebrow" data-bind="heroEyebrow">To‘yga taklifnoma</p>
+      </div>
+      <a class="scroll-hint" href="#intro"><span class="scroll-hint__line" aria-hidden="true"></span><span class="meta">Pastga</span></a>
+    </section>
+
+    <!-- ===================== 02 TAKLIF ===================== -->
+    <section class="intro section" id="intro" aria-labelledby="intro-title" data-clouds>
+      <p class="meta reveal" data-bind="introKicker">Biz turmush quryapmiz</p>
+      <h2 class="display intro__names reveal" id="intro-title">
+        <span data-bind="groomTitle">Muxriddin</span> <em class="amp">&amp;</em> <span data-bind="brideTitle">Umida</span>
+      </h2>
+      <span class="ornament reveal" aria-hidden="true">
+        <svg viewBox="0 0 120 20" width="120" height="20"><path d="M0 10H46M74 10H120" /><path class="ornament__heart" d="M60 16C52 10.5 50 8 50 5.6 50 3.6 51.6 2 53.6 2 55.6 2 57 3.2 60 6.2 63 3.2 64.4 2 66.4 2 68.4 2 70 3.6 70 5.6 70 8 68 10.5 60 16Z" /></svg>
+      </span>
+      <p class="intro__date reveal" data-bind="dateLong">06-oktabr, 2026-yil</p>
+      <p class="intro__text reveal" data-bind="introText">Ikki yurak, bir taqdir.</p>
+    </section>
+
+    <!-- ===================== 03 BIZNING TARIXIMIZ ===================== -->
+    <section class="story section" id="story" aria-labelledby="story-title" data-clouds>
+      <header class="section-head">
+        <p class="meta reveal">Sevgi hikoyasi</p>
+        <h2 class="display section-title reveal" id="story-title">Bizning <em>tariximiz</em></h2>
+      </header>
+      <div class="timeline">
+        <span class="timeline__track" aria-hidden="true"><span class="timeline__fill"></span></span>
+        <ol class="timeline__list" id="story-list"></ol>
+      </div>
+    </section>
+
+    <!-- ===================== 04 SANA (scroll bilan) ===================== -->
+    <section class="date" id="date" aria-labelledby="date-title" data-clouds>
+      <div class="date__sticky">
+        <h2 class="visually-hidden" id="date-title">To‘y sanasi</h2>
+        <p class="meta date__meta" data-bind="weekdayTime">Seshanba · 16:00</p>
+        <p class="date__line date__line--day"><span data-bind="day">06</span></p>
+        <p class="date__line date__line--month"><span data-bind="monthName">Oktabr</span></p>
+        <p class="date__line date__line--year"><span data-bind="year">2026</span></p>
+      </div>
+    </section>
+
+    <!-- oy ostidagi kino lavha -->
+    <figure class="film" data-film="afterDate" data-clouds>
+      <div class="film__frame">
+        <video class="film__video" muted loop playsinline preload="metadata" aria-hidden="true"></video>
+      </div>
+      <figcaption class="film__caption"></figcaption>
+    </figure>
+
+    <!-- ===================== 05 ORTGA SANOQ ===================== -->
+    <section class="countdown section section--dark" id="countdown" aria-labelledby="countdown-title" data-clouds>
+      <p class="meta reveal" id="countdown-title">To‘yimizgacha qolgan vaqt</p>
+      <div class="countdown__grid reveal" id="countdown-grid" role="timer" aria-live="off">
+        <div class="countdown__unit"><span class="countdown__num" data-unit="days">00</span><span class="meta">Kun</span></div>
+        <div class="countdown__unit"><span class="countdown__num" data-unit="hours">00</span><span class="meta">Soat</span></div>
+        <div class="countdown__unit"><span class="countdown__num" data-unit="minutes">00</span><span class="meta">Daqiqa</span></div>
+        <div class="countdown__unit"><span class="countdown__num" data-unit="seconds">00</span><span class="meta">Soniya</span></div>
+      </div>
+      <p class="display countdown__done" id="countdown-done" hidden>O‘sha kun keldi</p>
+    </section>
+
+    <!-- ===================== 06 MANZIL ===================== -->
+    <section class="venue section" id="venue" aria-labelledby="venue-title" data-clouds>
+      <div class="venue__text">
+        <p class="meta reveal">Manzil</p>
+        <h2 class="display venue__name reveal" id="venue-title" data-bind="venueName">Versal to‘yxonasi</h2>
+        <p class="venue__city reveal" data-bind="venueCity">Farg‘ona shahri</p>
+        <dl class="venue__facts reveal">
+          <div><dt class="meta">Sana</dt><dd data-bind="dateLong">06-oktabr, 2026-yil</dd></div>
+          <div><dt class="meta">Vaqt</dt><dd data-bind="time">16:00</dd></div>
+        </dl>
+        <a class="button reveal" id="map-link" href="https://www.google.com/maps/search/?api=1&amp;query=Versal%20to%E2%80%98yxonasi%20Farg%E2%80%98ona" target="_blank" rel="noopener">
+          <span>Xaritada ochish</span><span class="button__arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+      <figure class="venue__image photo" data-photo="venue"></figure>
+    </section>
+
+    <!-- ===================== 07 GALEREYA ===================== -->
+    <section class="gallery section" id="gallery" aria-labelledby="gallery-title" data-clouds>
+      <header class="section-head">
+        <p class="meta reveal">Lahzalar</p>
+        <h2 class="display section-title reveal" id="gallery-title">Sevgi <em>lahzalari</em></h2>
+      </header>
+      <ul class="gallery__grid" id="gallery-grid"></ul>
+    </section>
+
+    <!-- ===================== 08 DASTUR ===================== -->
+    <section class="program section" id="program" aria-labelledby="program-title" data-clouds>
+      <header class="section-head">
+        <p class="meta reveal">To‘y kuni</p>
+        <h2 class="display section-title reveal" id="program-title">Dastur</h2>
+      </header>
+      <ol class="program__list" id="program-list"></ol>
+    </section>
+
+    <!-- ===================== 09 TAKLIFGA JAVOB ===================== -->
+    <section class="rsvp section section--dark" id="rsvp" aria-labelledby="rsvp-title" data-clouds>
+      <header class="section-head">
+        <p class="meta reveal" data-bind="rsvpDeadline">Iltimos, javob bering</p>
+        <h2 class="display section-title reveal" id="rsvp-title">Bizga <em>qo‘shilasizmi?</em></h2>
+      </header>
+
+      <form class="rsvp__form reveal" id="rsvp-form" novalidate>
+        <div class="field">
+          <label for="rsvp-name">Ismingiz</label>
+          <input id="rsvp-name" name="name" type="text" autocomplete="name" required minlength="2" maxlength="80" aria-describedby="rsvp-name-error">
+          <p class="field__error" id="rsvp-name-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="rsvp-phone">Telefon raqamingiz</label>
+          <input id="rsvp-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="+998 __ ___ __ __" aria-describedby="rsvp-phone-error">
+          <p class="field__error" id="rsvp-phone-error" aria-live="polite"></p>
+        </div>
+        <fieldset class="field choice" aria-describedby="rsvp-attendance-error">
+          <legend>Ishtirok etasizmi?</legend>
+          <label class="choice__item"><input type="radio" name="attendance" value="yes" required><span>Ha, albatta boraman</span></label>
+          <label class="choice__item"><input type="radio" name="attendance" value="no"><span>Afsuski, kela olmayman</span></label>
+          <p class="field__error" id="rsvp-attendance-error" aria-live="polite"></p>
+        </fieldset>
+        <div class="field field--guests">
+          <label for="rsvp-guests">Mehmonlar soni</label>
+          <div class="stepper">
+            <button type="button" class="stepper__btn" data-step="-1" aria-label="Kamroq mehmon">−</button>
+            <input id="rsvp-guests" name="guests" type="number" inputmode="numeric" min="1" max="5" value="1" aria-describedby="rsvp-guests-error">
+            <button type="button" class="stepper__btn" data-step="1" aria-label="Ko‘proq mehmon">+</button>
+          </div>
+          <p class="field__error" id="rsvp-guests-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="rsvp-message">Tilaklaringiz <span class="field__optional">ixtiyoriy</span></label>
+          <textarea id="rsvp-message" name="message" rows="3" maxlength="500"></textarea>
+        </div>
+        <button class="button button--light" type="submit" id="rsvp-submit"><span>Ishtirokni tasdiqlash</span><span class="button__arrow" aria-hidden="true">→</span></button>
+        <p class="rsvp__status" id="rsvp-status" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="rsvp__success" id="rsvp-success" hidden tabindex="-1">
+        <p class="display">Rahmat!</p>
+        <p>Siz bilan birga nishonlashni intiqlik bilan kutamiz.</p>
+      </div>
+    </section>
+
+    <!-- ===================== 10 YAKUN ===================== -->
+    <section class="final" id="final" aria-labelledby="final-title" data-clouds>
+      <figure class="final__media photo" data-photo="final" aria-hidden="true"></figure>
+      <canvas class="sparkles" data-sparkles="lights petals" aria-hidden="true"></canvas>
+      <div class="final__content">
+        <p class="display final__message reveal" id="final-title" data-bind="finalMessage">Sizni intiqlik bilan kutamiz.</p>
+        <p class="final__names reveal" data-bind="namesInline">Muxriddin &amp; Umida</p>
+        <p class="meta reveal" data-bind="dateDots">06.10.2026</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="meta"><span data-bind="namesInline">Muxriddin &amp; Umida</span> · <span data-bind="dateDots">06.10.2026</span></p>
+    <p class="meta footer__music" data-bind="musicCredit"></p>
+  </footer>
+
+  <!-- ===================== SURATLARNI KO‘RISH ===================== -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Suratlarni ko‘rish" hidden>
+    <div class="lightbox__stage" id="lightbox-stage">
+      <img class="lightbox__img" id="lightbox-img" alt="">
+    </div>
+    <p class="lightbox__caption meta"><span id="lightbox-count">1 / 1</span> · <span id="lightbox-caption"></span></p>
+    <button class="lightbox__btn lightbox__close" type="button" data-lb="close" aria-label="Yopish">Yopish</button>
+    <button class="lightbox__btn lightbox__prev" type="button" data-lb="prev" aria-label="Oldingi surat">←</button>
+    <button class="lightbox__btn lightbox__next" type="button" data-lb="next" aria-label="Keyingi surat">→</button>
+  </div>
+</body>
+</html>

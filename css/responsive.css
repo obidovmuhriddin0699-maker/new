@@ -1,0 +1,155 @@
+/* ==========================================================================
+   SEVGI BULUTLARI — responsive. Base styles are mobile (360–430px).
+   Tablet 768 / 1024, desktop 1280 / 1440 / 1920.
+   ========================================================================== */
+
+@media (min-width: 768px) {
+  .chrome { padding-top: calc(var(--safe-top) + 22px); }
+
+  .hero__content { padding-top: calc(var(--safe-top) + 14svh); }
+
+  .event { padding-left: 48px; }
+  .event__photo { width: min(70%, 460px); }
+
+  .countdown__grid { grid-template-columns: repeat(4, 1fr); }
+  .countdown__unit { padding: 34px 22px 38px !important; border-right: 1px solid var(--line-dark); }
+  .countdown__unit:first-child { padding-left: 0 !important; }
+  .countdown__unit:last-child { border-right: 0; }
+  .countdown__num { font-size: clamp(4rem, 9vw, 11rem); }
+
+  .gallery__grid { display: block; columns: 2; column-gap: 28px; }
+  .tile { width: auto !important; break-inside: avoid; margin-bottom: 56px; }
+  .tile:nth-child(2) { margin-top: 120px; }
+
+  .program__item { grid-template-columns: 220px 1fr 1.2fr; align-items: baseline; }
+  .program__body { display: contents; }
+  .program__title { margin-top: 0; }
+  .program__text { margin-top: 0; }
+
+  .choice { display: flex; flex-wrap: wrap; }
+  .choice legend { margin-bottom: 10px; }
+  .choice .field__error { flex-basis: 100%; }
+}
+
+@media (min-width: 1024px) {
+  /* hero: the video becomes an arched window rising out of the clouds,
+     the names stand on either side of it, "&" glows in the middle */
+  .hero {
+    --arch-h: 76svh;
+    --arch-w: calc(var(--arch-h) * 9 / 14);
+    background: radial-gradient(70% 60% at 50% 42%, #fff9f5 0%, var(--paper) 55%, #efe2de 100%);
+    color: var(--ink);
+  }
+  .hero__media {
+    inset: auto;
+    left: 50%;
+    top: 9svh;
+    width: var(--arch-w);
+    height: var(--arch-h);
+    margin-left: calc(var(--arch-w) / -2);
+    border-radius: 999px 999px 6px 6px;
+    box-shadow: 0 50px 90px -50px rgba(90, 45, 40, 0.45);
+  }
+  .hero__shade { background: linear-gradient(180deg, rgba(29, 26, 34, 0) 50%, rgba(29, 26, 34, 0.25) 100%); }
+  .hero__clouds { height: 34%; --tile: 2200px; }
+  .hero__content {
+    position: absolute;
+    inset: 0;
+    display: block;
+    align-self: stretch;
+    padding: 0;
+  }
+  .hero__date {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(var(--safe-top) + 3.2svh);
+    color: var(--stone);
+  }
+  .hero__names {
+    position: absolute;
+    inset: 0;
+    grid-template-columns: 1fr var(--arch-w) 1fr;
+    align-items: center;
+    justify-items: stretch;
+    padding: 0 var(--gutter) 6svh;
+    font-size: clamp(3.4rem, 5.1vw, 7.6rem);
+    text-shadow: none;
+  }
+  .line--groom { grid-column: 1; grid-row: 1; text-align: right; padding-right: 3.2vw; }
+  .line--bride { grid-column: 3; grid-row: 1; text-align: left; padding-left: 3.2vw; }
+  .line--amp {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    text-align: center;
+    font-size: 2.3em;
+    color: #fff;
+    text-shadow: 0 4px 40px rgba(90, 40, 30, 0.45);
+  }
+  .hero__eyebrow {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--safe-bottom) + 13svh);
+    z-index: 3;
+    color: var(--ink);
+    text-shadow: none;
+    font-size: clamp(2.2rem, 2.6vw, 3.2rem);
+  }
+  .scroll-hint { bottom: calc(var(--safe-bottom) + 3svh); }
+
+  .section-head { grid-template-columns: 1fr 2fr; align-items: end; }
+
+  .timeline__track { left: 50%; }
+  .timeline__list { gap: 140px; }
+  .event { width: 50%; padding-left: 64px; }
+  .event::before { left: -4px; }
+  .event:nth-child(even) { margin-left: 50%; }
+  .event:nth-child(odd) { padding-left: 0; padding-right: 64px; text-align: right; justify-items: end; }
+  .event:nth-child(odd)::before { left: auto; right: -5px; }
+  .event__photo { width: min(80%, 460px); }
+
+  .venue { grid-template-columns: 5fr 6fr; align-items: center; gap: 8vw; }
+  .venue__image { aspect-ratio: 4 / 5; }
+
+  .gallery__grid { columns: 3; column-gap: 32px; }
+  .tile:nth-child(2) { margin-top: 160px; }
+  .tile:nth-child(3) { margin-top: 60px; }
+
+  /* the portrait moon film becomes an arched window, like the hero */
+  .film { padding-top: 4vh; }
+  .film__frame {
+    width: calc(var(--screen) * 0.84 * 9 / 16);
+    height: calc(var(--screen) * 0.84);
+    margin: 0 auto;
+    border-radius: 999px 999px 6px 6px;
+    box-shadow: 0 50px 90px -50px rgba(40, 30, 50, 0.5);
+  }
+  .film__caption { margin: 28px auto 0; text-align: center; }
+
+  .rsvp { display: grid; grid-template-columns: 1fr 1.2fr; gap: 6vw; align-items: start; }
+  .rsvp .section-head { grid-template-columns: 1fr; position: sticky; top: 120px; }
+
+  .final__content { padding-bottom: 120px; }
+  .final__message { max-width: 14ch; }
+
+  .footer { grid-template-columns: 1fr auto; padding-bottom: 34px; }
+}
+
+@media (min-width: 1440px) {
+  :root { --gutter: 80px; }
+  .gallery__grid { column-gap: 40px; }
+}
+
+@media (min-width: 1920px) {
+  :root { --gutter: 120px; }
+  .intro__text, .event__text { font-size: 1.15rem; }
+}
+
+/* short landscape phones: keep the hero readable */
+@media (max-height: 520px) and (orientation: landscape) {
+  .hero__names { font-size: clamp(2.4rem, 8vh + 2vw, 4.4rem); }
+  .hero__content { padding-top: calc(var(--safe-top) + 8svh); }
+  .date { height: calc(var(--screen) * 2.2); }
+}

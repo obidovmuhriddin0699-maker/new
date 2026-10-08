@@ -1,0 +1,113 @@
+/* ==========================================================================
+   SEVGI BULUTLARI — motion. transform / opacity / clip-path (+ a soft blur on text).
+   States are toggled by JS (IntersectionObserver / scroll progress).
+   ========================================================================== */
+
+@keyframes eq { from { transform: scaleY(0.2); } to { transform: scaleY(1); } }
+@keyframes hint {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(250%); }
+}
+
+/* ---------- hero entrance (html.is-ready: fonts + poster ready → the clouds part first) ---------- */
+.js .hero__poster { opacity: 0; transform: scale(1.08); }
+.js .hero__date, .js .hero__eyebrow, .js .scroll-hint { opacity: 0; translate: 0 14px; }
+.js .hero__names .line__inner { transform: translate3d(0, 105%, 0); }
+.js .hero__names .line--amp .line__inner { transform: scale(0.6); opacity: 0; filter: blur(8px); }
+
+.is-ready .hero__poster { opacity: 1; transform: none; transition: opacity 1.8s var(--ease), transform 4s var(--ease-expo); }
+.is-ready .hero__date { opacity: 1; translate: 0 0; transition: opacity 1.2s var(--ease) 1.2s, translate 1.4s var(--ease-expo) 1.2s; }
+.is-ready .hero__names .line__inner { transform: none; transition: transform 1.6s var(--ease-expo); }
+.is-ready .hero__names .line:nth-child(1) .line__inner { transition-delay: 1.45s; }
+.is-ready .hero__names .line:nth-child(3) .line__inner { transition-delay: 1.75s; }
+.is-ready .hero__names .line--amp .line__inner {
+  opacity: 1; filter: none;
+  transition: transform 1.8s var(--ease-expo) 2.1s, opacity 1.2s var(--ease) 2.1s, filter 1.4s var(--ease) 2.1s;
+  animation: heartbeat 3.2s ease-in-out 4.2s infinite;
+}
+.is-ready .hero__eyebrow { opacity: 1; translate: 0 0; transition: opacity 1.4s var(--ease) 2.6s, translate 1.6s var(--ease-expo) 2.6s; }
+.is-ready .scroll-hint { opacity: 1; translate: 0 0; transition: opacity 1s var(--ease) 3.2s, translate 1.2s var(--ease-expo) 3.2s; }
+
+/* a soft double heartbeat on every "&" */
+@keyframes heartbeat {
+  0%, 40%, 100% { transform: scale(1); }
+  10% { transform: scale(1.09); }
+  20% { transform: scale(1); }
+  30% { transform: scale(1.05); }
+}
+.intro__names .amp { animation: heartbeat 3.2s ease-in-out 1s infinite; }
+
+/* ornament: the line and heart draw themselves */
+.js .ornament path { stroke-dasharray: 120; stroke-dashoffset: 120; transition: stroke-dashoffset 2.2s var(--ease-io) 0.4s; }
+.js .ornament.is-in path { stroke-dashoffset: 0; }
+
+/* ---------- generic reveal ---------- */
+/* content rises out of the mist: up, from soft focus to sharp */
+.js .reveal {
+  opacity: 0;
+  transform: translate3d(0, 34px, 0);
+  filter: blur(10px);
+  transition: opacity 1.4s var(--ease), transform 1.6s var(--ease-expo), filter 1.5s var(--ease), clip-path 1.4s var(--ease-io);
+  transition-delay: var(--delay, 0s);
+}
+.js .has-veil .reveal { transition-delay: calc(var(--delay, 0s) + 0.45s); }
+.js .reveal[data-reveal="mask"] { opacity: 1; transform: none; clip-path: inset(0 0 100% 0); }
+.js .reveal.is-in { opacity: 1; transform: none; filter: none; clip-path: inset(0 0 -10% 0); }
+
+/* ---------- cinematic photo reveal: clip + settle from 1.05 ---------- */
+.js .photo[data-cine] { clip-path: inset(14% 0 14% 0); transition: clip-path 1.4s var(--ease-io); }
+.js .photo[data-cine] img { opacity: 0; transform: scale(1.05); transition: opacity 1.2s var(--ease), transform 1.5s var(--ease-expo); }
+.js .photo[data-cine].is-in { clip-path: inset(0 0 0 0); }
+.js .photo[data-cine].is-in img { opacity: 1; transform: none; }
+
+/* ---------- timeline events ---------- */
+.js .event > * { opacity: 0; transform: translate3d(0, 28px, 0); filter: blur(6px); transition: opacity 1.2s var(--ease), transform 1.4s var(--ease-expo), filter 1.3s var(--ease); }
+.js .event.is-in > * { opacity: 1; transform: none; filter: none; }
+.js .event.is-in > :nth-child(2) { transition-delay: 0.08s; }
+.js .event.is-in > :nth-child(3) { transition-delay: 0.16s; }
+.js .event.is-in > :nth-child(4) { transition-delay: 0.24s; }
+
+/* ---------- date: 06 → OCTOBER → 2026 ---------- */
+.js .date__line span { transform: translate3d(0, 102%, 0); transition: transform 1.2s var(--ease-expo); }
+.js .date__line.is-on span { transform: none; }
+.js .date__meta { opacity: 0; transition: opacity 1s var(--ease); }
+.js .date__meta.is-on { opacity: 1; }
+
+/* ---------- film panels ---------- */
+.js .film__frame { clip-path: inset(8% 6% 8% 6%); transition: clip-path 1.5s var(--ease-io); }
+.js .film__video { transform: scale(1.05); opacity: 0; transition: transform 1.8s var(--ease-expo), opacity 1.2s var(--ease); }
+.js .film.is-in .film__frame { clip-path: inset(0 0 0 0); }
+.js .film.is-in .film__video { transform: none; opacity: 1; }
+.js .film__caption { opacity: 0; transform: translate3d(0, 16px, 0); transition: opacity 1s var(--ease) 0.5s, transform 1.2s var(--ease-expo) 0.5s; }
+.js .film.is-in .film__caption { opacity: 1; transform: none; }
+
+/* ---------- program rows & gallery tiles ---------- */
+.js .program__item, .js .tile { opacity: 0; transform: translate3d(0, 32px, 0); transition: opacity 1s var(--ease), transform 1.2s var(--ease-expo); }
+.js .program__item.is-in, .js .tile.is-in { opacity: 1; transform: none; }
+
+/* ---------- countdown tick ---------- */
+.countdown__num.tick { animation: tick 0.7s var(--ease-expo); }
+@keyframes tick { from { opacity: 0.2; transform: translate3d(0, -18%, 0); } to { opacity: 1; transform: none; } }
+
+/* ==========================================================================
+   Reduced motion: keep fades only, remove movement and loops
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.2s !important;
+    transition-delay: 0s !important;
+  }
+  .js .reveal, .js .event > *, .js .program__item, .js .tile,
+  .js .film__caption { transform: none !important; }
+  .js .reveal[data-reveal="mask"], .js .photo[data-cine], .js .film__frame { clip-path: none !important; }
+  .js .reveal, .js .event > *, .js .hero__names .line--amp .line__inner { filter: none !important; }
+  .js .hero__date, .js .hero__eyebrow, .js .scroll-hint { translate: none !important; }
+  .js .ornament path { stroke-dashoffset: 0 !important; }
+  .hero__media { transform: none !important; }
+  .js .hero__names .line__inner, .js .date__line span, .js .photo[data-cine] img, .js .film__video, .js .hero__poster { transform: none !important; }
+  .js .date__line span { opacity: 1; }
+  .cursor { display: none !important; }
+}

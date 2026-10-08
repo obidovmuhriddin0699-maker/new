@@ -1,0 +1,85 @@
+{
+  "groom": "MUXRIDDIN",
+  "bride": "UMIDA",
+  "date": "06.10.2026",
+  "time": "16:00",
+  "timezone": "Asia/Tashkent",
+  "siteUrl": "https://obidovmuhriddin0699-maker.github.io/new/",
+
+  "venue": {
+    "name": "Versal to‘yxonasi",
+    "city": "Farg‘ona shahri",
+    "address": "",
+    "mapsUrl": "",
+    "image": "staircase"
+  },
+
+  "music": "assets/audio/oshiq-bu-kongil.m4a",
+  "musicFallback": "assets/audio/oshiq-bu-kongil.mp3",
+  "musicTitle": "Oshiq bu ko‘ngil",
+  "musicVolume": 0.35,
+
+  "hero": {
+    "video": "assets/video/beach",
+    "poster": "assets/video/beach-poster.webp",
+    "eyebrow": "To‘yga taklifnoma"
+  },
+
+  "intro": {
+    "kicker": "Biz turmush quryapmiz",
+    "text": "Ikki yurak, bir taqdir. Hayotimizning eng baxtli kunida sizni yonimizda ko‘rishni chin dildan istaymiz."
+  },
+
+  "story": [
+    { "year": "2019", "title": "Ilk nigoh", "text": "Bir qarash, bir tabassum — va ikkimiz ham tushuntira olmagan iliq tuyg‘u.", "image": "touch" },
+    { "year": "2021", "title": "Birga", "text": "Uzun suhbatlar, umumiy orzular va sabr bilan qurilgan ishonch.", "image": "window" },
+    { "year": "2024", "title": "Va’da", "text": "Ota-onalarimizning duosi bilan uzuk taqildi — javob esa faqat bitta edi.", "image": "rings-blossom" },
+    { "year": "2026", "title": "To‘y kuni", "text": "Endi buni barcha yaqinlarimiz oldida aytishga tayyormiz.", "image": "first-dance" }
+  ],
+
+  "program": [
+    { "time": "16:00", "title": "Mehmonlarni kutib olish", "text": "Iliq so‘zlar, musiqa va birinchi tabassumlar." },
+    { "time": "17:00", "title": "Nikoh marosimi", "text": "Biz uzoq kutgan eng muhim lahza." },
+    { "time": "19:00", "title": "To‘y ziyofati", "text": "Dasturxon atrofida yaqinlar bilan birga." },
+    { "time": "20:00", "title": "Bayram kechasi", "text": "Kelin-kuyovning ilk raqsi — so‘ng davra sizniki." }
+  ],
+
+  "films": {
+    "afterDate": { "video": "assets/video/moon", "poster": "assets/video/moon-poster.webp", "caption": "Oy guvoh — biz endi bir umrga birgamiz." },
+    "final": { "image": "rose-sunset" }
+  },
+
+  "images": {
+    "touch":         { "ratio": "4/5", "widths": [480, 720], "alt": "Bir-biriga intilgan ikki qo‘l" },
+    "window":        { "ratio": "4/5", "widths": [480, 720], "alt": "Kelin va kuyov baland ravoqli deraza oldida" },
+    "rings-blossom": { "ratio": "4/5", "widths": [480, 720], "alt": "Pushti gullar orasidagi nikoh uzugi" },
+    "first-dance":   { "ratio": "3/4", "widths": [480, 960], "alt": "Kelin va kuyovning ilk raqsi" },
+    "staircase":     { "ratio": "3/4", "widths": [480, 720], "alt": "To‘yxonaning keng zinapoyasida kelin-kuyov" },
+    "rose-sunset":   { "ratio": "4/5", "widths": [480, 736], "alt": "Quyosh botishidagi qizil atirgul" }
+  },
+
+  "gallery": [
+    { "id": "pink-embrace",  "ratio": "3/4",     "widths": [480, 720], "alt": "Kelin va kuyovning qo‘llari, pushti ko‘ylak fonida" },
+    { "id": "roses",         "ratio": "4/5",     "widths": [480, 720], "alt": "Qizil atirgullar guldastasi yonida qo‘l ushlash" },
+    { "id": "ring-on",       "ratio": "720/427", "widths": [480, 720], "alt": "Kuyov kelinning barmog‘iga uzuk taqmoqda" },
+    { "id": "evening-hands", "ratio": "3/4",     "widths": [480, 720], "alt": "Kechki chiroqlar fonida nikoh uzuklari" },
+    { "id": "bouquet-hands", "ratio": "4/5",     "widths": [480, 720], "alt": "Oq libos va pushti guldasta ustida qo‘llar" }
+  ],
+
+  "rsvp": {
+    "endpoint": "",
+    "whatsapp": "",
+    "deadline": "20.09.2026",
+    "maxGuests": 5
+  },
+
+  "final": {
+    "message": "Sizni intiqlik bilan kutamiz."
+  },
+
+  "seo": {
+    "title": "{groom} & {bride} — to‘yga taklifnoma",
+    "description": "{groom} va {bride}ning to‘y kechasiga marhamat qiling — {date}, {venue}.",
+    "image": "assets/images/og-image.jpg"
+  }
+}
