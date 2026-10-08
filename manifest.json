@@ -1,0 +1,16 @@
+{
+  "name": "Muxriddin & Umida — Wedding Invitation",
+  "short_name": "M & U",
+  "description": "Cloud Palace — luxury wedding invitation",
+  "lang": "uz",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f1ea",
+  "theme_color": "#f4efe7",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

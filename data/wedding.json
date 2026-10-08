@@ -1,0 +1,275 @@
+{
+  "slug": "muxriddin-umida",
+  "theme": "cloud-palace",
+  "groom": "MUXRIDDIN",
+  "bride": "UMIDA",
+  "date": "2026-10-06",
+  "time": "16:00",
+  "timezone": "Asia/Tashkent",
+  "venue": {
+    "name": "Versal to‘yxonasi",
+    "city": "Farg‘ona shahar",
+    "address": "",
+    "latitude": "",
+    "longitude": ""
+  },
+  "hero": {
+    "video": "assets/video/hands-ring.mp4",
+    "poster": {
+      "src": "assets/images/poster-hands-ring.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 1280,
+      "alt": ""
+    },
+    "image": {
+      "src": "assets/images/couple-ring.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 735,
+      "height": 1103,
+      "alt": "Kelin va kuyovning qo‘llari, nikoh uzugi"
+    }
+  },
+  "invitation": {
+    "greeting": "Assalomu alaykum, qadrli mehmonlar!",
+    "text": "Ikki qalb bir bo‘lib, yangi hayot ostonasida turibmiz. Hayotimizning eng go‘zal va unutilmas kunida — nikoh to‘yimizda — sizni aziz mehmonimiz sifatida ko‘rishdan cheksiz baxtiyor bo‘lamiz."
+  },
+  "story": {
+    "title": "Our Story",
+    "text": "Har bir buyuk sevgi kichik bir lahzadan boshlanadi. Bizning hikoyamiz — sabr, ishonch va duolar bilan bitilgan sahifalar.",
+    "timeline": [
+      {
+        "key": "FIRST MEETING",
+        "date": "2022",
+        "title": "Ilk uchrashuv",
+        "description": "Taqdir bizni oddiy bir kunda, kutilmagan lahzada uchrashtirdi. O‘sha nigoh — hammasining boshlanishi edi.",
+        "image": {
+          "src": "assets/images/still-staircase.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 720,
+          "height": 1280,
+          "alt": "Saroy zinapoyasida kelin va kuyov"
+        }
+      },
+      {
+        "key": "FIRST DATE",
+        "date": "2023",
+        "title": "Ilk suhbat",
+        "description": "Tugamas suhbatlar, samimiy kulgular va bir-birimizni kashf etgan sokin kechalar.",
+        "image": {
+          "src": "assets/images/still-dance.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 720,
+          "height": 960,
+          "alt": "Kelin va kuyov raqsi"
+        }
+      },
+      {
+        "key": "SPECIAL MOMENT",
+        "date": "2024",
+        "title": "Unutilmas lahza",
+        "description": "Qo‘llarimiz ilk bor tutashgan on — so‘zlarsiz berilgan va’da.",
+        "image": {
+          "src": "assets/images/still-vow.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 720,
+          "height": 1280,
+          "alt": "Kuyov kelin qo‘liga uzuk taqmoqda"
+        }
+      },
+      {
+        "key": "ENGAGEMENT",
+        "date": "2025",
+        "title": "Unashtiruv",
+        "description": "Uzuk taqilgan kun «ha» degan bir so‘z butun umrlik qarorga aylandi.",
+        "image": {
+          "src": "assets/images/still-ring-light.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 720,
+          "height": 900,
+          "alt": "Gullar orasidagi nikoh uzugi"
+        }
+      },
+      {
+        "key": "WEDDING DAY",
+        "date": "06.10.2026",
+        "title": "To‘y kuni",
+        "description": "Bulutlar ustidagi saroyda yangi hayotimiz boshlanadi — va bu kunni siz bilan baham ko‘rishni istaymiz.",
+        "image": {
+          "src": "assets/images/couple-ring.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 735,
+          "height": 1103,
+          "alt": "Kelin va kuyov qo‘lida nikoh uzugi"
+        }
+      }
+    ]
+  },
+  "film": [
+    {
+      "title": "Birinchi raqs",
+      "src": "assets/video/first-dance.mp4",
+      "poster": "assets/images/poster-first-dance.jpg"
+    },
+    {
+      "title": "Uzuk",
+      "src": "assets/video/hands-ring.mp4",
+      "poster": "assets/images/poster-hands-ring.jpg"
+    },
+    {
+      "title": "Gullar orasida",
+      "src": "assets/video/ring-blossom.mp4",
+      "poster": "assets/images/poster-ring-blossom.jpg"
+    },
+    {
+      "title": "Va’da",
+      "src": "assets/video/vow-hands.mp4",
+      "poster": "assets/images/poster-vow-hands.jpg"
+    },
+    {
+      "title": "Saroy zinapoyasi",
+      "src": "assets/video/grand-staircase.mp4",
+      "poster": "assets/images/poster-grand-staircase.jpg"
+    }
+  ],
+  "gallery": [
+    {
+      "src": "assets/images/couple-ring.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 735,
+      "height": 1103,
+      "alt": "Nikoh uzugi — kelin va kuyov qo‘llari"
+    },
+    {
+      "src": "assets/images/still-dance.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 960,
+      "alt": "Kelin va kuyovning raqsi"
+    },
+    {
+      "src": "assets/images/still-hands-veil.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 1280,
+      "alt": "Kelinning qo‘llari"
+    },
+    {
+      "src": "assets/images/still-ring-light.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 900,
+      "alt": "Gullar orasida uzuk"
+    },
+    {
+      "src": "assets/images/still-staircase.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 1280,
+      "alt": "Saroy zinapoyasi"
+    },
+    {
+      "src": "assets/images/still-dance-2.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 960,
+      "alt": "Oq gullar ostidagi raqs"
+    },
+    {
+      "src": "assets/images/still-vow.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 1280,
+      "alt": "Uzuk taqish lahzasi"
+    },
+    {
+      "src": "assets/images/poster-ring-blossom.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 900,
+      "alt": "Oltin uzuk va gullar"
+    }
+  ],
+  "program": [
+    {
+      "time": "16:00",
+      "title": "Mehmonlarni kutib olish"
+    },
+    {
+      "time": "17:00",
+      "title": "Nikoh marosimi"
+    },
+    {
+      "time": "18:00",
+      "title": "Foto sessiya"
+    },
+    {
+      "time": "19:00",
+      "title": "Bayram dasturi"
+    },
+    {
+      "time": "20:00",
+      "title": "Kechki ovqat"
+    },
+    {
+      "time": "21:00",
+      "title": "Wedding celebration"
+    }
+  ],
+  "music": "assets/audio/Asadov Silencio.m4a",
+  "rsvp": {
+    "enabled": true,
+    "deadline": "2026-09-25",
+    "maxGuests": 10,
+    "endpoint": ""
+  },
+  "seo": {
+    "siteUrl": "",
+    "image": "assets/images/og-cover.jpg"
+  }
+}
