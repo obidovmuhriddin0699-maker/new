@@ -3,7 +3,7 @@
   "theme": "cloud-palace",
   "groom": "MUXRIDDIN",
   "bride": "UMIDA",
-  "date": "2026-10-06",
+  "date": "2026-12-06",
   "time": "16:00",
   "timezone": "Asia/Tashkent",
   "venue": {
@@ -110,7 +110,7 @@
       },
       {
         "key": "WEDDING DAY",
-        "date": "06.10.2026",
+        "date": "06.12.2026",
         "title": "To‘y kuni",
         "description": "Bulutlar ustidagi saroyda yangi hayotimiz boshlanadi — va bu kunni siz bilan baham ko‘rishni istaymiz.",
         "image": {
@@ -264,7 +264,7 @@
   "music": "assets/audio/Asadov Silencio.m4a",
   "rsvp": {
     "enabled": true,
-    "deadline": "2026-09-25",
+    "deadline": "2026-11-25",
     "maxGuests": 10,
     "endpoint": ""
   },
