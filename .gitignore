@@ -2,3 +2,7 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 app.db
+node_modules/
+dist/
+.env*
+!.env.example

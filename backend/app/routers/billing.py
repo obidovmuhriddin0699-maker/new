@@ -1,6 +1,7 @@
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.billing import (
@@ -13,7 +14,7 @@ from backend.app.billing import (
 )
 from backend.app.database import get_db
 from backend.app.dependencies import CurrentUser, CsrfSession, require_membership, require_workspace_admin
-from backend.app.models import Workspace, WorkspaceBilling
+from backend.app.models import Workspace, WorkspaceBilling, WorkspaceUsage
 from backend.app.schemas import (
     BillingPlanResponse,
     BillingStatusResponse,
@@ -65,12 +66,21 @@ def get_billing_status(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Active workspace plan is missing from the configured catalog",
         )
+    now = int(time.time())
+    period_start = now - now % (30 * 24 * 60 * 60)
+    usage_rows = db.scalars(
+        select(WorkspaceUsage).where(
+            WorkspaceUsage.workspace_id == workspace_id,
+            WorkspaceUsage.period_start == period_start,
+        )
+    )
     return BillingStatusResponse(
         workspace_id=workspace_id,
         status=effective_status(billing),
         trial_started_at=billing.trial_started_at,
         trial_ends_at=billing.trial_ends_at,
         plan=plan_response(selected_plan) if selected_plan else None,
+        usage={row.metric: row.units for row in usage_rows},
     )
 
 

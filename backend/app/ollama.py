@@ -20,11 +20,19 @@ class OllamaAdapter:
         self.timeout_seconds = timeout_seconds
         self.max_output_tokens = max_output_tokens
 
-    def chat(self, prompt: str, system: str | None = None) -> dict[str, str]:
+    def chat(
+        self,
+        prompt: str,
+        system: str | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, str]:
         messages: list[dict[str, str]] = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
+        options: dict[str, int | float] = {"num_predict": self.max_output_tokens}
+        if temperature is not None:
+            options["temperature"] = temperature
         try:
             with httpx.Client(timeout=self.timeout_seconds) as client:
                 response = client.post(
@@ -33,7 +41,7 @@ class OllamaAdapter:
                         "model": self.model,
                         "messages": messages,
                         "stream": False,
-                        "options": {"num_predict": self.max_output_tokens},
+                        "options": options,
                     },
                 )
                 response.raise_for_status()

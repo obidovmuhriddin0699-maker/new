@@ -59,6 +59,22 @@ def test_workspace_trial_is_thirty_days_and_plan_catalog_is_configured(
     plans = client.get(f"/workspaces/{workspace_id}/billing/plans")
     assert plans.status_code == 200
     assert plans.json() == PLANS
+    assert billing["usage"] == {}
+
+
+def test_billing_status_reports_workspace_scoped_usage(client) -> None:
+    register(client, "usage-owner@example.com")
+    workspace_id = create_workspace(client, "Usage workspace")
+    response = client.post(
+        f"/workspaces/{workspace_id}/billing/usage/ai_requests",
+        json={"amount": 2},
+        headers=csrf(client),
+    )
+    assert response.status_code == 200
+
+    billing = client.get(f"/workspaces/{workspace_id}/billing")
+    assert billing.status_code == 200
+    assert billing.json()["usage"] == {"ai_requests": 2}
 
 
 def test_checkout_is_test_only_and_usage_limit_is_workspace_scoped(

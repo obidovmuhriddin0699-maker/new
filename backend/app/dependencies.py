@@ -1,5 +1,4 @@
 import hmac
-import os
 import time
 from typing import Annotated
 
@@ -8,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.database import get_db
+from backend.app.config import cookie_secure
 from backend.app.models import AuthSession, Membership, User
 from backend.app.security import hash_token
 
@@ -15,7 +15,6 @@ from backend.app.security import hash_token
 SESSION_COOKIE_NAME = "session"
 CSRF_COOKIE_NAME = "csrf_token"
 SESSION_MAX_AGE = 60 * 60 * 24 * 7
-COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 DbSession = Annotated[Session, Depends(get_db)]
 
 

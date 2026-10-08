@@ -79,6 +79,7 @@ class BillingStatusResponse(BaseModel):
     trial_started_at: int
     trial_ends_at: int
     plan: BillingPlanResponse | None
+    usage: dict[str, int]
 
 
 class CheckoutRequest(BaseModel):
@@ -112,3 +113,48 @@ class AIChatRequest(BaseModel):
 class AIChatResponse(BaseModel):
     model: str
     response: str
+
+
+class WorkflowCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    task: str = Field(min_length=1, max_length=16_000)
+
+    @field_validator("title", "task")
+    @classmethod
+    def strip_nonblank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Field cannot be blank")
+        return value
+
+
+class WorkflowPhaseResponse(BaseModel):
+    name: Literal["planner", "developer", "qa"]
+    status: Literal["pending", "running", "completed", "failed"]
+    attempt_count: int
+    output: str | None
+    model: str | None
+
+
+class WorkflowResponse(BaseModel):
+    id: str
+    workspace_id: str
+    created_by_user_id: str
+    title: str
+    task: str
+    status: Literal["queued", "running", "completed", "failed"]
+    last_error: str | None
+    phases: list[WorkflowPhaseResponse]
+    created_at: int
+    updated_at: int
+
+
+class TelegramLinkCodeResponse(BaseModel):
+    code: str
+    expires_at: int
+    bot_username: str | None
+
+
+class TelegramLinkStatusResponse(BaseModel):
+    linked: bool
+    workspace_id: str | None

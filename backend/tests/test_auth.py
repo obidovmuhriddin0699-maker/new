@@ -1,5 +1,6 @@
 import time
 
+from fastapi import Response
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Session
 from backend.app.dependencies import CSRF_COOKIE_NAME, SESSION_COOKIE_NAME
 from backend.app.models import AuthSession, User
 from backend.app.security import hash_token
+from backend.app.routers.auth import set_session_cookies
 
 
 def register(client: TestClient, email: str) -> dict:
@@ -104,3 +106,15 @@ def test_auth_cookie_state_changes_require_csrf(client) -> None:
     assert response.status_code == 403
     assert logout.status_code == 403
     assert client.get("/auth/me").status_code == 200
+
+
+def test_production_session_and_csrf_cookies_are_secure(monkeypatch) -> None:
+    monkeypatch.setenv("RAILWAY_ENVIRONMENT", "production")
+    monkeypatch.delenv("COOKIE_SECURE", raising=False)
+    response = Response()
+
+    set_session_cookies(response, "session-test", "csrf-test")
+
+    cookies = response.headers.getlist("set-cookie")
+    assert len(cookies) == 2
+    assert all("secure" in cookie.lower() for cookie in cookies)

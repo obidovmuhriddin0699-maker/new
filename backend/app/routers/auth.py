@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from backend.app.database import get_db
 from backend.app.dependencies import (
-    COOKIE_SECURE,
     CSRF_COOKIE_NAME,
     SESSION_COOKIE_NAME,
     SESSION_MAX_AGE,
@@ -15,6 +14,7 @@ from backend.app.dependencies import (
     CurrentUser,
     CsrfSession,
 )
+from backend.app.config import cookie_secure
 from backend.app.models import AuthSession, Membership, User, Workspace
 from backend.app.schemas import Credentials, CurrentUserResponse, UserResponse, WorkspaceResponse
 from backend.app.security import generate_token, hash_password, hash_token, verify_password
@@ -24,12 +24,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def set_session_cookies(response: Response, token: str, csrf_token: str) -> None:
+    secure = cookie_secure()
     response.set_cookie(
         SESSION_COOKIE_NAME,
         token,
         max_age=SESSION_MAX_AGE,
         httponly=True,
-        secure=COOKIE_SECURE,
+        secure=secure,
         samesite="lax",
         path="/",
     )
@@ -38,7 +39,7 @@ def set_session_cookies(response: Response, token: str, csrf_token: str) -> None
         csrf_token,
         max_age=SESSION_MAX_AGE,
         httponly=False,
-        secure=COOKIE_SECURE,
+        secure=secure,
         samesite="lax",
         path="/",
     )
@@ -105,8 +106,9 @@ def logout(
 ) -> Response:
     db.delete(auth_session)
     db.commit()
-    response.delete_cookie(SESSION_COOKIE_NAME, path="/", secure=COOKIE_SECURE, samesite="lax")
-    response.delete_cookie(CSRF_COOKIE_NAME, path="/", secure=COOKIE_SECURE, samesite="lax")
+    secure = cookie_secure()
+    response.delete_cookie(SESSION_COOKIE_NAME, path="/", secure=secure, samesite="lax")
+    response.delete_cookie(CSRF_COOKIE_NAME, path="/", secure=secure, samesite="lax")
     response.status_code = status.HTTP_204_NO_CONTENT
     return response
 
