@@ -13,7 +13,7 @@ celery_app = Celery(
     "muxriddin",
     broker=settings.effective_celery_broker_url,
     backend=settings.effective_celery_result_backend,
-    include=["app.workers.tasks.system"],
+    include=["app.workers.tasks.system", "app.workers.tasks.ai"],
 )
 celery_app.conf.update(
     task_always_eager=settings.celery_task_always_eager,

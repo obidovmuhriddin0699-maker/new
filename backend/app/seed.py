@@ -62,6 +62,29 @@ BRAND = {
         "'100% kafolat' kabi asossiz va'dalar berma",
     ],
     "languages": ["uz", "ru", "en"],
+    "target_audience": (
+        "Toshkentdagi kvartira va uy egalari, yangi uy sotib olganlar, interyerini "
+        "yangilamoqchi bo'lgan oilalar va 3D vizualizatsiya o'rganayotgan dizaynerlar"
+    ),
+    "services": [
+        "Interior design",
+        "3D visualization (3ds Max + Corona Renderer)",
+        "Interior planning",
+        "Design consultation",
+    ],
+    "preferred_styles": ["Minimalism", "Neo Classic", "Modern", "Luxury"],
+    "content_goals": [
+        "Mijozlarni dizayn bo'yicha o'qitish",
+        "Portfolio orqali ishonch qozonish",
+        "Konsultatsiyaga yozilishlar",
+        "Auditoriya bilan muloqot",
+    ],
+    "preferred_ctas": [
+        "Saqlab qo'ying",
+        "Izohda fikringizni yozing",
+        "Konsultatsiya uchun Direct'ga yozing",
+    ],
+    "banned_phrases": ["100% kafolat", "eng arzon", "1-raqamli", "kafolatlaymiz"],
     "visual_style": (
         "Premium minimalist interiors, natural light, warm beige palette, natural marble "
         "and wood, hidden LED lighting, photorealistic architectural visualization"

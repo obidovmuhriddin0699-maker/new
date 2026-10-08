@@ -142,3 +142,49 @@ def make_approved(db: Session, actor):
     content = make_ready(db, actor)
     ApprovalService(db).approve(content.id, actor, expected_version=content.version)
     return content
+
+
+# ---------------------------------------------------------------- PHASE 3 helpers
+@pytest.fixture
+def brand(db: Session):
+    from app.models import BrandProfile
+
+    b = BrandProfile(
+        name="Test Studio",
+        niche="Interior design",
+        voice=["Calm", "Expert"],
+        topics=["Minimalism", "Lighting"],
+        forbidden_rules=["No fake reviews"],
+        languages=["uz", "en"],
+        target_audience="Apartment owners",
+        services=["Interior design"],
+        preferred_styles=["Minimalism"],
+        content_goals=["Educate clients"],
+        preferred_ctas=["Save this post"],
+        banned_phrases=["100% kafolat"],
+        visual_style="Soft daylight, beige palette",
+        is_default=True,
+    )
+    db.add(b)
+    db.commit()
+    return b
+
+
+def mock_factory(*responses, responder=None):
+    """Provider factory returning a fresh MockAIProvider sharing one response queue."""
+    from collections import deque
+
+    from app.providers.ai.mock import MockAIProvider
+
+    queue = deque(responses)
+    created: list[MockAIProvider] = []
+
+    def factory():
+        items = list(queue)
+        queue.clear()
+        provider = MockAIProvider(items, responder=responder)
+        created.append(provider)
+        return provider
+
+    factory.created = created  # type: ignore[attr-defined]
+    return factory

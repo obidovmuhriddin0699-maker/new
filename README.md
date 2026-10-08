@@ -4,12 +4,13 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 2 — Database, repositories & content state machine.**
+> **Joriy holat: PHASE 3 — AI content creation pipeline.**
 > Real Instagram OAuth va real publishing hali **yo‘q** (PHASE 7–8).
 > Meta credentials kerak emas va so‘ralmaydi.
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
+- AI pipeline (agentlar, schemalar, sifat, joblar, xatolar): [`docs/AI_PIPELINE.md`](docs/AI_PIPELINE.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -51,6 +52,19 @@ PHASE 2 da qo'shilganlar:
 - `python -m app.cli seed`: xavfsiz development ma'lumotlari.
 - Content API: `/api/v1/contents` (list, create, get, patch, submit-review, request-edit, approve, reject, history).
 - **Publish endpoint yo'q.** U PHASE 8 da qo'shiladi.
+
+PHASE 3 da qo'shilganlar:
+
+- AI pipeline. U to'rt qismdan iborat:
+  - **Strategist**: strategiya va kontent yo'nalishlari.
+  - **Planner**: g'oyalar va haftalik/oylik reja.
+  - **Creator**: post, karusel, Reels ssenariysi, Story va hashtag'lar.
+  - **Quality Evaluator**: qoidalarga asoslangan sifat tekshiruvi.
+- AI chiqishi Pydantic schemalari bilan tekshiriladi. Noto'g'ri JSON kelsa, bitta tuzatish urinishi qilinadi. Bu ham muvaffaqiyatsiz bo'lsa, job FAILED bo'ladi va hech narsa uydirilmaydi.
+- AI yaratgan kontent faqat `DRAFT` holatida saqlanadi. Siz so'rasangiz va sifat tekshiruvidan o'tsa, `READY_FOR_REVIEW` ga o'tadi. **Hech qachon avtomatik `APPROVED` bo'lmaydi.**
+- `AIJob` ishlash rejimlari: `sync` (default) yoki `celery` (HTTP 202 javob, keyin holatni so'rash kerak).
+- Rasm va video provider'lari `not_configured` holatida. Ular soxta media yaratmaydi.
+- `/api/v1/ai/*` endpoint'lari (to'liq ro'yxat [`docs/AI_PIPELINE.md`](docs/AI_PIPELINE.md) da).
 
 ## 2. Requirements (Windows 11)
 
@@ -142,7 +156,12 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 | `JWT_SECRET_KEY` | JWT imzolash kaliti (prod'da ≥32 belgi, majburiy) |
 | `TOKEN_ENCRYPTION_KEYS` | Fernet kalit(lar)i; birinchisi bilan shifrlanadi, qolganlari faqat o‘qish (rotation) uchun |
 | `CORS_ORIGINS` | ruxsat etilgan frontend manzillari, vergul bilan |
+| `AI_PROVIDER` | `ollama` (real) yoki `mock` (faqat test/demo; production'da taqiqlangan) |
 | `OLLAMA_BASE_URL`, `AI_MODEL` | AI provider (default `qwen2.5:3b`) |
+| `AI_TIMEOUT_SECONDS`, `AI_MAX_OUTPUT_TOKENS`, `AI_STRUCTURED_MAX_ATTEMPTS` | Generatsiya chegaralari |
+| `AI_JOBS_MODE` | `sync` (so'rov ichida) yoki `celery` (fonda, worker kerak) |
+| `AI_MAX_ACTIVE_JOBS_PER_USER` | Bir vaqtda ishlayotgan AI job'lar soni chegarasi |
+| `IMAGE_PROVIDER`, `VIDEO_PROVIDER` | `none` (default, `not_configured`) yoki `mock` (faqat placeholder) |
 | `META_LOGIN_MODE` | `instagram` (default) yoki `facebook` |
 | `META_GRAPH_API_VERSION` | Graph API versiyasi (rasmiy changelog bilan tekshiring) |
 | `META_DRY_RUN` | `true` bo‘lsa real akkauntga hech narsa yuborilmaydi |
@@ -224,6 +243,22 @@ Invoke-RestMethod http://localhost:8000/api/v1/system/ai-status -Headers @{ Auth
 
 Ollama o‘chiq bo‘lsa, javob `available: false` va `error_code: "ai_provider_unavailable"` bo‘ladi. Backend crash bo‘lmaydi.
 
+To'liq pipeline holati (provider, job rejimi, media provider'lar):
+
+```powershell
+Invoke-RestMethod http://localhost:8000/api/v1/ai/status -Headers @{ Authorization = "Bearer $token" }
+```
+
+Birinchi generatsiya (natija `DRAFT` bo'lib saqlanadi):
+
+```powershell
+$req = @{ topic = "Minimalist yotoqxona"; slides = 5 } | ConvertTo-Json
+Invoke-RestMethod -Method Post http://localhost:8000/api/v1/ai/generate-carousel -Headers @{ Authorization = "Bearer $token" } -ContentType "application/json" -Body $req
+```
+
+> CPU'da `qwen2.5:3b` bitta javob uchun 30–120 soniya ishlashi mumkin. Agar so'rov uzoq kutib qolsa, `.env` da `AI_JOBS_MODE=celery` qiling va Celery worker'ni ishga tushiring (5-bo'lim).
+> Ollama'siz sinab ko'rish uchun `.env` ga `AI_PROVIDER=mock` yozing. Bu deterministik test matni qaytaradi va metadata'da `provider: mock` deb belgilanadi.
+
 ## 7. Database setup
 
 **Variant A — SQLite (default, hech narsa o‘rnatish shart emas).** `DATABASE_URL` bo‘sh qoldiriladi.
@@ -302,6 +337,8 @@ Remove-Item Env:TEST_DATABASE_URL
 ```
 
 > `muxriddin_test` va `muxriddin_suite` bazalari **bo'sh** bo'lishi kerak: testlar ulardagi jadvallarni o'chirib, qayta yaratadi.
+
+AI testlari faqat deterministik `MockAIProvider` va `respx` mock'lari bilan ishlaydi. Ollama, pullik API kalitlari yoki internet kerak emas.
 
 Testlar hech qachon real Meta, real Ollama yoki real Redis'ga murojaat qilmaydi
 (`respx` mock, `META_DRY_RUN=true`).
@@ -386,6 +423,12 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | `409 version_mismatch` | Kontent siz ko'rgandan keyin o'zgargan. Qayta yuklang va `expected_version` ni yangilang |
 | `409 invalid_state_transition` | Bu holatdan bu amalga o'tib bo'lmaydi (jadval: `docs/CONTENT_LIFECYCLE.md`) |
 | `403 approval_forbidden` | Approve uchun OWNER/ADMIN roli kerak. AI yoki tizim approve qila olmaydi |
+| AI so'rovi `503 ai_provider_unavailable` | `ollama serve`; Docker'da Ollama host'da ishlayotganini tekshiring |
+| AI so'rovi `503 ai_model_not_found` | `ollama pull qwen2.5:3b` (yoki `AI_MODEL` dagi model) |
+| AI so'rovi `504 ai_timeout` | `AI_TIMEOUT_SECONDS` ni oshiring yoki `AI_JOBS_MODE=celery` |
+| AI so'rovi `502 ai_invalid_output` | Model JSON'ni noto'g'ri qaytardi. Qayta urinib ko'ring, `AI_STRUCTURED_MAX_ATTEMPTS=3` qiling yoki kattaroq model ishlating |
+| `429 too_many_requests` | Oldingi AI job'lar tugashini kuting (`GET /api/v1/ai/jobs`) |
+| `400 language_not_supported` | Bu til brend profilida yoqilmagan (`languages`) |
 | Migration `91ed60cfe649 requires 'approvals' to be empty` | Eski versiyasiz approval qatorlari bor; ularni xavfsiz ko'chirib bo'lmaydi |
 
 ## Development phases
@@ -395,7 +438,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | 0 — Architecture | ✅ |
 | 1 — Project foundation | ✅ |
 | 2 — Database (repositories, seed, state machine) | ✅ |
-| 3 — AI Content Creator | ⏳ |
+| 3 — AI Content Creator | ✅ |
 | 4 — Admin Panel | ⏳ |
 | 5 — Telegram Bot | ⏳ |
 | 6 — Approval System | ⏳ |

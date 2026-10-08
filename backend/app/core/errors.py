@@ -118,3 +118,8 @@ class ApprovalRequiredError(ConflictError):
 
 class ApprovalForbiddenError(PermissionDeniedError):
     code = "approval_forbidden"
+
+
+class TooManyRequestsError(AppError):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "too_many_requests"

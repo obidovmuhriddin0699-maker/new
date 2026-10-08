@@ -154,6 +154,7 @@ class ContentService:
                 version=1,
                 created_by=actor.actor_type,
                 hashtags=[],
+                structure={},
             )
             for name, value in fields.items():
                 setattr(content, name, value)
@@ -517,6 +518,7 @@ class ContentService:
             script=content.script,
             visual_prompt=content.visual_prompt,
             aspect_ratio=content.aspect_ratio,
+            structure=dict(content.structure or {}),
             media=media,
             ai_metadata=ai_metadata or {},
             source=actor.actor_type,

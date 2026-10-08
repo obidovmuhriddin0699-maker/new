@@ -23,6 +23,7 @@ VERSIONED_FIELDS: tuple[str, ...] = (
     "script",
     "visual_prompt",
     "aspect_ratio",
+    "structure",
 )
 
 
@@ -52,6 +53,9 @@ def content_snapshot(content: Content, media: list[dict[str, Any]]) -> dict[str,
         value = getattr(content, name)
         snap[name] = value.value if hasattr(value, "value") else value
     snap["hashtags"] = list(snap.get("hashtags") or [])
+    # Omitted when empty so versions created before ``structure`` existed keep their hash.
+    if not snap.get("structure"):
+        snap.pop("structure", None)
     snap["media"] = media
     return snap
 

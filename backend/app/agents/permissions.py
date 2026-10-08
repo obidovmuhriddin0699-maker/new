@@ -46,3 +46,16 @@ def is_allowed(granted: frozenset[AgentTool], tool: str) -> bool:
         return AgentTool(tool.upper()) in granted
     except ValueError:
         return False
+
+
+# Tools granted to the content pipeline agents (PHASE 3). Deliberately excludes
+# CREATE_SCHEDULE: scheduling is a human decision after approval.
+PIPELINE_AGENT_TOOLS: frozenset[AgentTool] = frozenset(
+    {
+        AgentTool.READ_ANALYTICS,
+        AgentTool.CREATE_CONTENT,
+        AgentTool.EDIT_CONTENT,
+        AgentTool.GENERATE_MEDIA,
+        AgentTool.REQUEST_APPROVAL,
+    }
+)

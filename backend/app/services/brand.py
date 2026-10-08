@@ -13,7 +13,21 @@ from app.services.audit import AuditLogService
 from app.services.guards import require_human_writer
 
 BRAND_FIELDS = frozenset(
-    {"name", "niche", "voice", "topics", "forbidden_rules", "languages", "visual_style"}
+    {
+        "name",
+        "niche",
+        "voice",
+        "topics",
+        "forbidden_rules",
+        "languages",
+        "visual_style",
+        "target_audience",
+        "services",
+        "preferred_styles",
+        "content_goals",
+        "preferred_ctas",
+        "banned_phrases",
+    }
 )
 
 

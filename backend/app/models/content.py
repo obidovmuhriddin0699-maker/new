@@ -69,6 +69,8 @@ class Content(TimestampMixin, SoftDeleteMixin, Base):
     script: Mapped[str | None] = mapped_column(Text)  # Reels / Story script
     visual_prompt: Mapped[str | None] = mapped_column(Text)
     aspect_ratio: Mapped[str | None] = mapped_column(String(10))
+    # Format-specific publishable structure: carousel slides, reels scenes, story frames.
+    structure: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_by: Mapped[ActorType] = mapped_column(str_enum(ActorType, 10), default=ActorType.AGENT)
     ig_media_id: Mapped[str | None] = mapped_column(String(64), unique=True)
     ig_permalink: Mapped[str | None] = mapped_column(String(500))
@@ -106,6 +108,7 @@ class ContentVersion(Base):
     script: Mapped[str | None] = mapped_column(Text)
     visual_prompt: Mapped[str | None] = mapped_column(Text)
     aspect_ratio: Mapped[str | None] = mapped_column(String(10))
+    structure: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     # Snapshot of media references at this version (asset id, url, checksum, ...).
     media: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     # Provider / model / ai_job_id / prompt info when the version was AI-generated.

@@ -59,10 +59,23 @@ class Settings(BaseSettings):
     token_encryption_keys: SecretStr = SecretStr("")
 
     # --- AI provider ---
-    ai_provider: Literal["ollama"] = "ollama"
+    # "mock" is deterministic and for tests/demos only; refused in production.
+    ai_provider: Literal["ollama", "mock"] = "ollama"
     ollama_base_url: str = "http://localhost:11434"
     ai_model: str = "qwen2.5:3b"
     ai_timeout_seconds: float = 120.0
+    ai_temperature: float = 0.6
+    ai_max_output_tokens: int = 2048
+    ai_max_response_chars: int = 60_000
+    ai_structured_max_attempts: int = 2  # 1 call + 1 repair attempt for invalid JSON
+    # "sync": run generation inside the request (dev default).
+    # "celery": enqueue an AIJob for the worker and return 202 immediately.
+    ai_jobs_mode: Literal["sync", "celery"] = "sync"
+    ai_max_active_jobs_per_user: int = 3
+
+    # --- Media generation (no real provider in PHASE 3) ---
+    image_provider: Literal["none", "mock"] = "none"
+    video_provider: Literal["none", "mock"] = "none"
 
     # --- Meta / Instagram (PHASE 7+). Only non-secret config here in PHASE 1.
     meta_login_mode: Literal["instagram", "facebook"] = "instagram"
@@ -96,6 +109,10 @@ class Settings(BaseSettings):
                 problems.append("CORS_ORIGINS must not contain '*' in production")
             if self.debug:
                 problems.append("DEBUG must be false in production")
+            if self.ai_provider == "mock":
+                problems.append("AI_PROVIDER=mock is not allowed in production")
+            if "mock" in (self.image_provider, self.video_provider):
+                problems.append("mock media providers are not allowed in production")
             if problems:
                 raise ValueError("Invalid production configuration: " + "; ".join(problems))
         return self

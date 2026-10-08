@@ -47,8 +47,15 @@ def upgrade() -> None:
         sa.Column("version", sa.Integer(), nullable=False),
         sa.Column(
             "content_type",
-            sa.Enum("POST", "CAROUSEL", "REELS", "STORY", name="contenttype",
-                    native_enum=False, length=20),
+            sa.Enum(
+                "POST",
+                "CAROUSEL",
+                "REELS",
+                "STORY",
+                name="contenttype",
+                native_enum=False,
+                length=20,
+            ),
             nullable=False,
         ),
         sa.Column(
@@ -77,21 +84,23 @@ def upgrade() -> None:
         sa.Column("content_hash", sa.String(length=64), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
-            ["content_id"], ["contents.id"],
-            name=op.f("fk_content_versions_content_id_contents"), ondelete="CASCADE",
+            ["content_id"],
+            ["contents.id"],
+            name=op.f("fk_content_versions_content_id_contents"),
+            ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["created_by_user_id"], ["users.id"],
-            name=op.f("fk_content_versions_created_by_user_id_users"), ondelete="SET NULL",
+            ["created_by_user_id"],
+            ["users.id"],
+            name=op.f("fk_content_versions_created_by_user_id_users"),
+            ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_content_versions")),
         sa.UniqueConstraint(
             "content_id", "version", name=op.f("uq_content_versions_content_id_version")
         ),
     )
-    op.create_index(
-        op.f("ix_content_versions_content_id"), "content_versions", ["content_id"]
-    )
+    op.create_index(op.f("ix_content_versions_content_id"), "content_versions", ["content_id"])
     op.create_index(
         op.f("ix_content_versions_created_by_user_id"), "content_versions", ["created_by_user_id"]
     )
@@ -124,12 +133,18 @@ def upgrade() -> None:
         batch.create_index(op.f("ix_content_schedules_approval_id"), ["approval_id"])
         batch.create_index(op.f("ix_content_schedules_created_by_user_id"), ["created_by_user_id"])
         batch.create_foreign_key(
-            op.f("fk_content_schedules_created_by_user_id_users"), "users",
-            ["created_by_user_id"], ["id"], ondelete="SET NULL",
+            op.f("fk_content_schedules_created_by_user_id_users"),
+            "users",
+            ["created_by_user_id"],
+            ["id"],
+            ondelete="SET NULL",
         )
         batch.create_foreign_key(
-            op.f("fk_content_schedules_approval_id_approvals"), "approvals",
-            ["approval_id"], ["id"], ondelete="RESTRICT",
+            op.f("fk_content_schedules_approval_id_approvals"),
+            "approvals",
+            ["approval_id"],
+            ["id"],
+            ondelete="RESTRICT",
         )
 
 

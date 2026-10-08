@@ -13,6 +13,10 @@ class AIJob(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     agent: Mapped[str] = mapped_column(String(50))
+    job_type: Mapped[str] = mapped_column(String(50), default="generic", index=True)
+    created_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
     content_id: Mapped[int | None] = mapped_column(
         ForeignKey("contents.id", ondelete="SET NULL"), index=True
     )
@@ -23,7 +27,10 @@ class AIJob(TimestampMixin, Base):
     model: Mapped[str | None] = mapped_column(String(100))
     input: Mapped[dict] = mapped_column(JSON, default=dict)
     output: Mapped[dict | None] = mapped_column(JSON)
-    error: Mapped[str | None] = mapped_column(Text)
+    error: Mapped[str | None] = mapped_column(Text)  # safe, user-presentable message only
+    error_category: Mapped[str | None] = mapped_column(String(50))
+    started_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     duration_ms: Mapped[int | None] = mapped_column(Integer)
 
 
