@@ -102,3 +102,19 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=error_body("internal_error", "Internal server error"),
         )
+
+
+class InvalidStateTransitionError(ConflictError):
+    code = "invalid_state_transition"
+
+
+class VersionMismatchError(ConflictError):
+    code = "version_mismatch"
+
+
+class ApprovalRequiredError(ConflictError):
+    code = "approval_required"
+
+
+class ApprovalForbiddenError(PermissionDeniedError):
+    code = "approval_forbidden"

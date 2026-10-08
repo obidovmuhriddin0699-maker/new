@@ -9,6 +9,7 @@ from app.models.content import (
     ContentAsset,
     ContentPerformance,
     ContentSchedule,
+    ContentVersion,
 )
 from app.models.instagram import InstagramAccount, OAuthToken
 from app.models.system import AIJob, AuditLog, SystemSetting
@@ -25,6 +26,7 @@ __all__ = [
     "ContentAsset",
     "ContentPerformance",
     "ContentSchedule",
+    "ContentVersion",
     "InstagramAccount",
     "OAuthToken",
     "SystemSetting",

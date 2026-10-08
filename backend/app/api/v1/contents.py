@@ -1,0 +1,209 @@
+"""Content endpoints. Routers only translate HTTP <-> service calls.
+
+There is intentionally no publish endpoint in PHASE 2.
+"""
+
+from typing import Annotated
+
+from fastapi import APIRouter, Query, status
+
+from app.api.deps import DbSession, HumanActorDep
+from app.models import Content
+from app.models.enums import ContentStatus, ContentType
+from app.schemas.content import (
+    ApprovalRead,
+    ApprovalResponse,
+    AssetRead,
+    AuditEventRead,
+    ContentCreate,
+    ContentHistoryRead,
+    ContentList,
+    ContentRead,
+    ContentUpdate,
+    ContentVersionRead,
+    DecisionRequest,
+)
+from app.schemas.errors import error_responses
+from app.services import ApprovalService, ContentService
+
+router = APIRouter(prefix="/contents", tags=["contents"])
+
+
+def _read(service: ContentService, content: Content) -> ContentRead:
+    data = ContentRead.model_validate(content)
+    data.assets = [AssetRead.model_validate(a) for a in service.list_assets(content.id)]
+    data.publish_authorized = service.is_publish_authorized(content)
+    return data
+
+
+@router.get(
+    "",
+    response_model=ContentList,
+    summary="List content",
+    description="Paginated list of non-deleted content, newest first.",
+    responses=error_responses(401, 422),
+)
+def list_contents(
+    db: DbSession,
+    _: HumanActorDep,
+    status_: Annotated[ContentStatus | None, Query(alias="status")] = None,
+    content_type: ContentType | None = None,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> ContentList:
+    service = ContentService(db)
+    rows, total = service.list(
+        status=status_, content_type=content_type, offset=offset, limit=limit
+    )
+    return ContentList(
+        items=[_read(service, c) for c in rows], total=total, offset=offset, limit=limit
+    )
+
+
+@router.post(
+    "",
+    response_model=ContentRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create content (DRAFT, version 1)",
+    responses=error_responses(401, 403, 422),
+)
+def create_content(body: ContentCreate, db: DbSession, actor: HumanActorDep) -> ContentRead:
+    service = ContentService(db)
+    data = body.model_dump(exclude_none=True)
+    content = service.create(
+        actor,
+        content_type=data.pop("content_type"),
+        language=data.pop("language"),
+        **data,
+    )
+    return _read(service, content)
+
+
+@router.get(
+    "/{content_id}",
+    response_model=ContentRead,
+    summary="Get content",
+    responses=error_responses(401, 404),
+)
+def get_content(content_id: int, db: DbSession, _: HumanActorDep) -> ContentRead:
+    service = ContentService(db)
+    return _read(service, service.get(content_id))
+
+
+@router.patch(
+    "/{content_id}",
+    response_model=ContentRead,
+    summary="Edit content (creates a new version)",
+    description=(
+        "Any change to publishable fields creates a new immutable version. "
+        "Approvals of earlier versions stop authorising publishing, pending "
+        "schedules are cancelled, and APPROVED/SCHEDULED content returns to "
+        "READY_FOR_REVIEW. `expected_version` must match the current version."
+    ),
+    responses=error_responses(401, 403, 404, 409, 422),
+)
+def update_content(
+    content_id: int, body: ContentUpdate, db: DbSession, actor: HumanActorDep
+) -> ContentRead:
+    service = ContentService(db)
+    content = service.update(
+        content_id,
+        actor,
+        expected_version=body.expected_version,
+        changes=body.changes(),
+        change_note=body.change_note,
+    )
+    return _read(service, content)
+
+
+@router.post(
+    "/{content_id}/submit-review",
+    response_model=ContentRead,
+    summary="Submit for human review",
+    description="DRAFT or EDIT_REQUESTED → READY_FOR_REVIEW.",
+    responses=error_responses(401, 403, 404, 409),
+)
+def submit_review(content_id: int, db: DbSession, actor: HumanActorDep) -> ContentRead:
+    service = ContentService(db)
+    return _read(service, service.submit_for_review(content_id, actor))
+
+
+@router.post(
+    "/{content_id}/request-edit",
+    response_model=ContentRead,
+    summary="Request changes (human only)",
+    description=(
+        "READY_FOR_REVIEW / APPROVED / SCHEDULED → EDIT_REQUESTED. Invalidates any "
+        "active approval and cancels pending schedules."
+    ),
+    responses=error_responses(401, 403, 404, 409, 422),
+)
+def request_edit(
+    content_id: int, body: DecisionRequest, db: DbSession, actor: HumanActorDep
+) -> ContentRead:
+    ApprovalService(db).request_edit(
+        content_id, actor, expected_version=body.expected_version, comment=body.comment
+    )
+    service = ContentService(db)
+    return _read(service, service.get(content_id))
+
+
+@router.post(
+    "/{content_id}/approve",
+    response_model=ApprovalResponse,
+    summary="Approve the reviewed version (human only)",
+    description=(
+        "Records a human approval bound to the exact version and content hash. "
+        "Requires an authenticated human session with OWNER/ADMIN role; AI agents "
+        "cannot call this. Idempotent: repeating it for the same version returns "
+        "the existing approval. **Does not publish.**"
+    ),
+    responses=error_responses(401, 403, 404, 409, 422),
+)
+def approve(
+    content_id: int, body: DecisionRequest, db: DbSession, actor: HumanActorDep
+) -> ApprovalResponse:
+    result = ApprovalService(db).approve(
+        content_id, actor, expected_version=body.expected_version, comment=body.comment
+    )
+    service = ContentService(db)
+    return ApprovalResponse(
+        content=_read(service, result.content),
+        approval=ApprovalRead.model_validate(result.approval),
+        created=result.created,
+    )
+
+
+@router.post(
+    "/{content_id}/reject",
+    response_model=ContentRead,
+    summary="Reject (human only, terminal)",
+    description="READY_FOR_REVIEW → REJECTED. Rejected content can never be published.",
+    responses=error_responses(401, 403, 404, 409, 422),
+)
+def reject(
+    content_id: int, body: DecisionRequest, db: DbSession, actor: HumanActorDep
+) -> ContentRead:
+    ApprovalService(db).reject(
+        content_id, actor, expected_version=body.expected_version, comment=body.comment
+    )
+    service = ContentService(db)
+    return _read(service, service.get(content_id))
+
+
+@router.get(
+    "/{content_id}/history",
+    response_model=ContentHistoryRead,
+    summary="Versions, approval decisions and audit events",
+    responses=error_responses(401, 404),
+)
+def history(content_id: int, db: DbSession, _: HumanActorDep) -> ContentHistoryRead:
+    h = ContentService(db).history(content_id)
+    return ContentHistoryRead(
+        content_id=h.content.id,
+        current_version=h.content.version,
+        status=h.content.status,
+        versions=[ContentVersionRead.model_validate(v) for v in h.versions],
+        approvals=[ApprovalRead.model_validate(a) for a in h.approvals],
+        events=[AuditEventRead.model_validate(e) for e in h.events],
+    )

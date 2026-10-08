@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, SoftDeleteMixin, TimestampMixin, str_enum
+from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UTCDateTime, str_enum
 from app.models.enums import InstagramAccountType, MetaLoginMode
 
 
@@ -27,7 +27,7 @@ class InstagramAccount(TimestampMixin, SoftDeleteMixin, Base):
         str_enum(MetaLoginMode, 20), default=MetaLoginMode.INSTAGRAM
     )
     facebook_page_id: Mapped[str | None] = mapped_column(String(64))  # facebook mode only
-    connected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    connected_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
     user: Mapped["User"] = relationship(back_populates="instagram_accounts")  # noqa: F821
     tokens: Mapped[list["OAuthToken"]] = relationship(
@@ -48,9 +48,9 @@ class OAuthToken(TimestampMixin, Base):
     token_ciphertext: Mapped[str] = mapped_column(Text)  # Fernet ciphertext
     token_type: Mapped[str] = mapped_column(String(30), default="long_lived")
     scopes: Mapped[str | None] = mapped_column(Text)  # space-separated, as granted by Meta
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
-    last_refreshed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), index=True)
+    last_refreshed_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
     instagram_account: Mapped[InstagramAccount] = relationship(back_populates="tokens")
 

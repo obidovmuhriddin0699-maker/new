@@ -37,7 +37,7 @@ def get_engine() -> Engine:
     global _engine, _SessionLocal
     if _engine is None:
         _engine = build_engine(get_settings())
-        _SessionLocal = sessionmaker(bind=_engine, autoflush=False, expire_on_commit=False)
+        _SessionLocal = sessionmaker(bind=_engine, autoflush=True, expire_on_commit=False)
     return _engine
 
 

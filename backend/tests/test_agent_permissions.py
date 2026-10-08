@@ -45,4 +45,5 @@ def test_is_allowed():
 def test_no_publish_endpoint_exists(client):
     paths = client.get("/openapi.json").json()["paths"]
     assert not any("publish" in p.lower() for p in paths)
-    assert not any("approve" in p.lower() for p in paths)
+    # PHASE 2: the only approval endpoint is the human-only content approve route.
+    assert [p for p in paths if "approve" in p.lower()] == ["/api/v1/contents/{content_id}/approve"]

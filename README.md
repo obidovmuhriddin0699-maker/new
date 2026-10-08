@@ -4,11 +4,12 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 1 — Project Foundation.**
+> **Joriy holat: PHASE 2 — Database, repositories & content state machine.**
 > Real Instagram OAuth va real publishing hali **yo‘q** (PHASE 7–8).
 > Meta credentials kerak emas va so‘ralmaydi.
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -37,6 +38,19 @@ PHASE 1 da tayyor bo‘lganlar:
 - OAuth tokenlarni shifrlash uchun `TokenCipher` (Fernet, kalit rotatsiyasi bilan).
 - AI agent permission'lari. `PUBLISH_TO_INSTAGRAM` umuman mavjud emas va hech qachon berilmaydi.
 - Celery worker foundation (`system.ping` task).
+
+PHASE 2 da qo'shilganlar:
+
+- Repository qatlami (14 ta repository) va service qatlami. Oqim: Router → Service → Repository → DB.
+- Kontent state machine. Ruxsat etilmagan o'tishlar HTTP 409 qaytaradi.
+- Kontent versiyalash (`content_versions`): har bir o'zgarish yangi o'zgarmas versiya yaratadi.
+- Approval aniq versiya va SHA-256 hash'ga bog'lanadi. Kontent tahrirlansa, eski approval bekor qilinadi.
+- Approve faqat tasdiqlangan inson (OWNER/ADMIN) tomonidan qilinadi. AI va tizim jarayonlari approve qila olmaydi.
+- Audit log: kim, nima, qachon, qaysi kontent va qaysi versiya. Sir ma'lumotlar yashiriladi.
+- Idempotency: approve, schedule va kelajakdagi publish bir xil key bilan takrorlansa dublikat yaratilmaydi.
+- `python -m app.cli seed`: xavfsiz development ma'lumotlari.
+- Content API: `/api/v1/contents` (list, create, get, patch, submit-review, request-edit, approve, reject, history).
+- **Publish endpoint yo'q.** U PHASE 8 da qo'shiladi.
 
 ## 2. Requirements (Windows 11)
 
@@ -168,6 +182,16 @@ celery -A app.workers.celery_app worker -l info --pool=solo
 
 > Windows'da Celery uchun `--pool=solo` majburiy.
 
+Development ma'lumotlarini yuklash (admin, "Muxriddin Design" brendi, namuna draft):
+
+```powershell
+$env:SEED_ADMIN_PASSWORD = "kamida-12-belgili-parol"   # ixtiyoriy; bo'lmasa parol generatsiya qilinib bir marta ko'rsatiladi
+python -m app.cli seed
+Remove-Item Env:SEED_ADMIN_PASSWORD
+```
+
+Default admin email: `admin@example.com` (`SEED_ADMIN_EMAIL` yoki `--admin-email` bilan o'zgartiriladi).
+
 Manzillar:
 
 - Admin panel: http://localhost:3000. Bosh sahifada backend `/health` holati ko‘rinadi.
@@ -269,6 +293,16 @@ python -m pytest -q
 Remove-Item Env:TEST_POSTGRES_URL
 ```
 
+Butun test to'plamini PostgreSQL'da ishga tushirish uchun (parallel approve testi ham faqat PostgreSQL'da ishlaydi):
+
+```powershell
+$env:TEST_DATABASE_URL = "postgresql+psycopg://muxriddin:muxriddin_dev@localhost:5432/muxriddin_suite"
+python -m pytest -q
+Remove-Item Env:TEST_DATABASE_URL
+```
+
+> `muxriddin_test` va `muxriddin_suite` bazalari **bo'sh** bo'lishi kerak: testlar ulardagi jadvallarni o'chirib, qayta yaratadi.
+
 Testlar hech qachon real Meta, real Ollama yoki real Redis'ga murojaat qilmaydi
 (`respx` mock, `META_DRY_RUN=true`).
 
@@ -316,6 +350,8 @@ Admin yaratish:
 
 ```powershell
 docker compose exec backend python -m app.cli create-admin --email siz@example.com
+# yoki namuna ma'lumotlar bilan:
+docker compose exec -e SEED_ADMIN_PASSWORD=kamida-12-belgili-parol backend python -m app.cli seed
 ```
 
 To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docker compose down -v`).
@@ -329,7 +365,9 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 - CORS faqat `CORS_ORIGINS` ro‘yxatidagi manzillarga ochiq. Production'da `*` taqiqlangan.
 - 500 xatolarda ichki tafsilotlar foydalanuvchiga ko‘rsatilmaydi, ular faqat logga yoziladi.
 - AI agentlar uchun `PUBLISH_TO_INSTAGRAM` / `APPROVE_CONTENT` ruxsatlarini berib bo‘lmaydi (`ForbiddenAgentPermissionError`).
-- PHASE 1 da publish yoki approve endpoint **yo‘q**. Buni ham test tekshiradi.
+- Publish endpoint **yo'q**. Approve endpoint faqat inson sessiyasi (JWT `actor=human`) uchun ochiq, OWNER/ADMIN rolini talab qiladi va publish qilmaydi.
+- Approval kontentning aniq versiyasi va hash'iga bog'langan. Approve'dan keyin kontent o'zgarsa, approval kuchini yo'qotadi. Batafsil: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md).
+- Audit log faqat qo'shiladi, o'zgartirilmaydi. Unda parol, token va kalitlar saqlanmaydi.
 
 ## 17. Troubleshooting
 
@@ -345,6 +383,10 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | Port band (5432/6379/8000/3000) | lokal PostgreSQL/Redis xizmatini to‘xtating yoki `docker-compose.yml` dagi portni o‘zgartiring |
 | Celery Windows'da osilib qoladi | `--pool=solo` bilan ishga tushiring |
 | `Invalid production configuration` | §4 dagi production talablarini bajaring |
+| `409 version_mismatch` | Kontent siz ko'rgandan keyin o'zgargan. Qayta yuklang va `expected_version` ni yangilang |
+| `409 invalid_state_transition` | Bu holatdan bu amalga o'tib bo'lmaydi (jadval: `docs/CONTENT_LIFECYCLE.md`) |
+| `403 approval_forbidden` | Approve uchun OWNER/ADMIN roli kerak. AI yoki tizim approve qila olmaydi |
+| Migration `91ed60cfe649 requires 'approvals' to be empty` | Eski versiyasiz approval qatorlari bor; ularni xavfsiz ko'chirib bo'lmaydi |
 
 ## Development phases
 
@@ -352,7 +394,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 |---|---|
 | 0 — Architecture | ✅ |
 | 1 — Project foundation | ✅ |
-| 2 — Database (repositories, seed, state machine) | ⏳ |
+| 2 — Database (repositories, seed, state machine) | ✅ |
 | 3 — AI Content Creator | ⏳ |
 | 4 — Admin Panel | ⏳ |
 | 5 — Telegram Bot | ⏳ |

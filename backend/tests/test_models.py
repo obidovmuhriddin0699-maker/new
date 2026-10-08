@@ -23,7 +23,7 @@ ENTITIES = [
 def test_all_entities_importable():
     for name in ENTITIES:
         assert hasattr(models, name), name
-    assert len(Base.metadata.tables) == 13
+    assert len(Base.metadata.tables) == 14  # 13 core entities + content_versions
 
 
 def test_no_instagram_password_column():

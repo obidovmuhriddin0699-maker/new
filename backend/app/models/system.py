@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, str_enum, utcnow
+from app.models.base import Base, TimestampMixin, UTCDateTime, str_enum, utcnow
 from app.models.enums import ActorType, AIJobStatus
 
 
@@ -34,9 +34,7 @@ class AuditLog(Base):
     __table_args__ = (Index("ix_audit_logs_action_ts", "action", "timestamp"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, nullable=False
-    )
+    timestamp: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, nullable=False)
     actor_type: Mapped[ActorType] = mapped_column(str_enum(ActorType, 10))
     actor_user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True
@@ -46,6 +44,7 @@ class AuditLog(Base):
     content_id: Mapped[int | None] = mapped_column(
         ForeignKey("contents.id", ondelete="SET NULL"), index=True
     )
+    content_version: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(30))
     error: Mapped[str | None] = mapped_column(Text)
     details: Mapped[dict] = mapped_column(JSON, default=dict)

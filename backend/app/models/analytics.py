@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String
+from sqlalchemy import JSON, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin
+from app.models.base import Base, TimestampMixin, UTCDateTime
 
 
 class AnalyticsSnapshot(TimestampMixin, Base):
@@ -21,6 +21,6 @@ class AnalyticsSnapshot(TimestampMixin, Base):
     )
     scope: Mapped[str] = mapped_column(String(20))  # "account" | "media"
     period: Mapped[str | None] = mapped_column(String(20))
-    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    captured_at: Mapped[datetime] = mapped_column(UTCDateTime())
     metrics: Mapped[dict] = mapped_column(JSON, default=dict)
     api_version: Mapped[str | None] = mapped_column(String(10))

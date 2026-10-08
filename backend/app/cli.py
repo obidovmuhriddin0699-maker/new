@@ -10,12 +10,17 @@ import sys
 from sqlalchemy import select
 
 from app.core.database import get_sessionmaker
-from app.core.security import hash_password
+from app.core.security import hash_password, normalize_login_email
 from app.models import User
 from app.models.enums import UserRole
 
 
 def create_admin(email: str, password: str | None, full_name: str | None) -> int:
+    try:
+        email = normalize_login_email(email)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     password = password or getpass.getpass("Password (min 12 chars): ")
     if len(password) < 12:
         print("Password must be at least 12 characters.", file=sys.stderr)
@@ -44,10 +49,31 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--email", required=True)
     p.add_argument("--password", help="omit to be prompted (recommended)")
     p.add_argument("--full-name")
+    s = sub.add_parser("seed", help="load safe development data (idempotent)")
+    s.add_argument("--admin-email", help="defaults to SEED_ADMIN_EMAIL or admin@example.com")
     args = parser.parse_args(argv)
     if args.command == "create-admin":
         return create_admin(args.email, args.password, args.full_name)
+    if args.command == "seed":
+        return seed(args.admin_email)
     return 1
+
+
+def seed(admin_email: str | None) -> int:
+    from app.seed import run_seed
+
+    with get_sessionmaker()() as db:
+        result = run_seed(db, admin_email=admin_email)
+    print(f"Admin: {result.admin_email} ({'created' if result.admin_created else 'exists'})")
+    if result.generated_password:
+        print("Generated admin password (shown once, store it safely):")
+        print(f"  {result.generated_password}")
+    print(f"Brand profile id: {result.brand_profile_id}")
+    print(
+        f"Example draft content id: {result.content_id} "
+        f"({'created' if result.content_created else 'exists'})"
+    )
+    return 0
 
 
 if __name__ == "__main__":

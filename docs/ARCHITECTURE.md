@@ -246,6 +246,8 @@ Barcha testlar `respx` bilan mock Meta API. `META_DRY_RUN=true` (test/dev defaul
 Har bir jadvalda `created_at`, `updated_at`; kerakli joylarda `deleted_at` (soft delete); status/FK/sana bo‘yicha indekslar.
 
 ### Content state machine
+
+> PHASE 2 da yakuniy jadval: [`CONTENT_LIFECYCLE.md`](CONTENT_LIFECYCLE.md).
 ```
 DRAFT → GENERATING → READY_FOR_REVIEW ─┬─ APPROVE ─→ APPROVED ─┬→ SCHEDULED → PUBLISHING
                                        │                       └→ PUBLISHING
