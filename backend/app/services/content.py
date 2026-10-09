@@ -34,6 +34,7 @@ from app.models.enums import (
     ContentType,
     ScheduleStatus,
 )
+from app.providers.media import DEFAULT_ASPECT_RATIO
 from app.repositories import (
     ApprovalRepository,
     AuditLogRepository,
@@ -149,6 +150,10 @@ class ContentService:
         with atomic(self.session):
             require_writer(self.session, actor, AgentTool.CREATE_CONTENT)
             self._reject_unknown_fields(fields)
+            if fields.get("aspect_ratio") is None:
+                # Publishing requires a format; hand-made content gets the type's default
+                # (as AI drafts do) instead of a blocker the editor cannot see a cause for.
+                fields["aspect_ratio"] = DEFAULT_ASPECT_RATIO[content_type]
             content = Content(
                 content_type=content_type,
                 language=language,
@@ -205,7 +210,11 @@ class ContentService:
             for name, value in changed.items():
                 setattr(content, name, value)
 
-            versioned_change = any(k in VERSIONED_FIELDS for k in changed)
+            # The target account is part of what a human approved: moving approved
+            # content to another account needs a new version and a new approval.
+            versioned_change = any(
+                k in VERSIONED_FIELDS or k == "instagram_account_id" for k in changed
+            )
             self.audit.record(
                 AuditAction.CONTENT_UPDATED,
                 actor,
@@ -374,7 +383,9 @@ class ContentService:
             return content
 
     # ------------------------------------------------------------------ publish states (PHASE 8)
-    def start_publishing(self, content_id: int, actor: Actor) -> Approval:
+    def start_publishing(
+        self, content_id: int, actor: Actor, *, from_schedule: bool = False
+    ) -> Approval:
         """Move an approved version into PUBLISHING. Does NOT contact Instagram.
 
         Refused unless: actor is the backend publish service; the transition is
@@ -385,6 +396,12 @@ class ContentService:
             with atomic(self.session):
                 require_publish_service(actor)
                 content = self._load_for_update(content_id)
+                if from_schedule and content.status == ContentStatus.APPROVED:
+                    # The worker runs a schedule, so the content is SCHEDULED (or FAILED
+                    # for a retry). APPROVED means it was unscheduled after the worker
+                    # claimed it: the human cancelled, so do not publish. Checked under
+                    # the row lock that unschedule() also takes.
+                    raise ConflictError("Publishing was cancelled", code="publish_cancelled")
                 assert_transition(content.status, ContentStatus.PUBLISHING)
                 approval = self.approval_service.require_valid_approval(content)
                 for schedule in self.schedules.list_for_content(content.id):

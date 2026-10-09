@@ -13,8 +13,9 @@ x-backend-env: &backend-env
   OLLAMA_BASE_URL: ${DOCKER_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
   CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
   # The worker is always running here, so publishing (Reels processing can take minutes)
-  # is queued instead of blocking the API request.
-  PUBLISH_JOBS_MODE: ${PUBLISH_JOBS_MODE:-celery}
+  # is queued instead of blocking the API request. Fixed on purpose: .env's
+  # PUBLISH_JOBS_MODE=sync is meant for running the backend without Docker.
+  PUBLISH_JOBS_MODE: celery
   MEDIA_ROOT: /var/lib/muxriddin/media
 
 services:

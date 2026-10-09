@@ -33,6 +33,7 @@ from app.agents.structured import run_sync
 from app.core.actors import PUBLISH_SERVICE_NAME, Actor, SystemActor
 from app.core.caption import published_caption
 from app.core.config import get_settings
+from app.core.crypto import DecryptionError
 from app.core.errors import AppError, ConflictError, NotFoundError, VersionMismatchError
 from app.core.transaction import atomic
 from app.integrations.meta.errors import MetaApiError, MetaErrorKind
@@ -56,6 +57,7 @@ from app.services.content import ContentService
 from app.services.content_state import apply_transition, assert_transition
 from app.services.guards import require_human_approver
 from app.services.instagram import InstagramAccountService
+from app.services.invalidation import invalidate_active_approvals
 from app.services.review import Readiness, ReviewService
 from app.services.schedule import publish_idempotency_key
 
@@ -373,7 +375,13 @@ class PublishService:
             self.session.commit()
             if claimed != 1:
                 continue
-            result = self._resume(schedule.id)
+            try:
+                result = self._resume(schedule.id)
+            except Exception:  # one broken row must not stop the others
+                self.session.rollback()
+                logger.exception("reconcile failed for schedule %s", schedule.id)
+                counts["error"] = counts.get("error", 0) + 1
+                continue
             counts[result.status] = counts.get(result.status, 0) + 1
         return counts
 
@@ -406,6 +414,8 @@ class PublishService:
             return self._settle_schedule(
                 schedule, content, "Kontent rejalashtirilgandan keyin o‘zgargan yoki o‘chirilgan."
             )
+        if content.status not in (ContentStatus.SCHEDULED, ContentStatus.FAILED):
+            return self._settle_schedule(schedule, content, "Nashr bekor qilingan.")
 
         readiness = self.review.readiness(content.id)
         blockers = [c.message for c in readiness.checks if c.severity == "blocker" and not c.ok]
@@ -417,9 +427,9 @@ class PublishService:
             return self._fail_before_start(schedule, content, "Instagram akkaunt topilmadi.")
         version = self.versions.get_version(content.id, content.version)
         plan = build_plan(version)  # type: ignore[arg-type]
-        token = self._token(account)
 
         try:
+            token = self._token(account)
             limit = self._call(token, account.ig_user_id, lambda c: c.publishing_limit())
         except MetaApiError as exc:
             if exc.kind in RETRYABLE:
@@ -435,7 +445,7 @@ class PublishService:
             )
 
         try:
-            self.content_service.start_publishing(content.id, PUBLISH_ACTOR)
+            self.content_service.start_publishing(content.id, PUBLISH_ACTOR, from_schedule=True)
         except AppError as exc:
             return self._settle_schedule(schedule, content, exc.message)
         with atomic(self.session):
@@ -446,7 +456,12 @@ class PublishService:
         schedule = self._schedule(schedule_id)
         content = self.contents.get(schedule.content_id)
         if content is None or content.status != ContentStatus.PUBLISHING:
-            # Crashed before start_publishing (nothing sent): let the scheduler retry.
+            # Crashed before start_publishing (nothing sent): let the scheduler retry,
+            # but not forever.
+            if schedule.attempts >= self.settings.publish_max_attempts:
+                return self._settle_schedule(
+                    schedule, content, "Nashr bir necha marta boshlanmadi (worker to‘xtagan?)."
+                )
             with atomic(self.session):
                 schedule.status = ScheduleStatus.PENDING
                 schedule.scheduled_at = utcnow()
@@ -455,7 +470,16 @@ class PublishService:
         version = self.versions.get_version(content.id, schedule.content_version)
         if account is None or version is None:
             return self._fail(schedule, content, "Instagram akkaunt yoki versiya topilmadi.")
-        token = self._token(account)
+        try:
+            token = self._token(account)
+        except MetaApiError as exc:
+            unknown = (
+                " Oldingi urinish natijasi noma’lum: post chiqqan-chiqmaganini Instagram’da "
+                "tekshiring."
+                if schedule.outcome_unknown
+                else ""
+            )
+            return self._fail(schedule, content, _describe(exc) + unknown)
         return self._publish_steps(schedule, content, build_plan(version), account, token)
 
     def _publish_steps(
@@ -487,8 +511,10 @@ class PublishService:
                     container_id = None
             if not container_id:
                 container_id = self._create_containers(schedule, content, plan, token, ig)
+                self._heartbeat(schedule)
 
             status = self._wait_finished(token, ig, container_id)
+            self._heartbeat(schedule)
             if status == ContainerStatus.PUBLISHED:
                 return self._succeed(schedule, content, plan, token, ig, None, reconciled=True)
             if status != ContainerStatus.FINISHED:
@@ -536,6 +562,11 @@ class PublishService:
                 },
             )
         return container_id
+
+    def _heartbeat(self, schedule: ContentSchedule) -> None:
+        """Still working on it: keeps reconcile_stale from treating this run as crashed."""
+        with atomic(self.session):
+            schedule.processing_started_at = utcnow()
 
     def _wait_finished(self, token: str, ig: str, container_id: str) -> ContainerStatus:
         deadline = time.monotonic() + self.settings.meta_container_max_wait_seconds
@@ -696,6 +727,8 @@ class PublishService:
         with atomic(self.session):
             schedule.status = ScheduleStatus.FAILED
             schedule.last_error = message[:2000]
+            if content is not None:
+                self._release(content, message)
             self.audit.record(
                 AuditAction.CONTENT_PUBLISH_FAILED,
                 PUBLISH_ACTOR,
@@ -707,11 +740,27 @@ class PublishService:
             )
         return PublishResult("failed", content, schedule, message)
 
+    def _release(self, content: Content, reason: str) -> None:
+        """A schedule ended before Meta was contacted. Don't leave the content showing
+        SCHEDULED: back to APPROVED, or to review when its approval no longer holds."""
+        if content.status not in (ContentStatus.SCHEDULED, ContentStatus.APPROVED):
+            return
+        if self.approvals.get_valid_approval(content) is None:
+            invalidate_active_approvals(self.session, self.audit, content, PUBLISH_ACTOR, reason)
+            apply_transition(content, ContentStatus.READY_FOR_REVIEW)
+        elif (
+            content.status == ContentStatus.SCHEDULED
+            and not self.schedules.list_pending_for_content(content.id)
+        ):
+            apply_transition(content, ContentStatus.APPROVED)
+
     def _defer(
         self, schedule: ContentSchedule, content: Content, message: str, *, minutes: int
     ) -> PublishResult:
         with atomic(self.session):
             schedule.status = ScheduleStatus.PENDING
+            # Waiting for quota is not a failed attempt.
+            schedule.attempts = max(schedule.attempts - 1, 0)
             schedule.scheduled_at = utcnow() + timedelta(minutes=minutes)
             schedule.last_error = message
             self.audit.record(
@@ -733,9 +782,14 @@ class PublishService:
         return 60 if exc.kind == MetaErrorKind.RATE_LIMIT else 5 * max(schedule.attempts, 1)
 
     def _token(self, account: InstagramAccount) -> str:
-        token = InstagramAccountService(self.session, self.audit).get_access_token(
-            account.id, PUBLISH_ACTOR
-        )
+        try:
+            token = InstagramAccountService(self.session, self.audit).get_access_token(
+                account.id, PUBLISH_ACTOR
+            )
+        except DecryptionError as exc:  # key rotated away / corrupted ciphertext
+            raise MetaApiError(
+                MetaErrorKind.TOKEN_EXPIRED, meta_message="stored token cannot be decrypted"
+            ) from exc
         if not token:
             raise MetaApiError(MetaErrorKind.TOKEN_EXPIRED)
         return token

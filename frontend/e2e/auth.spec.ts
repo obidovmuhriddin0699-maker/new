@@ -33,6 +33,37 @@ test("login redirect ignores external targets", async ({ page }) => {
   await expect(page).toHaveURL(/localhost:3100\/overview/);
 });
 
+// Browsers read "/\evil", "/<TAB>/evil" and "/.//evil" as protocol-relative URLs.
+for (const next of ["/%5Cevil.example", "/%09/evil.example", "/.//evil.example"]) {
+  test(`login redirect refuses disguised external target ${next}`, async ({ page }) => {
+    await page.goto(`/login?next=${next}`);
+    await page.getByLabel("Email").fill(ADMIN.email);
+    await page.getByLabel("Parol").fill(ADMIN.password);
+    await page.getByRole("button", { name: "Kirish" }).click();
+    await expect(page).toHaveURL(/^http:\/\/localhost:3100\/overview/);
+  });
+}
+
+test("login redirect keeps a local target with its query", async ({ page }) => {
+  await page.goto(`/login?next=${encodeURIComponent("/content?status=DRAFT")}`);
+  await page.getByLabel("Email").fill(ADMIN.email);
+  await page.getByLabel("Parol").fill(ADMIN.password);
+  await page.getByRole("button", { name: "Kirish" }).click();
+  await expect(page).toHaveURL(/^http:\/\/localhost:3100\/content\?status=DRAFT$/);
+});
+
+test("proxy refuses anonymous API calls before reading the body", async ({ playwright }) => {
+  const anon = await playwright.request.newContext({ baseURL: "http://localhost:3100" });
+  const res = await anon.post("/api/backend/contents", {
+    data: { content_type: "POST" },
+    headers: { Origin: "http://localhost:3100" },
+  });
+  expect(res.status()).toBe(401);
+  expect((await res.json()).error.code).toBe("unauthenticated");
+  expect((await anon.get("/api/backend/health")).status()).toBe(200); // public route still works
+  await anon.dispose();
+});
+
 test("logout clears the session", async ({ page, context }) => {
   await loginUI(page);
   await page.goto("/settings");

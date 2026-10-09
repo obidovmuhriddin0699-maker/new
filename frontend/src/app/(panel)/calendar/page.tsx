@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button, Card, ErrorBox, LinkButton, Loading, PageHeader, StatusBadge, TypeBadge } from "@/components/ui";
-import { formatDate, formatDateTime, isoDate, STATUS_STYLE, TYPE_LABEL } from "@/lib/format";
+import { formatDate, formatDateTime, isoDate, STATUS_STYLE, tashkentDay, TYPE_LABEL } from "@/lib/format";
 import type { CalendarItem } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
+import { useMe } from "@/lib/useMe";
 
 type View = "day" | "week" | "month";
 const WEEKDAYS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
@@ -55,12 +56,18 @@ export default function CalendarPage() {
 function Calendar({ cursor, setCursor }: { cursor: Date; setCursor: (d: Date) => void }) {
   const [view, setView] = useState<View>("month");
   const [selected, setSelected] = useState<CalendarItem | null>(null);
+  const { readOnly } = useMe();
   const { start, end } = range(view, cursor);
   const { data, error, loading, reload } = useApi<{ items: CalendarItem[] }>(`calendar?start=${isoDate(start)}&end=${isoDate(end)}`);
 
   const byDay = useMemo(() => {
     const m = new Map<string, CalendarItem[]>();
-    for (const it of data?.items ?? []) m.set(it.date, [...(m.get(it.date) ?? []), it]);
+    // The backend's `date` is the UTC day; timed items go on their Tashkent day instead
+    // (e.g. 02:00 Tashkent is still "yesterday" in UTC). Planned items have only a date.
+    for (const it of data?.items ?? []) {
+      const day = it.at ? tashkentDay(it.at) : it.date;
+      m.set(day, [...(m.get(day) ?? []), it]);
+    }
     return m;
   }, [data]);
 
@@ -194,11 +201,15 @@ function Calendar({ cursor, setCursor }: { cursor: Date; setCursor: (d: Date) =>
                 <p className="text-muted">{KIND_LABEL[selected.kind]} · {selected.at ? formatDateTime(selected.at) : formatDate(selected.date)}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <LinkButton href={`/content/${selected.content_id}`}>Ko‘rish</LinkButton>
-                  <LinkButton href={`/content/${selected.content_id}?action=edit`}>Tahrirlash</LinkButton>
-                  <LinkButton href={`/content/${selected.content_id}?action=regenerate`}>Qayta yaratish</LinkButton>
-                  <LinkButton href={`/content/${selected.content_id}?action=approve`}>Tasdiqlash</LinkButton>
-                  <LinkButton href={`/content/${selected.content_id}?action=schedule`}>Rejalashtirish</LinkButton>
-                  <LinkButton href={`/content/${selected.content_id}?action=delete`} variant="danger">O‘chirish</LinkButton>
+                  {!readOnly && (
+                    <>
+                      <LinkButton href={`/content/${selected.content_id}?action=edit`}>Tahrirlash</LinkButton>
+                      <LinkButton href={`/content/${selected.content_id}?action=regenerate`}>Qayta yaratish</LinkButton>
+                      <LinkButton href={`/content/${selected.content_id}?action=approve`}>Tasdiqlash</LinkButton>
+                      <LinkButton href={`/content/${selected.content_id}?action=schedule`}>Rejalashtirish</LinkButton>
+                      <LinkButton href={`/content/${selected.content_id}?action=delete`} variant="danger">O‘chirish</LinkButton>
+                    </>
+                  )}
                 </div>
                 <p className="text-xs text-muted">Amallar faqat kontent holati ruxsat bergandagina mavjud bo‘ladi.</p>
               </div>

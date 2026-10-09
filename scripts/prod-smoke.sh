@@ -96,12 +96,27 @@ check "app DB role cannot change the schema" \
   "(${C[*]} exec -T -e PGPASSWORD=\"$APP_PW\" postgres psql -h 127.0.0.1 -U \"$APP_USER\" -d \"$DB\" -c 'CREATE TABLE pwned(id int)' 2>&1 || true) | grep 'permission denied'"
 check "redis requires a password" "(${C[*]} exec -T redis sh -c 'REDISCLI_AUTH= redis-cli ping' 2>&1 || true) | grep NOAUTH"
 
+# {"email": SMOKE_EMAIL, "password": SMOKE_PASSWORD} as JSON (python3, else jq, else printf).
+login_body() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import json, os; print(json.dumps({"email": os.environ["SMOKE_EMAIL"], "password": os.environ["SMOKE_PASSWORD"]}))'
+  elif command -v jq >/dev/null 2>&1; then
+    jq -cn --arg email "$SMOKE_EMAIL" --arg password "$SMOKE_PASSWORD" '{email: $email, password: $password}'
+  else
+    json_str() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g'; }
+    printf '{"email":"%s","password":"%s"}' "$(json_str "$SMOKE_EMAIL")" "$(json_str "$SMOKE_PASSWORD")"
+  fi
+}
+
 if [ -n "${SMOKE_EMAIL:-}" ] && [ -n "${SMOKE_PASSWORD:-}" ]; then
+  export SMOKE_EMAIL SMOKE_PASSWORD
   echo "== session"
   jar="$(mktemp)"; copy="$(mktemp)"
   # A forged X-Forwarded-For must not reach the audit log: Caddy overwrites it.
-  "${CURL[@]}" -c "$jar" -X POST "$PANEL/api/auth/login" -H "Origin: $PANEL" -H 'Content-Type: application/json' \
-    -H 'X-Forwarded-For: 203.0.113.66' -d "{\"email\":\"$SMOKE_EMAIL\",\"password\":\"$SMOKE_PASSWORD\"}" >/dev/null
+  # The body is sent on stdin (not in the process list) and built with a JSON encoder, so
+  # quotes or backslashes in the password cannot break it.
+  login_body | "${CURL[@]}" -c "$jar" -X POST "$PANEL/api/auth/login" -H "Origin: $PANEL" \
+    -H 'Content-Type: application/json' -H 'X-Forwarded-For: 203.0.113.66' --data-binary @- >/dev/null
   check "login through the panel" "${CURL[*]} -b $jar $PANEL/api/backend/auth/me | grep '\"email\"'"
   login_ip="$("${CURL[@]}" -b "$jar" "$PANEL/api/backend/audit-logs?action=AUTH_LOGIN_SUCCEEDED&limit=1" \
     | grep -o '"ip":"[^"]*"' | head -1 | cut -d'"' -f4)"

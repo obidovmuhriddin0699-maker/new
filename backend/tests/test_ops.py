@@ -153,7 +153,10 @@ def production(monkeypatch):
         ops_module,
         "get_settings",
         lambda: SimpleNamespace(
-            app_env="production", meta_dry_run=True, media_root=real.media_root
+            app_env="production",
+            meta_dry_run=True,
+            media_root=real.media_root,
+            backup_monitoring=getattr(real, "backup_monitoring", True),
         ),
     )
 
@@ -177,6 +180,24 @@ def test_backup_states_in_production(db, production):
     assert keys(db) == {"backup:stale"}
     # format written by docker/backup/backup.sh
     set_backup(db, {"ok": True, "at": utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")})
+    assert keys(db) == set()
+
+
+def test_backup_check_can_be_turned_off(db, monkeypatch):
+    """Platforms with their own database backups (Railway) have no backup service."""
+    monkeypatch.setenv("BACKUP_MONITORING", "false")
+    get_settings.cache_clear()
+    real = get_settings()
+    monkeypatch.setattr(
+        ops_module,
+        "get_settings",
+        lambda: SimpleNamespace(
+            app_env="production",
+            meta_dry_run=True,
+            media_root=real.media_root,
+            backup_monitoring=real.backup_monitoring,
+        ),
+    )
     assert keys(db) == set()
 
 

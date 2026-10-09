@@ -158,7 +158,7 @@ class OpsMonitor:
         return out
 
     def _backups(self) -> list[Problem]:
-        if self.settings.app_env != "production":
+        if self.settings.app_env != "production" or not self.settings.backup_monitoring:
             return []
         last = SystemSettingRepository(self.session).get_value(BACKUP_KEY)
         if not isinstance(last, dict):

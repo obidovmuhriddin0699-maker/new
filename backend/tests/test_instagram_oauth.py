@@ -351,6 +351,9 @@ def test_deauthorize_and_data_deletion(db, human, meta_settings):
         lambda: signed({"algorithm": "MD5", "user_id": "1"}),
         lambda: signed({"algorithm": "HMAC-SHA256"}),
         lambda: "not-a-signed-request",
+        # valid JSON that is not an object (used to crash with a 500 before the HMAC check)
+        lambda: "sig." + base64.urlsafe_b64encode(b"[1]").decode().rstrip("="),
+        lambda: "sig." + base64.urlsafe_b64encode(b"\xff\xfe").decode().rstrip("="),
     ],
 )
 def test_signed_request_rejected(db, meta_settings, bad):

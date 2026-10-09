@@ -70,7 +70,7 @@ docker run --rm muxriddin-backend:test     # 545 passed, 8 skipped (git/Redis/Po
 
 | Service | Role | Notes |
 |---|---|---|
-| `postgres` | PostgreSQL 16 | Volume `postgres_data`; superuser = owner role, used only by `migrate` |
+| `postgres` | PostgreSQL 16 | Volume `postgres_data`; superuser = owner role, used only by `migrate` and `backup` (app services get `POSTGRES_USER`/`POSTGRES_PASSWORD` blanked) |
 | `redis` | Rate limits + Celery broker | Password required, AOF persistence, `noeviction` (never silently drops limiter keys or tasks) |
 | `migrate` | One-shot | Runs `alembic upgrade head`, then `python -m app.cli db-app-role` as the owner. Every app service waits for it to succeed |
 | `backend` | API | Not published; reachable only from the panel |
@@ -79,8 +79,8 @@ docker run --rm muxriddin-backend:test     # 545 passed, 8 skipped (git/Redis/Po
 | `frontend` | Panel | Not published; fixed address 172.30.0.10, the only proxy the backend trusts for `X-Forwarded-For` |
 | `caddy` | TLS edge (PHASE 12) | The only published ports: 80, 443 (TCP + UDP/HTTP3). Admin API off, read-only, only `NET_BIND_SERVICE` |
 | `backup` | Daily `pg_dump` + media archive (PHASE 12) | Runs as `BACKUP_UID`; see DEPLOYMENT.md §7 |
-| `telegram-bot` | Profile `telegram` | Long polling |
-| `ollama` | Profile `ollama` | Optional containerised LLM; pin its tag in production |
+| `telegram-bot` | Profile `telegram` | Long polling. Enable with `COMPOSE_PROFILES=telegram` in the env file |
+| `ollama` | Profile `ollama` | Optional containerised LLM; pinned by tag + digest, bump deliberately |
 
 **Least-privilege database role.** The app connects as `APP_DB_USER`, which can:
 

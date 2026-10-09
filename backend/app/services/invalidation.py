@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.core.actors import Actor
@@ -34,12 +35,29 @@ def invalidate_active_approvals(
 def cancel_pending_schedules(
     session: Session, audit: AuditLogService, content: Content, actor: Actor, reason: str
 ) -> Sequence[ContentSchedule]:
-    schedules = ContentScheduleRepository(session).list_pending_for_content(content.id)
-    for schedule in schedules:
-        schedule.status = ScheduleStatus.CANCELLED
-        schedule.last_error = reason
-        # Free the idempotency key so the same version can be scheduled again later.
-        schedule.idempotency_key = f"{schedule.idempotency_key}:cancelled:{schedule.id}"
+    cancelled = []
+    for schedule in ContentScheduleRepository(session).list_pending_for_content(content.id):
+        # Conditional update: a worker may have claimed (PENDING -> PROCESSING) the row
+        # since it was read. That run is stopped by the content status check instead.
+        claimed_meanwhile = (
+            session.execute(
+                update(ContentSchedule)
+                .where(
+                    ContentSchedule.id == schedule.id,
+                    ContentSchedule.status == ScheduleStatus.PENDING,
+                )
+                .values(
+                    status=ScheduleStatus.CANCELLED,
+                    last_error=reason,
+                    # Free the idempotency key so the version can be scheduled again later.
+                    idempotency_key=f"{schedule.idempotency_key}:cancelled:{schedule.id}",
+                )
+            ).rowcount
+            != 1
+        )
+        if claimed_meanwhile:
+            continue
+        cancelled.append(schedule)
         audit.record(
             AuditAction.CONTENT_SCHEDULE_CANCELLED,
             actor,
@@ -48,4 +66,4 @@ def cancel_pending_schedules(
             details={"schedule_id": schedule.id, "reason": reason},
         )
     session.flush()
-    return schedules
+    return cancelled

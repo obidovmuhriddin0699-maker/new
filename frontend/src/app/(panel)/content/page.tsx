@@ -10,7 +10,7 @@ import type { ContentList, ContentStatus, ContentType } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 
 const TABS: (ContentStatus | "ALL")[] = [
-  "ALL", "READY_FOR_REVIEW", "DRAFT", "EDIT_REQUESTED", "APPROVED", "SCHEDULED", "PUBLISHED", "FAILED", "REJECTED",
+  "ALL", "READY_FOR_REVIEW", "DRAFT", "GENERATING", "EDIT_REQUESTED", "APPROVED", "SCHEDULED", "PUBLISHING", "PUBLISHED", "FAILED", "REJECTED",
 ];
 const PAGE = 20;
 

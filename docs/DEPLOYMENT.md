@@ -125,6 +125,7 @@ values that matter for this phase:
 | `BACKUP_UID` / `BACKUP_GID` | Output of `id -u` / `id -g` for the deploy user (usually 1000) |
 | `LEGAL_OPERATOR_NAME`, `LEGAL_CONTACT_EMAIL` | Shown on `/privacy` and `/terms` |
 | `TELEGRAM_*` | Optional; also used for the ops alerts (§8) |
+| `COMPOSE_PROFILES` | `telegram` to run the Telegram bot. Docker Compose reads it from the env file, and `deploy.sh`, `rollback.sh` and `restore.sh` start/update the bot with the rest |
 
 > **Keep a copy of `.env.production` off the server**, for example in a password manager.
 > Without `TOKEN_ENCRYPTION_KEYS`, a restored backup cannot decrypt the Instagram tokens,
@@ -215,9 +216,15 @@ dashboard (Instagram API with Instagram Login), check:
 * `media-<stamp>.tar.gz`: uploaded media;
 * `backup-<stamp>.sha256`: checksums.
 
-Files are owner-only (0600). Backups older than `BACKUP_RETENTION_DAYS` are deleted.
-Each run is recorded in the database, and the ops monitor alerts when a backup fails or
-is more than 26 hours old. Setting `BACKUP_HEARTBEAT_URL` (for example a free
+Files are owner-only (0600). Backups older than `BACKUP_RETENTION_DAYS` are deleted
+(only after a successful run). Each run is recorded in the database, and the ops monitor
+alerts when a backup fails or is more than 26 hours old. If any step fails (dump, media
+archive, checksums), the run's files are removed, the failure is recorded and the
+heartbeat is not pinged.
+
+The database owner's credentials (`POSTGRES_USER`/`POSTGRES_PASSWORD`) are given only to
+`postgres`, `migrate` and `backup`; they are blanked in the backend, worker, beat and bot
+containers, which connect as the least-privilege `APP_DB_USER`. Setting `BACKUP_HEARTBEAT_URL` (for example a free
 healthchecks.io check) also alerts you when the server itself is down.
 
 To back up right now:
@@ -248,10 +255,14 @@ The script:
 2. Asks you to type `restore`.
 3. Backs up the current state first, so a restore can itself be undone.
 4. Stops the app.
-5. Restores the database in one transaction.
+5. Restores the database in one transaction: drops and recreates the `public` schema (so
+   tables from newer migrations do not survive), then loads the dump. Any error rolls the
+   whole database step back. The dump is first converted to SQL inside the postgres
+   container, so it needs free disk space of about the uncompressed dump size.
 6. Restores the media.
 7. Re-applies migrations and the app-role grants.
-8. Starts everything again.
+8. Starts everything again. If any step after stopping the app fails, the script prints
+   the error and starts the app again (`up -d`).
 
 Then run `./scripts/prod-smoke.sh`. Tested in PHASE 12: data deleted after a backup came
 back, the audit trigger and app-role restrictions stayed intact, and the smoke test
@@ -291,7 +302,7 @@ How the alerts behave:
 * **When:** an alert is sent only when the set of problems changes. While a problem stays
   open, a reminder goes out once every 24 h. When everything recovers, a "✅ Tizim holati
   tiklandi" message is sent.
-* **Where:** Telegram, to linked owners and admins (needs `--profile telegram`), plus a
+* **Where:** Telegram, to linked owners and admins (needs `COMPOSE_PROFILES=telegram`), plus a
   banner on the panel's overview page. Owners and admins can also call
   `GET /api/v1/system/ops-status`.
 * **Record:** every alert is also an `OPS_ALERT` entry in the audit log.
@@ -311,15 +322,16 @@ cd /opt/muxriddin && git pull && ./scripts/deploy.sh      # backup → migrate �
 If the smoke test fails, or something looks wrong:
 
 ```bash
-./scripts/rollback.sh            # previous release's images
+./scripts/rollback.sh            # the most recent release that differs from the current one
 ./scripts/rollback.sh <sha>      # a specific release from .deploy/releases
 ```
 
 Rollback switches **images only**. If the release you are leaving ran a database
 migration, also restore the backup that `deploy.sh` took right before it (§7).
 
-Running `rollback.sh` again switches back to the newer release. Pass a tag to choose
-exactly.
+Every deploy and rollback appends a line to `.deploy/releases`; the last line is the
+running release. Running `rollback.sh` again therefore switches back to the newer
+release. Pass a tag to choose exactly.
 
 **Maintenance:**
 
@@ -337,5 +349,5 @@ exactly.
 | Audit log shows `172.30.0.1` for every login | Only for requests made from the server itself (Docker's userland proxy). Real visitors are recorded with their own IP. Check with `SMOKE_HOST=<server public IP> ./scripts/prod-smoke.sh` |
 | `deploy.sh`: "owned by uid 0, but BACKUP_UID=1000" | Set `BACKUP_UID`/`BACKUP_GID` to `id -u`/`id -g`, or run `sudo chown deploy:deploy backups` |
 | "Hali birorta zaxira nusxa olinmagan" alert right after installing | Expected until the first nightly run. Run a backup now (§7) |
-| Telegram alerts don't arrive | Telegram needs `--profile telegram`, `TELEGRAM_ENABLED=true`, and an account linked under Panel → Telegram |
+| Telegram alerts don't arrive | Telegram needs `COMPOSE_PROFILES=telegram` (then `./scripts/deploy.sh`), `TELEGRAM_ENABLED=true`, and an account linked under Panel → Telegram |
 | Smoke test `FAIL panel /login 200` | `docker compose ... ps`: is the frontend healthy? Then check `logs frontend caddy` |

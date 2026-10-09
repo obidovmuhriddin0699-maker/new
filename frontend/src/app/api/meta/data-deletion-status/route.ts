@@ -1,4 +1,4 @@
-import { backendUrl, jsonError } from "@/lib/server/session";
+import { backendUrl, forwardedFor, jsonError } from "@/lib/server/session";
 
 const CODE = /^[A-Za-z0-9_-]{6,64}$/;
 
@@ -8,7 +8,7 @@ export async function GET(request: Request): Promise<Response> {
   if (!CODE.test(code)) return jsonError(400, "invalid_code", "Invalid confirmation code");
   try {
     const upstream = await fetch(`${backendUrl()}/api/v1/instagram/meta/data-deletion/${code}`, {
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...forwardedFor(request) },
       cache: "no-store",
     });
     return new Response(await upstream.text(), {

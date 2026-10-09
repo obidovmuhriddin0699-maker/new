@@ -5,12 +5,16 @@
 #   SKIP_BUILD=1 ./scripts/deploy.sh   restart with the already-built images
 #
 # Every release is tagged with the git commit (muxriddin-*:<sha>) and recorded in
-# .deploy/releases, so scripts/rollback.sh can switch back to the previous images.
+# .deploy/releases (one line per deploy), so scripts/rollback.sh can switch back to the
+# previous images. Optional services follow COMPOSE_PROFILES in the env file (e.g. telegram).
 set -euo pipefail
 
 ENV_FILE="${ENV_FILE:-.env.production}"; export ENV_FILE
 C=(docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE")
-val() { grep -E "^$1=" "$ENV_FILE" | tail -1 | cut -d= -f2- | sed 's/[[:space:]]*#.*$//'; }
+val() { { grep -E "^$1=" "$ENV_FILE" || true; } | tail -1 | cut -d= -f2- | sed 's/[[:space:]]*#.*$//'; }
+# The env file is the source of truth for optional services (COMPOSE_PROFILES=telegram),
+# also when the shell happens to have its own COMPOSE_PROFILES.
+COMPOSE_PROFILES="$(val COMPOSE_PROFILES)"; export COMPOSE_PROFILES
 
 echo "== preflight"
 [ -f "$ENV_FILE" ] || { echo "missing $ENV_FILE (cp .env.production.example $ENV_FILE)"; exit 1; }
@@ -47,7 +51,9 @@ for image in muxriddin-backend muxriddin-frontend; do
   [ "$TAG" = prod ] || docker tag "$image:$TAG" "$image:prod"
 done
 IMAGE_TAG=prod "${C[@]}" up -d --remove-orphans
-grep -q "^$TAG " .deploy/releases 2>/dev/null || echo "$TAG $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .deploy/releases
+# Always record the deploy (also a redeploy of an older tag): rollback.sh reads the last line
+# as the current release.
+[ "$TAG" = prod ] || echo "$TAG $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .deploy/releases
 
 echo "== waiting for health"
 for _ in $(seq 1 60); do

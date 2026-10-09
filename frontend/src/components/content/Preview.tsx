@@ -24,8 +24,11 @@ export function MediaBox({ content }: { content: Content }) {
       ) : (
         <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-xs text-muted">
           <span className="text-sm font-medium">Media hali yo‘q</span>
-          <span>Rasm/video provayderi sozlanmagan (not_configured). Real media yaratilmagan.</span>
-          {content.assets.length > 0 && <span>{content.assets.length} ta media metadata saqlangan</span>}
+          {content.assets.length > 0 ? (
+            <span>{content.assets.length} ta media metadata saqlangan, lekin ochiq havolasi yo‘q.</span>
+          ) : (
+            <span>Bu kontentga hali rasm yoki video biriktirilmagan. Uni “Media” bo‘limida yuklang yoki havola bering.</span>
+          )}
           <span className="mt-1 rounded border border-border px-2 py-0.5">{content.aspect_ratio ?? "—"}</span>
         </div>
       )}

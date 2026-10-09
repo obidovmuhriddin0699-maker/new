@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+
+import { signOut } from "@/lib/api";
 
 const NAV: { href: string; label: string; group?: string }[] = [
   { href: "/overview", label: "Umumiy ko‘rinish" },
@@ -24,12 +26,27 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => setOpen(false), [pathname]);
 
+  function closeMenu() {
+    setOpen(false);
+    menuButton.current?.focus(); // back to where the keyboard user was
+  }
+
+  // Escape closes the mobile menu.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMenu();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
-    router.replace("/login");
+    router.replace(await signOut());
     router.refresh();
   }
 
@@ -68,6 +85,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-card/95 px-4 py-3 backdrop-blur lg:hidden">
         <Brand />
         <button
+          ref={menuButton}
           type="button"
           aria-label="Menyuni ochish"
           aria-expanded={open}
@@ -80,11 +98,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Menyu">
-          <button type="button" aria-label="Yopish" className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+          <button type="button" aria-label="Yopish" className="absolute inset-0 bg-black/40" onClick={closeMenu} />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto bg-card p-4 shadow-xl">
             <div className="flex items-center justify-between">
               <Brand />
-              <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-2 py-1 text-sm text-muted">
+              <button type="button" onClick={closeMenu} className="rounded-lg px-2 py-1 text-sm text-muted">
                 Yopish
               </button>
             </div>

@@ -76,7 +76,17 @@ class AnalyticsSyncService:
         accounts = self.session.scalars(
             select(InstagramAccount).where(InstagramAccount.deleted_at.is_(None))
         ).all()
-        return [self.sync_account(a) for a in accounts]
+        results = []
+        for account in accounts:
+            try:
+                results.append(self.sync_account(account))
+            except Exception:  # one broken account must not stop the others
+                self.session.rollback()
+                logger.exception("insights sync failed for account %s", account.id)
+                results.append(
+                    AccountSyncResult(account.id, account.username, "failed", "ichki xato")
+                )
+        return results
 
     def sync_account(self, account: InstagramAccount) -> AccountSyncResult:
         result = AccountSyncResult(account.id, account.username, "ok")

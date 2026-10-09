@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { BackendStatus } from "@/components/BackendStatus";
 import { Button, Card, ErrorBox, Field, KeyValue, Loading, Notice, PageHeader, inputClass } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, signOut } from "@/lib/api";
 import type { User } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 
@@ -16,8 +16,7 @@ export default function SettingsPage() {
   const { data, error, loading } = useApi<User>("auth/me");
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
-    router.replace("/login");
+    router.replace(await signOut());
     router.refresh();
   }
 
@@ -58,8 +57,7 @@ function SecurityCard() {
 
   async function done() {
     // The backend has revoked every session, including this one.
-    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
-    router.replace("/login");
+    router.replace(await signOut());
     router.refresh();
   }
 
@@ -78,8 +76,7 @@ function SecurityCard() {
 
   async function logoutAll() {
     setBusy("all");
-    await fetch("/api/auth/logout?all=1", { method: "POST", credentials: "same-origin" });
-    router.replace("/login");
+    router.replace(await signOut(true));
     router.refresh();
   }
 

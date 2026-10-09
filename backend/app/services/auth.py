@@ -8,7 +8,13 @@ from sqlalchemy.orm import Session
 
 from app.core.actors import HumanActor, SystemActor
 from app.core.errors import AppError, AuthenticationError
-from app.core.ratelimit import LOGIN_FAILURES, LOGIN_IP, RateLimitedError, get_limiter
+from app.core.ratelimit import (
+    LOGIN_ACCOUNT_FAILURES,
+    LOGIN_FAILURES,
+    LOGIN_IP,
+    RateLimitedError,
+    get_limiter,
+)
 from app.core.security import create_access_token, hash_password, verify_password
 from app.core.transaction import atomic
 from app.models import RevokedToken, User
@@ -49,6 +55,8 @@ class AuthService:
         allowed, retry = self.limiter.hit(LOGIN_IP, ip)
         if allowed:
             allowed, retry = self.limiter.peek(LOGIN_FAILURES, fail_key)
+        if allowed:
+            allowed, retry = self.limiter.peek(LOGIN_ACCOUNT_FAILURES, email)
         if not allowed:
             self._audit_failure(AuditAction.AUTH_LOGIN_BLOCKED, email, ip, "rate limited")
             raise RateLimitedError(
@@ -61,6 +69,7 @@ class AuthService:
         valid = verify_password(password, user.password_hash if user else _DUMMY_HASH)
         if user is None or not valid or not user.is_active:
             self.limiter.hit(LOGIN_FAILURES, fail_key)
+            self.limiter.hit(LOGIN_ACCOUNT_FAILURES, email)
             reason = "unknown email" if user is None else ("inactive" if valid else "bad password")
             self._audit_failure(AuditAction.AUTH_LOGIN_FAILED, email, ip, reason, user)
             raise AuthenticationError("Invalid email or password")

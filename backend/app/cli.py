@@ -64,6 +64,10 @@ def main(argv: list[str] | None = None) -> int:
         help="re-encrypt stored OAuth tokens with the first TOKEN_ENCRYPTION_KEYS key",
     )
     sub.add_parser("weekly-report", help="create the analyst report for last week")
+    sub.add_parser(
+        "migrate",
+        help="alembic upgrade head under a PostgreSQL advisory lock (safe with several replicas)",
+    )
     args = parser.parse_args(argv)
     if args.command == "create-admin":
         return create_admin(args.email, args.password, args.full_name)
@@ -109,6 +113,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "rotate-token-keys":
         print(f"re-encrypted {rotate_token_keys()} token(s)")
         return 0
+    if args.command == "migrate":
+        return migrate()
     if args.command == "weekly-report":
         from app.services.analytics_report import ANALYST_ACTOR, AnalyticsReportService
 
@@ -117,6 +123,37 @@ def main(argv: list[str] | None = None) -> int:
             print(f"report #{report.id} ({report.source}, {report.status})\n{report.summary}")
         return 0
     return 1
+
+
+MIGRATION_LOCK_ID = 7_302_412_001  # arbitrary, constant: one migration runner at a time
+
+
+def migrate() -> int:
+    """Upgrade the schema to head. On PostgreSQL an advisory lock serialises concurrent
+    runners (several replicas / a pre-deploy step racing a start command)."""
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import text
+
+    from app.core.database import get_engine
+
+    ini = Path(__file__).resolve().parent.parent / "alembic.ini"
+    cfg = Config(str(ini))
+    engine = get_engine()
+    if engine.dialect.name != "postgresql":
+        command.upgrade(cfg, "head")
+        print("migrations applied")
+        return 0
+    with engine.connect() as conn:
+        conn.execute(text("SELECT pg_advisory_lock(:id)"), {"id": MIGRATION_LOCK_ID})
+        try:
+            command.upgrade(cfg, "head")
+        finally:
+            conn.execute(text("SELECT pg_advisory_unlock(:id)"), {"id": MIGRATION_LOCK_ID})
+    print("migrations applied")
+    return 0
 
 
 def seed(admin_email: str | None) -> int:

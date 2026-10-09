@@ -44,3 +44,34 @@ export function forwardedFor(request: Request): Record<string, string> {
   const xff = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip");
   return xff ? { "X-Forwarded-For": xff.slice(0, 200) } : {};
 }
+
+/**
+ * Reads a request body as a stream, counting bytes, and gives up as soon as it exceeds
+ * `limit` (returns null) — an oversized body is never buffered in full. A declared
+ * Content-Length above the limit is refused before reading anything.
+ */
+export async function readBodyLimited(request: Request, limit: number): Promise<Uint8Array<ArrayBuffer> | null> {
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declared) && declared > limit) return null;
+  if (!request.body) return new Uint8Array(0);
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > limit) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(size);
+  let offset = 0;
+  for (const c of chunks) {
+    out.set(c, offset);
+    offset += c.byteLength;
+  }
+  return out;
+}

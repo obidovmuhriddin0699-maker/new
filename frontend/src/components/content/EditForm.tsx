@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 
 import { Button, ErrorBox, Field, Notice, inputClass } from "@/components/ui";
 import { api } from "@/lib/api";
-import { parseHashtags } from "@/lib/format";
+import { ASPECT_LABEL, ASPECT_RATIOS, parseHashtags, validRatio } from "@/lib/format";
 import type { Content, Structure, StructureItem } from "@/lib/types";
 
 const TEXT_KEYS = ["heading", "body", "visual", "on_screen_text", "narration", "text"];
@@ -25,6 +25,7 @@ export function EditForm({ content, onSaved, onCancel }: { content: Content; onS
     cta: content.cta ?? "",
     hashtags: content.hashtags.join(" "),
     planned_date: content.planned_date ?? "",
+    aspect_ratio: validRatio(content.content_type, content.aspect_ratio),
     change_note: "",
   });
   const [structure, setStructure] = useState<Structure>(structuredClone(content.structure ?? {}));
@@ -55,6 +56,8 @@ export function EditForm({ content, onSaved, onCancel }: { content: Content; onS
           cta: form.cta || null,
           hashtags: parseHashtags(form.hashtags),
           planned_date: form.planned_date || null,
+          // Sent only when it differs, so saving other fields does not count as a format change.
+          ...(form.aspect_ratio !== content.aspect_ratio ? { aspect_ratio: form.aspect_ratio } : {}),
           change_note: form.change_note || null,
           ...(listKey ? { structure } : {}),
         },
@@ -87,9 +90,18 @@ export function EditForm({ content, onSaved, onCancel }: { content: Content; onS
           <input type="date" className={inputClass} value={form.planned_date} onChange={set("planned_date")} />
         </Field>
       </div>
-      <Field label="Hashtaglar" hint="Bo‘sh joy yoki vergul bilan, maksimal 30 ta">
-        <input className={inputClass} value={form.hashtags} onChange={set("hashtags")} />
-      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Hashtaglar" hint="Bo‘sh joy yoki vergul bilan, maksimal 30 ta">
+          <input className={inputClass} value={form.hashtags} onChange={set("hashtags")} />
+        </Field>
+        <Field label="Format (tomonlar nisbati)">
+          <select className={inputClass} value={form.aspect_ratio} onChange={set("aspect_ratio")} data-testid="edit-aspect-ratio">
+            {ASPECT_RATIOS[content.content_type].map((r) => (
+              <option key={r} value={r}>{ASPECT_LABEL[r] ?? r}</option>
+            ))}
+          </select>
+        </Field>
+      </div>
       {listKey && (
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium">{listKey === "slides" ? "Slaydlar" : listKey === "scenes" ? "Sahnalar" : "Kadrlar"}</legend>

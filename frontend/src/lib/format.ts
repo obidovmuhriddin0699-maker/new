@@ -35,6 +35,27 @@ export const TYPE_LABEL: Record<ContentType, string> = {
   STORY: "Story",
 };
 
+// Instagram formats per type — the backend's ALLOWED_ASPECT_RATIOS (providers/media.py);
+// readiness refuses anything else. The first entry is the default (DEFAULT_ASPECT_RATIO).
+export const ASPECT_RATIOS: Record<ContentType, string[]> = {
+  POST: ["4:5", "1:1", "16:9"],
+  CAROUSEL: ["4:5", "1:1"],
+  REELS: ["9:16"],
+  STORY: ["9:16"],
+};
+
+export const ASPECT_LABEL: Record<string, string> = {
+  "4:5": "4:5 (vertikal)",
+  "1:1": "1:1 (kvadrat)",
+  "16:9": "16:9 (gorizontal)",
+  "9:16": "9:16 (to‘liq ekran)",
+};
+
+/** The ratio if allowed for the type, else the type's default. */
+export function validRatio(type: ContentType, ratio: string | null | undefined): string {
+  return ratio && ASPECT_RATIOS[type].includes(ratio) ? ratio : ASPECT_RATIOS[type][0];
+}
+
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "—";
   return new Intl.DateTimeFormat("uz-UZ", {
@@ -57,6 +78,28 @@ export function formatDate(value: string | null | undefined): string {
 export function isoDate(d: Date): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+// Asia/Tashkent is UTC+5 all year (no DST), so a fixed offset is exact.
+const TZ_OFFSET = "+05:00";
+const TZ_OFFSET_MS = 5 * 3600 * 1000;
+
+/** Instant -> "YYYY-MM-DDTHH:mm" wall-clock time in Tashkent (for datetime-local inputs). */
+export function tashkentInputValue(d: Date): string {
+  return new Date(d.getTime() + TZ_OFFSET_MS).toISOString().slice(0, 16);
+}
+
+/** datetime-local value read as Tashkent wall-clock time -> UTC ISO string. */
+export function tashkentToIso(value: string): string {
+  const withSeconds = value.length === 16 ? `${value}:00` : value;
+  const d = new Date(`${withSeconds}${TZ_OFFSET}`);
+  if (Number.isNaN(d.getTime())) throw new Error("Vaqt noto‘g‘ri kiritilgan");
+  return d.toISOString();
+}
+
+/** Instant -> calendar day "YYYY-MM-DD" in Tashkent. */
+export function tashkentDay(value: string): string {
+  return new Date(new Date(value).getTime() + TZ_OFFSET_MS).toISOString().slice(0, 10);
 }
 
 export function truncate(text: string | null | undefined, n = 120): string {

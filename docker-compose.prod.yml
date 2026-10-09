@@ -25,7 +25,12 @@ x-hardening: &hardening
 
 # Runtime settings shared by API, worker, beat and bot. The app connects with the
 # least-privilege role (APP_DB_USER); only the migrate service uses the owner.
+# env_file passes the whole .env.production to these containers, so the database owner's
+# credentials are blanked here: only postgres, migrate (via its DATABASE_URL) and backup
+# ever receive them.
 x-backend-env: &backend-env
+  POSTGRES_USER: ""
+  POSTGRES_PASSWORD: ""
   APP_ENV: production
   DATABASE_URL: postgresql+psycopg://${APP_DB_USER:?}:${APP_DB_PASSWORD:?}@postgres:5432/${POSTGRES_DB:-muxriddin}
   REDIS_URL: redis://:${REDIS_PASSWORD:?}@redis:6379/0
@@ -100,7 +105,7 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-muxriddin_owner}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:-muxriddin}
       APP_DB_USER: ${APP_DB_USER:?}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?}
-    command: ["sh", "-c", "alembic upgrade head && python -m app.cli db-app-role"]
+    command: ["sh", "-c", "python -m app.cli migrate && python -m app.cli db-app-role"]
     restart: "no"
     networks: [data]
     depends_on:
@@ -249,7 +254,8 @@ services:
   # Optional local LLM in a container: docker compose ... --profile ollama up -d
   # then set OLLAMA_BASE_URL=http://ollama:11434 and `docker compose exec ollama ollama pull qwen2.5:3b`.
   ollama:
-    image: ollama/ollama:latest
+    # Pinned (0.40.2 = :latest on 2026-10-09). Bump deliberately: docker buildx imagetools inspect ollama/ollama:<tag>
+    image: ollama/ollama:0.40.2@sha256:b86366bb528bbf7f1424435d165028497a5b69bf6ddb4fa5a87102e2b79f44fb
     profiles: ["ollama"]
     volumes:
       - ollama_data:/root/.ollama

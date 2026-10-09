@@ -5,12 +5,12 @@ import { useState, type FormEvent } from "react";
 
 import { Button, Card, ErrorBox, Field, PageHeader, inputClass } from "@/components/ui";
 import { api } from "@/lib/api";
-import { parseHashtags, TYPE_LABEL } from "@/lib/format";
+import { ASPECT_LABEL, ASPECT_RATIOS, parseHashtags, TYPE_LABEL, validRatio } from "@/lib/format";
 import type { Content, ContentType, Language } from "@/lib/types";
 
 export default function NewContentPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ content_type: "POST" as ContentType, language: "uz" as Language, topic: "", hook: "", caption: "", cta: "", hashtags: "" });
+  const [form, setForm] = useState({ content_type: "POST" as ContentType, aspect_ratio: ASPECT_RATIOS.POST[0], language: "uz" as Language, topic: "", hook: "", caption: "", cta: "", hashtags: "" });
   const [error, setError] = useState<unknown>(null);
   const [saving, setSaving] = useState(false);
 
@@ -24,6 +24,7 @@ export default function NewContentPage() {
         body: {
           content_type: form.content_type,
           language: form.language,
+          aspect_ratio: form.aspect_ratio,
           topic: form.topic || null,
           hook: form.hook || null,
           caption: form.caption || null,
@@ -47,9 +48,24 @@ export default function NewContentPage() {
       <Card>
         <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
           <Field label="Turi">
-            <select className={inputClass} value={form.content_type} onChange={set("content_type")}>
+            <select
+              className={inputClass}
+              value={form.content_type}
+              onChange={(e) => {
+                const type = e.target.value as ContentType;
+                // Keep the chosen format if the new type allows it, else the type's default.
+                setForm({ ...form, content_type: type, aspect_ratio: validRatio(type, form.aspect_ratio) });
+              }}
+            >
               {(Object.keys(TYPE_LABEL) as ContentType[]).map((t) => (
                 <option key={t} value={t}>{TYPE_LABEL[t]}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Format (tomonlar nisbati)">
+            <select className={inputClass} value={form.aspect_ratio} onChange={set("aspect_ratio")} data-testid="aspect-ratio">
+              {ASPECT_RATIOS[form.content_type].map((r) => (
+                <option key={r} value={r}>{ASPECT_LABEL[r] ?? r}</option>
               ))}
             </select>
           </Field>

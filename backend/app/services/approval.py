@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import cast
 
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -28,7 +29,7 @@ from app.core.errors import (
     VersionMismatchError,
 )
 from app.core.transaction import atomic
-from app.models import Approval, Content
+from app.models import Approval, Content, InstagramAccount
 from app.models.base import utcnow
 from app.models.enums import (
     ApprovalDecision,
@@ -115,6 +116,7 @@ class ApprovalService:
                 )
                 self.approvals.add(approval)
                 apply_transition(content, ContentStatus.APPROVED)
+                self._pin_account(content)
                 self.audit.record(
                     AuditAction.CONTENT_APPROVED,
                     actor,
@@ -124,6 +126,7 @@ class ApprovalService:
                         "approval_id": approval.id,
                         "channel": human.channel.value,
                         "content_hash": content_hash,
+                        "instagram_account_id": content.instagram_account_id,
                     },
                 )
                 return ApprovalResult(approval, content, created=True)
@@ -137,6 +140,18 @@ class ApprovalService:
         except AppError as exc:
             self._record_denial(AuditAction.CONTENT_APPROVED, actor, content_id, exc)
             raise
+
+    def _pin_account(self, content: Content) -> None:
+        """Content without a target account goes to "the only connected account". Record
+        which one that is at approval time, so connecting a different account later
+        cannot redirect an approved post (changing it needs a new version + approval)."""
+        if content.instagram_account_id is not None:
+            return
+        accounts = self.session.scalars(
+            select(InstagramAccount.id).where(InstagramAccount.deleted_at.is_(None)).limit(2)
+        ).all()
+        if len(accounts) == 1:
+            content.instagram_account_id = accounts[0]
 
     def reject(
         self, content_id: int, actor: Actor, *, expected_version: int, comment: str | None = None

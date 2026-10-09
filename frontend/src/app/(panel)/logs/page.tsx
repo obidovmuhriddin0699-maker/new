@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button, Card, EmptyState, ErrorBox, Loading, PageHeader, inputClass } from "@/components/ui";
 import { ApiError } from "@/lib/api";
@@ -15,8 +15,14 @@ export default function LogsPage() {
   const [action, setAction] = useState("");
   const [status, setStatus] = useState("");
   const [offset, setOffset] = useState(0);
+  // Typing in the action filter queries the backend only after a 300 ms pause.
+  const [actionQuery, setActionQuery] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setActionQuery(action), 300);
+    return () => clearTimeout(t);
+  }, [action]);
   const q = new URLSearchParams({ limit: String(PAGE), offset: String(offset) });
-  if (action) q.set("action", action);
+  if (actionQuery) q.set("action", actionQuery);
   if (status) q.set("status", status);
   const { data, error, loading, reload } = useApi<{ items: AuditEvent[]; total: number }>(`audit-logs?${q}`);
   const forbidden = error instanceof ApiError && error.status === 403;

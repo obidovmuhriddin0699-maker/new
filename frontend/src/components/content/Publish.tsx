@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button, Card, ErrorBox, Field, Notice, inputClass } from "@/components/ui";
 import { api, uploadFile } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import type { Content, PublishPreview, PublishResponse } from "@/lib/types";
+import { useMe } from "@/lib/useMe";
 
 const PUBLISHABLE = ["APPROVED", "SCHEDULED", "FAILED"];
 const STATE_LABEL: Record<string, string> = {
@@ -16,6 +17,22 @@ const STATE_LABEL: Record<string, string> = {
   CANCELLED: "Bekor qilingan",
 };
 
+const POLL_MS = 4000;
+const POLL_MAX_MS = 5 * 60 * 1000;
+
+/**
+ * A publish attempt is running or queued for the worker right now (Celery mode): the
+ * content is PUBLISHING, its schedule is PROCESSING, or the schedule is PENDING and due.
+ * A PENDING schedule in the future is an ordinary schedule / retry, not "in flight".
+ */
+export function publishInFlight(content: Content): boolean {
+  if (content.status === "PUBLISHING") return true;
+  const state = content.publish_state;
+  if (!state) return false;
+  if (state.status === "PROCESSING") return true;
+  return state.status === "PENDING" && new Date(state.scheduled_at).getTime() <= Date.now() + 60_000;
+}
+
 /** Publish to Instagram: preview (no Meta call), then an explicit, confirmed publish. */
 export function PublishCard({ content, onChanged }: { content: Content; onChanged: () => Promise<void> }) {
   const [preview, setPreview] = useState<PublishPreview | null>(null);
@@ -23,8 +40,40 @@ export function PublishCard({ content, onChanged }: { content: Content; onChange
   const [busy, setBusy] = useState<"preview" | "publish" | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [result, setResult] = useState<PublishResponse | null>(null);
+  const [stale, setStale] = useState(false);
+  const { readOnly } = useMe();
   const state = content.publish_state;
-  const canPublish = PUBLISHABLE.includes(content.status) && content.publish_authorized;
+  const inFlight = publishInFlight(content);
+  const canPublish = PUBLISHABLE.includes(content.status) && content.publish_authorized && !inFlight && !readOnly;
+
+  // While the worker publishes, poll the content every 4 s (max 5 min), then refresh the page.
+  const changed = useRef(onChanged);
+  changed.current = onChanged;
+  useEffect(() => {
+    if (!inFlight) return;
+    const started = Date.now();
+    let active = true;
+    const timer = setInterval(async () => {
+      if (Date.now() - started > POLL_MAX_MS) {
+        clearInterval(timer);
+        if (active) setStale(true);
+        return;
+      }
+      try {
+        const fresh = await api<Content>(`contents/${content.id}`);
+        if (active && !publishInFlight(fresh)) {
+          clearInterval(timer);
+          await changed.current();
+        }
+      } catch {
+        // Transient error: keep polling until the time limit.
+      }
+    }, POLL_MS);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [inFlight, content.id]);
 
   async function loadPreview() {
     setBusy("preview");
@@ -91,6 +140,16 @@ export function PublishCard({ content, onChanged }: { content: Content; onChange
           </div>
         )}
 
+        {inFlight && (
+          <Notice tone="info">
+            <span data-testid="publish-in-flight">
+              {stale
+                ? "Nashr natijasi hali kelmadi. Birozdan keyin sahifani yangilang — qayta bosmang."
+                : "Nashr jarayoni ketmoqda. Natija avtomatik yangilanadi — qayta bosmang."}
+            </span>
+          </Notice>
+        )}
+
         {result && (
           <Notice tone={result.status === "published" ? "success" : result.status === "dry_run" || result.status === "queued" ? "info" : "warning"}>
             <span data-testid="publish-result">{result.message}</span>
@@ -110,11 +169,11 @@ export function PublishCard({ content, onChanged }: { content: Content; onChange
             )}
           </div>
         )}
-        {!canPublish && content.status !== "PUBLISHED" && content.status !== "PUBLISHING" && (
+        {!canPublish && !inFlight && !readOnly && content.status !== "PUBLISHED" && content.status !== "PUBLISHING" && (
           <p className="text-xs text-muted">Nashr uchun joriy versiya tasdiqlangan bo‘lishi kerak.</p>
         )}
 
-        {confirming && (
+        {confirming && canPublish && (
           <div className="space-y-2 rounded-xl border border-border bg-background p-3" data-testid="publish-confirm">
             <p>
               <b>v{content.version}</b> hozir Instagram’ga joylanadi. Bu ommaviy amal; uni API orqali qaytarib bo‘lmaydi.
@@ -183,7 +242,8 @@ export function MediaManager({ content, onChanged }: { content: Content; onChang
   const [kind, setKind] = useState<"IMAGE" | "VIDEO">("IMAGE");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const editable = ["DRAFT", "EDIT_REQUESTED", "READY_FOR_REVIEW", "APPROVED", "SCHEDULED", "FAILED"].includes(content.status);
+  const { readOnly } = useMe();
+  const editable = !readOnly && ["DRAFT", "EDIT_REQUESTED", "READY_FOR_REVIEW", "APPROVED", "SCHEDULED", "FAILED"].includes(content.status);
 
   async function run(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -274,7 +334,7 @@ export function MediaManager({ content, onChanged }: { content: Content; onChang
             </form>
           </>
         ) : (
-          <p className="text-xs text-muted">Bu holatda media o‘zgartirilmaydi.</p>
+          <p className="text-xs text-muted">{readOnly ? "Kuzatuvchi roli: media o‘zgartirilmaydi." : "Bu holatda media o‘zgartirilmaydi."}</p>
         )}
         <ErrorBox error={error} />
       </div>

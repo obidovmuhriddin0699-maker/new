@@ -1,4 +1,4 @@
-# Smoke test for the production stack (docker-compose.prod.yml) — Windows PowerShell 5.1+ / PowerShell 7.
+# Smoke test for the production stack (docker-compose.prod.yml) - Windows PowerShell 5.1+ / PowerShell 7.
 # Read-only: it does not create users or content. Optional login checks use -Email / -Password.
 # The panel is reached as https://DOMAIN through Caddy with curl.exe (built into Windows 10/11);
 # requests are pinned to -HostIp (default 127.0.0.1) with --resolve, so no DNS/hosts edit is needed.
@@ -129,7 +129,10 @@ if ($Email -and $Password) {
     Write-Host "== session"
     $jar = (New-TemporaryFile).FullName; $copy = (New-TemporaryFile).FullName
     $bodyFile = (New-TemporaryFile).FullName
-    @{ email = $Email; password = $Password } | ConvertTo-Json -Compress | Set-Content -NoNewline -Encoding ascii $bodyFile
+    # UTF-8 without BOM (Set-Content -Encoding utf8 adds a BOM in Windows PowerShell 5.1,
+    # ascii would turn non-ASCII password characters into "?").
+    $json = @{ email = $Email; password = $Password } | ConvertTo-Json -Compress
+    [IO.File]::WriteAllText($bodyFile, $json, (New-Object Text.UTF8Encoding $false))
     # A forged X-Forwarded-For must not reach the audit log: Caddy overwrites it.
     Invoke-Curl @("-c", $jar, "-X", "POST", "$panel/api/auth/login", "-H", "Origin: $panel",
         "-H", "Content-Type: application/json", "-H", "X-Forwarded-For: 203.0.113.66", "--data-binary", "@$bodyFile") | Out-Null

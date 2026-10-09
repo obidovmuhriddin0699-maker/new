@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.deps import DbSession, HumanActorDep, limit_per_ip, limit_per_user
 from app.core.config import get_settings
 from app.core.errors import NotFoundError
-from app.core.ratelimit import META_CALLBACK, OAUTH_START
+from app.core.ratelimit import META_CALLBACK, OAUTH_START, QUOTA_CHECK
 from app.integrations.meta.capabilities import CAPABILITIES
 from app.models import InstagramAccount
 from app.schemas.errors import error_responses
@@ -180,7 +180,8 @@ def capabilities(_: HumanActorDep) -> list[CapabilityRead]:
     summary="Live content publishing quota from Meta (read-only)",
     description="Calls `content_publishing_limit`. Meta's pages disagree on the quota "
     "(50 vs 100 posts / 24 h), so the live value is shown.",
-    responses=error_responses(401, 404) | {502: {"description": "Meta error"}},
+    responses=error_responses(401, 404, 429) | {502: {"description": "Meta error"}},
+    dependencies=[limit_per_user(QUOTA_CHECK)],
 )
 def publishing_limit(account_id: int, db: DbSession, _: HumanActorDep) -> PublishingLimitRead:
     account = db.get(InstagramAccount, account_id)

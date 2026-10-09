@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { QualityView } from "@/components/content/Quality";
 import { Button, Card, ErrorBox, Field, Notice, PageHeader, StatusBadge, inputClass } from "@/components/ui";
@@ -48,6 +48,13 @@ export default function AIStudioPage() {
     submit_for_review: false,
     save_as_drafts: false,
   });
+  // The brand may not allow the default language: switch to its first allowed one.
+  const allowedLanguages = brand?.languages;
+  useEffect(() => {
+    if (allowedLanguages?.length && !allowedLanguages.includes(form.language)) {
+      setForm((f) => ({ ...f, language: allowedLanguages[0] }));
+    }
+  }, [allowedLanguages, form.language]);
   const [result, setResult] = useState<GenerationResponse | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [running, setRunning] = useState(false);

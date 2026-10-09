@@ -3,7 +3,26 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
 
-import { Button, Field, inputClass } from "@/components/ui";
+import { Button, Field, Notice, inputClass } from "@/components/ui";
+import { forgetMe } from "@/lib/api";
+
+/**
+ * Post-login target from ?next=. Only same-origin paths are allowed (no open redirect):
+ * browsers treat `/\evil.com` or `/<TAB>/evil.com` as protocol-relative, so backslashes and
+ * control characters are rejected outright and the result is re-checked with the URL parser.
+ */
+function safeNext(next: string | null): string {
+  if (!next || !next.startsWith("/") || /[\\\u0000-\u001f\u007f]/.test(next)) return "/overview";
+  try {
+    const url = new URL(next, window.location.origin);
+    const target = url.pathname + url.search + url.hash;
+    // "/.//evil.com" normalises to "//evil.com": still protocol-relative, so refuse it too.
+    if (url.origin !== window.location.origin || target.startsWith("//")) return "/overview";
+    return target;
+  } catch {
+    return "/overview";
+  }
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -33,10 +52,8 @@ function LoginForm() {
         );
         return;
       }
-      const next = params.get("next");
-      // Only allow local, absolute paths as redirect targets (no open redirect).
-      const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/overview";
-      router.replace(target);
+      forgetMe();
+      router.replace(safeNext(params.get("next")));
       router.refresh();
     } catch {
       setError("Server bilan aloqa yo‘q.");
@@ -47,6 +64,13 @@ function LoginForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
+      {params.get("logout") === "failed" && (
+        <Notice tone="warning">
+          <span data-testid="logout-failed">
+            Siz bu brauzerdan chiqdingiz, lekin serverda sessiyani bekor qilib bo‘lmadi. Xavfsizlik uchun qayta kirib, “Barcha qurilmalardan chiqish”ni bosing.
+          </span>
+        </Notice>
+      )}
       <Field label="Email">
         <input
           className={inputClass}

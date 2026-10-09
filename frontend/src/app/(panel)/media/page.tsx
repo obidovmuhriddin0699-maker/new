@@ -32,7 +32,9 @@ export default function MediaPage() {
           {data.items.map((a) => (
             <Card key={a.id} className="p-3">
               <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-background text-xs text-muted">
-                {a.public_url ? (
+                {a.public_url && a.kind === "VIDEO" ? (
+                  <video src={a.public_url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                ) : a.public_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={a.public_url} alt="" className="h-full w-full object-cover" />
                 ) : (

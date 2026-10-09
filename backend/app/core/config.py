@@ -164,6 +164,11 @@ class Settings(BaseSettings):
     media_max_image_mb: int = 8
     media_max_video_mb: int = 100
 
+    # The ops monitor alerts when the backup service (docker-compose.prod.yml) stops
+    # recording backups. Turn off where the platform backs up the database itself
+    # (e.g. Railway Postgres backups) and there is no backup service.
+    backup_monitoring: bool = True
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:
@@ -174,6 +179,19 @@ class Settings(BaseSettings):
 
                 return json.loads(value)
             return [o.strip() for o in value.split(",") if o.strip()]
+        return value
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _psycopg_driver(cls, value: object) -> object:
+        """Hosting platforms (Railway, Heroku, Render...) hand out ``postgres://`` or
+        ``postgresql://`` URLs; SQLAlchemy would then look for psycopg2, which is not
+        installed. Use the psycopg 3 driver the app ships with."""
+        if isinstance(value, str):
+            value = value.strip()
+            for prefix in ("postgres://", "postgresql://"):
+                if value.startswith(prefix):
+                    return "postgresql+psycopg://" + value[len(prefix) :]
         return value
 
     @field_validator("trusted_proxies", "allowed_hosts", mode="before")
@@ -248,6 +266,16 @@ class Settings(BaseSettings):
                 )
             if "mock" in (self.image_provider, self.video_provider):
                 problems.append("mock media providers are not allowed in production")
+            if not self.allowed_hosts:
+                problems.append("ALLOWED_HOSTS must list the host names the API answers to")
+            if self.panel_public_url and not self.panel_public_url.startswith("https://"):
+                problems.append("PANEL_PUBLIC_URL must use https in production")
+            if any(p.strip() in ("0.0.0.0/0", "::/0", "*") for p in self.trusted_proxies):
+                problems.append(
+                    "TRUSTED_PROXIES must not trust every address (clients could forge their IP)"
+                )
+            if not self.jwt_algorithm.startswith("HS"):
+                problems.append("JWT_ALGORITHM must be an HMAC algorithm (HS256/HS384/HS512)")
             if problems:
                 raise ValueError("Invalid production configuration: " + "; ".join(problems))
         return self

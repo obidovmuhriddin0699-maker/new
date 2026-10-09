@@ -28,6 +28,7 @@ from app.schemas.publish import (
 )
 from app.schemas.review import ReadinessCheckRead, ReadinessRead
 from app.services.content import AssetInput, ContentService
+from app.services.guards import require_human_writer
 from app.services.media_storage import MediaRejectedError, MediaStorage
 from app.services.publish import PublishPreview, PublishService
 
@@ -168,6 +169,9 @@ async def upload_asset(
     expected_version: Annotated[int, Query(ge=1)],
     position: Annotated[int | None, Query(ge=0, le=20)] = None,
 ) -> ContentRead:
+    # Role check before reading (and storing) the body: viewers never get a file onto
+    # the public /media/ path, not even briefly.
+    await run_in_threadpool(require_human_writer, db, actor)
     s = get_settings()
     limit = max(s.media_max_image_mb, s.media_max_video_mb) * 1024 * 1024
     chunks: list[bytes] = []

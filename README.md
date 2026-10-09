@@ -21,6 +21,7 @@ tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘lad
 - Xavfsizlik (tahdidlar modeli, limitlar, sessiyalar, qabul qilingan risklar): [`docs/SECURITY.md`](docs/SECURITY.md)
 - Docker production image'lar: [`docs/DOCKER.md`](docs/DOCKER.md)
 - **Serverga o'rnatish** (VPS, domen, HTTPS, zaxira, monitoring, yangilash): [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- **Railway'ga joylash** (GitHub'dan, domen va HTTPS avtomatik): [`docs/RAILWAY.md`](docs/RAILWAY.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -195,10 +196,18 @@ ollama --version
 ### 3.2 Repository va avtomatik sozlash
 
 ```powershell
-git clone https://github.com/obidovmuhriddin0699-maker/new.git muxriddin-ai
+git clone -b claude/nima-boldi-9nzp1a https://github.com/obidovmuhriddin0699-maker/new.git muxriddin-ai
 cd muxriddin-ai
 powershell -ExecutionPolicy Bypass -File .\scripts\dev-setup.ps1
 ```
+
+> Hozircha loyiha kodi `claude/nima-boldi-9nzp1a` branch'ida (`main` da hali yo'q). U `main` ga
+> birlashtirilgandan keyin `-b claude/nima-boldi-9nzp1a` kerak bo'lmaydi.
+
+> **Muhim (bir marta):** Windows PowerShell default holatda skriptlarni bloklaydi (`Restricted`).
+> Keyingi bo'limlardagi `.\.venv\Scripts\Activate.ps1` va `npm` (`npm.ps1`) "running scripts is
+> disabled" xatosini bermasligi uchun oddiy PowerShell'da bajaring:
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
 
 `dev-setup.ps1` quyidagilarni bajaradi:
 
@@ -225,6 +234,23 @@ Kalitlarni generatsiya qiling va `.env` ichiga qo‘ying:
 ```powershell
 python -c "import secrets; print(secrets.token_urlsafe(48))"                                  # JWT_SECRET_KEY
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"     # TOKEN_ENCRYPTION_KEYS
+```
+
+Ma'lumotlar bazasini yarating (venv aktiv, `backend` papkasida; default SQLite: `backend\data\muxriddin.db`):
+
+```powershell
+cd backend
+alembic upgrade head
+cd ..
+```
+
+Frontend kutubxonalari va sozlamasi:
+
+```powershell
+cd frontend
+npm install
+Copy-Item .env.example .env.local      # BACKEND_URL=http://localhost:8000
+cd ..
 ```
 
 > Agar `Activate.ps1` "running scripts is disabled" xatosini bersa:
@@ -710,9 +736,11 @@ To'liq qo'llanma: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). U quyidagilarni qa
 
 ```bash
 # serverda (Ubuntu 24.04), deploy foydalanuvchisi bilan:
+sudo mkdir -p /opt/muxriddin && sudo chown deploy:deploy /opt/muxriddin
 git clone https://github.com/<siz>/<repo>.git /opt/muxriddin && cd /opt/muxriddin
 cp .env.production.example .env.production && chmod 600 .env.production && nano .env.production
 #   DOMAIN=panel.sizningdomen.uz   CADDY_TLS=siz@example.com   BACKUP_UID=$(id -u) ...
+#   Telegram bot ham kerak bo'lsa: COMPOSE_PROFILES=telegram (deploy/rollback/restore uni ham yangilaydi)
 ./scripts/deploy.sh             # build → zaxira → migratsiya → ishga tushirish → smoke test
 docker compose -f docker-compose.prod.yml --env-file .env.production run --rm backend python -m app.cli create-admin --email siz@example.com
 ```
@@ -721,8 +749,8 @@ docker compose -f docker-compose.prod.yml --env-file .env.production run --rm ba
 |---|---|
 | **Caddy** (`docker/caddy/Caddyfile`) | Let's Encrypt sertifikatini o'zi oladi va yangilaydi. HTTP so'rovlarni HTTPS'ga yo'naltiradi, HSTS qo'yadi. Mijozning haqiqiy IP'sini uzatadi (soxta `X-Forwarded-For` e'tiborga olinmaydi). Logda OAuth `code`/`state` yashiriladi |
 | **Zaxira** (`backup` servisi) | Har kuni `BACKUP_TIME` (UTC) da `pg_dump` va media arxivini sha256 bilan oladi. `BACKUP_RETENTION_DAYS` kun saqlaydi. Har deploy'dan oldin ham zaxira olinadi |
-| **Tiklash** | `./scripts/restore.sh backups/db-….dump backups/media-….tar.gz`. Avval joriy holatni zaxiralaydi |
-| **Yangilash / orqaga qaytarish** | `git pull && ./scripts/deploy.sh`, `./scripts/rollback.sh`. Har release git commit bilan teglanadi |
+| **Tiklash** | `./scripts/restore.sh backups/db-….dump backups/media-….tar.gz`. Avval joriy holatni zaxiralaydi, so'ng `public` sxemasini butunlay o'chirib, zaxirani bitta tranzaksiyada tiklaydi. Xato bo'lsa, ilova qayta ishga tushiriladi |
+| **Yangilash / orqaga qaytarish** | `git pull && ./scripts/deploy.sh`, `./scripts/rollback.sh`. Har release git commit bilan teglanadi; `rollback.sh` joriydan farqli eng oxirgi release'ga qaytadi |
 | **Ops monitor** | Har 5 daqiqada tekshiradi: Redis, Instagram token, muvaffaqiyatsiz yoki osilib qolgan nashr, zaxira, statistika, disk. Muammo bo'lsa → Telegram va Umumiy ko'rinish sahifasida banner |
 | **Huquqiy sahifalar** | `https://DOMAIN/privacy` va `/terms` ochiq (Meta App Review uchun kerak). Matn shablon; o'z yurisdiksiyangiz bo'yicha tekshirtiring |
 

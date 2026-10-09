@@ -42,7 +42,9 @@ celery_app.conf.update(
         "publish-due-schedules": {"task": "publish.process_due", "schedule": 60},
         "reconcile-publishing": {"task": "publish.reconcile", "schedule": 5 * 60},
         # Insights change slowly and Meta rate-limits calls: every 6 hours is plenty.
-        "sync-insights": {"task": "analytics.sync", "schedule": 6 * 60 * 60},
+        # On the clock (00:00, 06:00... UTC), not "6 h after beat started": the Monday
+        # 00:00 run stores the closed week the 03:10 weekly report reads.
+        "sync-insights": {"task": "analytics.sync", "schedule": crontab(minute=0, hour="*/6")},
         "ops-check": {"task": "ops.check", "schedule": 5 * 60},
         # Monday 03:10 UTC = 08:10 Asia/Tashkent, for the previous Monday–Sunday.
         "weekly-analytics-report": {

@@ -1,4 +1,4 @@
-import { backendUrl } from "@/lib/server/session";
+import { backendUrl, forwardedFor } from "@/lib/server/session";
 
 const NAME = /^[A-Za-z0-9_-]{20,64}\.(jpg|mp4|mov)$/;
 
@@ -7,7 +7,8 @@ const NAME = /^[A-Za-z0-9_-]{20,64}\.(jpg|mp4|mov)$/;
 export async function GET(request: Request, ctx: { params: Promise<{ name: string }> }): Promise<Response> {
   const { name } = await ctx.params;
   if (!NAME.test(name)) return new Response("Not found", { status: 404 });
-  const headers: Record<string, string> = {};
+  // Own rate-limit bucket per client, not one shared by every visitor of this server.
+  const headers: Record<string, string> = { ...forwardedFor(request) };
   const range = request.headers.get("range");
   if (range) headers.Range = range;
   let upstream: Response;

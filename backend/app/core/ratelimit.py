@@ -37,6 +37,13 @@ LOGIN_IP = Limit("login-ip", 30, 300)
 LOGIN_FAILURES = Limit(
     "login-fail", 10, 900, "Juda ko‘p noto‘g‘ri urinish. 15 daqiqadan keyin qayta urinib ko‘ring."
 )
+# Failures for one account from ANY address (password spraying from many IPs).
+LOGIN_ACCOUNT_FAILURES = Limit(
+    "login-account-fail",
+    50,
+    3600,
+    "Bu akkauntga juda ko‘p noto‘g‘ri urinish bo‘ldi. Bir soatdan keyin qayta urinib ko‘ring.",
+)
 AI_GENERATE = Limit(
     "ai", 60, 3600, "AI so‘rovlari soati chegarasiga yetdi. Keyinroq urinib ko‘ring."
 )
@@ -53,6 +60,8 @@ TELEGRAM_LINK_ATTEMPT = Limit(
     "telegram-link", 5, 900, "Juda ko‘p noto‘g‘ri kod. 15 daqiqadan keyin qayta urinib ko‘ring."
 )
 API_IP = Limit("api-ip", 600, 60)
+# Live Meta quota look-ups (each is a Graph API call that counts against the app limit).
+QUOTA_CHECK = Limit("quota-check", 60, 3600)
 
 
 def _digest(value: str) -> str:

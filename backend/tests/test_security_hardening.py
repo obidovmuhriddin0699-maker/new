@@ -6,7 +6,13 @@ from sqlalchemy import select, text, update
 from sqlalchemy.exc import DatabaseError
 
 from app.core.config import get_settings
-from app.core.ratelimit import LOGIN_FAILURES, Limit, RateLimiter, get_limiter
+from app.core.ratelimit import (
+    LOGIN_ACCOUNT_FAILURES,
+    LOGIN_FAILURES,
+    Limit,
+    RateLimiter,
+    get_limiter,
+)
 from app.models import AuditLog, User
 from app.models.enums import AuditAction
 from tests.conftest import TEST_PASSWORD
@@ -318,3 +324,71 @@ def test_cli_commands_run_as_a_process(db):
     assert "re-encrypted 0 token(s)" in rotated.stdout
     role = run("db-app-role", APP_DB_USER="", APP_DB_PASSWORD="")
     assert role.returncode == 2 and "APP_DB_USER" in role.stdout
+
+
+# ================================================================== review fixes
+def test_password_spraying_from_many_addresses_locks_the_account(db, user):
+    from app.core.errors import AppError
+    from app.services.auth import AuthService
+
+    for i in range(LOGIN_ACCOUNT_FAILURES.limit):
+        with pytest.raises(AppError):
+            AuthService(db).login(user.email, "wrong-password-xx", ip=f"198.51.100.{i}")
+    with pytest.raises(AppError) as exc:  # even the right password, from a fresh address
+        AuthService(db).login(user.email, TEST_PASSWORD, ip="203.0.113.200")
+    assert exc.value.code == "rate_limited"
+    # Other accounts are unaffected.
+    with pytest.raises(AppError) as other:
+        AuthService(db).login("someone-else@example.com", "x" * 12, ip="203.0.113.201")
+    assert other.value.code != "rate_limited"
+
+
+def _viewer_headers(viewer) -> dict[str, str]:
+    from app.core.security import create_access_token
+
+    return {"Authorization": f"Bearer {create_access_token(str(viewer.user_id))}"}
+
+
+def test_viewer_upload_is_refused_before_anything_is_stored(client, db, human, viewer):
+    from pathlib import Path
+
+    from tests.conftest import make_ready
+
+    content = make_ready(db, human)
+    media = Path(get_settings().media_root)
+    before = set(media.glob("*")) if media.exists() else set()
+    jpeg = b"\xff\xd8\xff\xe0" + b"\x00" * 64
+    r = client.post(
+        f"/api/v1/contents/{content.id}/assets/upload",
+        params={"expected_version": content.version},
+        content=jpeg,
+        headers={**_viewer_headers(viewer), "Content-Type": "image/jpeg"},
+    )
+    assert r.status_code == 403
+    after = set(media.glob("*")) if media.exists() else set()
+    assert after == before
+
+
+def test_viewer_cannot_write_evaluations_into_content_history(client, db, human, viewer):
+    from tests.conftest import make_ready
+
+    content = make_ready(db, human)
+    r = client.post(
+        "/api/v1/ai/evaluate-content",
+        json={"content_id": content.id},
+        headers=_viewer_headers(viewer),
+    )
+    assert r.status_code == 403
+    assert not db.scalars(
+        select(AuditLog).where(AuditLog.action == AuditAction.AI_CONTENT_EVALUATED.value)
+    ).all()
+
+
+def test_live_quota_lookups_are_rate_limited_per_user(client, auth_headers):
+    from app.core.ratelimit import QUOTA_CHECK
+
+    user_id = client.get("/api/v1/auth/me", headers=auth_headers).json()["id"]
+    for _ in range(QUOTA_CHECK.limit):
+        get_limiter().hit(QUOTA_CHECK, f"user:{user_id}")
+    r = client.get("/api/v1/instagram/accounts/1/publishing-limit", headers=auth_headers)
+    assert r.status_code == 429 and r.headers["Retry-After"]

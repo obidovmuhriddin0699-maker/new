@@ -56,12 +56,15 @@ WORKDIR /app
 COPY backend/app ./app
 COPY backend/alembic ./alembic
 COPY backend/alembic.ini ./alembic.ini
+# Executable bit comes from git (docker/backend-start.sh is mode 755).
+COPY docker/backend-start.sh /usr/local/bin/muxriddin-start
 
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
-    CMD ["python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+    CMD ["python", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/health' % (os.environ.get('PORT') or 8000), timeout=4)"]
 
-# --no-proxy-headers: the app resolves the client IP itself from TRUSTED_PROXIES
-# (app/core/ratelimit.py); uvicorn must not rewrite the peer address first.
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY} --no-proxy-headers --no-server-header"]
+# APP_ROLE selects web (default) / worker / beat / telegram / migrate (docker/backend-start.sh).
+# The web role serves on PORT (default 8000) over IPv4 and IPv6 (app/serve.py) and leaves
+# proxy headers alone: the app resolves the client IP itself from TRUSTED_PROXIES.
+CMD ["muxriddin-start"]

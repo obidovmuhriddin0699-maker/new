@@ -5,7 +5,7 @@ from datetime import timedelta
 
 import pytest
 import respx
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 
 from app.core.actors import AgentActor
 from app.core.config import get_settings
@@ -28,7 +28,7 @@ from app.models.enums import (
 from app.services import ApprovalService, ContentService, ScheduleService
 from app.services.publish import PublishService, build_plan
 from app.services.review import ReviewService
-from tests.conftest import IG_PUBLISH_ID, PUBLISH_TOKEN, make_publishable
+from tests.conftest import IG_PUBLISH_ID, PUBLISH_TOKEN, make_publishable, make_ready
 from tests.meta_publish_fake import FakeMeta
 
 pytestmark = pytest.mark.usefixtures("publish_settings")
@@ -424,7 +424,15 @@ def test_readiness_publish_specific_checks(db, human, user, ig_account):
     InstagramAccountService(db).store_token(
         second.id, SystemActor("t"), access_token="t2", expires_at=utcnow() + timedelta(days=9)
     )
+    # The account was pinned when the content was approved: a second connection
+    # does not make it ambiguous (nor silently redirect it).
     checks = {c.key: c for c in ReviewService(db).readiness(content.id).checks}
+    assert (
+        checks["instagram_account"].ok
+        and "@muxriddin.design" in checks["instagram_account"].message
+    )
+    unpinned = make_ready(db, human)
+    checks = {c.key: c for c in ReviewService(db).readiness(unpinned.id).checks}
     assert (
         not checks["instagram_account"].ok
         and "akkauntni tanlang" in checks["instagram_account"].message
@@ -500,3 +508,76 @@ def test_telegram_is_told_about_publish_result(db, human, linked_owner, ig_accou
     messages, _ = TelegramService(db).collect_review_notifications()
     texts = [m.text for _, m in messages]
     assert any("nashr qilindi" in t and "instagram.com/p/" in t for t in texts)
+
+
+# ================================================================== review fixes
+def test_unschedule_after_a_worker_claimed_it_does_not_publish(db, human, ig_account, meta):
+    content = make_publishable(db, human)
+    ScheduleService(db).schedule(content.id, human, scheduled_at=utcnow())
+    schedule = db.scalars(select(ContentSchedule)).one()
+    worker = PublishService(db)
+    assert worker._claim(schedule.id)  # the worker has the row...
+    ScheduleService(db).unschedule(content.id, human)  # ...when the human cancels
+    result = worker._run(schedule.id)
+    assert result.status == "failed" and "bekor" in result.message
+    assert meta.published == [] and meta.containers == {}
+    db.expire_all()
+    assert ContentService(db).get(content.id).status == ContentStatus.APPROVED
+    assert db.get(ContentSchedule, schedule.id).status == ScheduleStatus.FAILED
+
+
+def test_reconcile_survives_a_missing_token(db, human, ig_account, meta):
+    from app.models import OAuthToken
+
+    meta.publish_behavior = "lost_before_publish"
+    content = make_publishable(db, human)
+    assert publish(db, human, content).status == "in_progress"
+    db.execute(delete(OAuthToken))  # account disconnected / deauthorized meanwhile
+    db.execute(
+        update(ContentSchedule).values(processing_started_at=utcnow() - timedelta(minutes=30))
+    )
+    db.commit()
+    assert PublishService(db).reconcile_stale() == {"stale": 1, "failed": 1}
+    db.expire_all()
+    c = ContentService(db).get(content.id)
+    assert c.status == ContentStatus.FAILED and "Instagram’da tekshiring" in c.last_error
+    assert db.scalars(select(ContentSchedule)).one().status == ScheduleStatus.FAILED
+
+
+def test_approval_pins_the_account_and_moving_it_needs_a_new_approval(db, human, ig_account):
+    content = make_publishable(db, human)
+    assert content.instagram_account_id == ig_account.id  # recorded at approval time
+    approved_version = content.version
+    ContentService(db).update(
+        content.id, human, expected_version=content.version, changes={"instagram_account_id": None}
+    )
+    db.expire_all()
+    c = ContentService(db).get(content.id)
+    assert c.version == approved_version + 1 and c.status == ContentStatus.READY_FOR_REVIEW
+    assert ApprovalService(db).get_valid_approval(c) is None
+
+
+def test_expired_approval_sends_scheduled_content_back_to_review(
+    db, human, ig_account, meta, monkeypatch, publish_settings
+):
+    from app.models import Approval
+
+    content = make_publishable(db, human)
+    ScheduleService(db).schedule(content.id, human, scheduled_at=utcnow())
+    db.execute(update(Approval).values(created_at=utcnow() - timedelta(hours=48)))
+    db.commit()
+    monkeypatch.setattr(publish_settings, "approval_max_age_hours", 24)
+    assert PublishService(db).process_due() == {"due": 1, "processed": 1, "failed": 1}
+    assert meta.published == []
+    db.expire_all()
+    c = ContentService(db).get(content.id)
+    assert c.status == ContentStatus.READY_FOR_REVIEW  # can be approved again
+    ApprovalService(db).approve(c.id, human, expected_version=c.version)
+    assert ApprovalService(db).get_valid_approval(c) is not None
+
+
+def test_quota_deferral_does_not_use_up_attempts(db, human, ig_account, meta):
+    meta.quota_usage = meta.quota_total = 25
+    content = make_publishable(db, human)
+    assert publish(db, human, content).status == "deferred"
+    assert db.scalars(select(ContentSchedule)).one().attempts == 0

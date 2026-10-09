@@ -48,6 +48,17 @@ test("navigation works on mobile and desktop", async ({ page, isMobile }) => {
   await expect(page).toHaveURL(/\/calendar/);
 });
 
+test("mobile menu closes on Escape and returns focus", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "the menu button exists only on small screens");
+  await page.goto("/overview");
+  const button = page.getByRole("button", { name: "Menyuni ochish" });
+  await button.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(button).toBeFocused();
+});
+
 test("brand settings save", async ({ page }) => {
   await page.goto("/brand");
   const field = page.getByLabel("Soha");

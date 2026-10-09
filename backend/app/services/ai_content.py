@@ -648,7 +648,13 @@ class AIContentService:
         brand_profile_id: int | None = None,
         content_id: int | None = None,
     ) -> QualityReport:
-        require_active_human(self.session, actor)
+        if content_id is not None:
+            # Writes an entry into that content's history: writers only.
+            require_human_writer(self.session, actor)
+            if self.session.get(Content, content_id) is None:
+                raise NotFoundError("Content not found")
+        else:
+            require_active_human(self.session, actor)
         brand = None
         try:
             brand = self.resolve_brand(brand_profile_id)

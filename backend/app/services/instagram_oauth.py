@@ -351,6 +351,10 @@ class InstagramOAuthService:
                 result["refreshed"] += 1
             except (AppError, MetaApiError):
                 result["failed"] += 1
+            except Exception:  # e.g. undecryptable token: must not stop the other accounts
+                self.session.rollback()
+                logger.exception("token refresh failed for account %s", row.instagram_account_id)
+                result["failed"] += 1
         return result
 
     # ------------------------------------------------------------------ disconnect
@@ -385,8 +389,10 @@ class InstagramOAuthService:
             encoded_sig, payload = signed_request.split(".", 1)
             sig = _b64decode(encoded_sig)
             data = json.loads(_b64decode(payload))
-        except (ValueError, json.JSONDecodeError) as exc:
+        except (ValueError, TypeError, UnicodeDecodeError) as exc:
             raise AppError("Invalid signed_request", code="invalid_signed_request") from exc
+        if not isinstance(data, dict):
+            raise AppError("Invalid signed_request", code="invalid_signed_request")
         if str(data.get("algorithm", "")).upper() != "HMAC-SHA256":
             raise AppError("Unsupported signature algorithm", code="invalid_signed_request")
         expected = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest()

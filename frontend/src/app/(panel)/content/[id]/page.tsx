@@ -7,14 +7,15 @@ import { Suspense, useEffect, useState } from "react";
 import { EditForm } from "@/components/content/EditForm";
 import { CaptionView, MediaBox, StructureView } from "@/components/content/Preview";
 import { QualityView } from "@/components/content/Quality";
-import { MediaManager, PublishCard } from "@/components/content/Publish";
+import { MediaManager, PublishCard, publishInFlight } from "@/components/content/Publish";
 import { DiffCard, ReadinessCard } from "@/components/content/Review";
 import { Button, Card, ErrorBox, Field, KeyValue, Loading, Notice, StatusBadge, TypeBadge, inputClass } from "@/components/ui";
 import { api } from "@/lib/api";
 import { runGeneration } from "@/lib/ai";
-import { formatDate, formatDateTime, STATUS_LABEL } from "@/lib/format";
+import { formatDate, formatDateTime, STATUS_LABEL, tashkentInputValue, tashkentToIso } from "@/lib/format";
 import type { Content, ContentHistory, ContentStatus, QualityReport } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
+import { useMe } from "@/lib/useMe";
 
 type Action = "approve" | "reject" | "request-edit" | "submit" | "regenerate" | "schedule" | "unschedule" | "revoke" | "delete";
 
@@ -44,11 +45,11 @@ const ACTION_LABEL: Record<Action, string> = {
   delete: "O‘chirish",
 };
 
+/** Tomorrow, same hour, :00 — as Tashkent wall-clock time (whatever the browser's zone). */
 function defaultScheduleValue(): string {
   const d = new Date(Date.now() + 24 * 3600 * 1000);
-  d.setMinutes(0, 0, 0);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  d.setUTCMinutes(0, 0, 0); // UTC+5 has whole hours, so this is :00 in Tashkent too
+  return tashkentInputValue(d);
 }
 
 function Detail() {
@@ -57,26 +58,38 @@ function Detail() {
   const search = useSearchParams();
   const content = useApi<Content>(`contents/${id}`);
   const history = useApi<ContentHistory>(`contents/${id}/history`);
-  const [editing, setEditing] = useState(search.get("action") === "edit");
+  const [editing, setEditing] = useState(false);
   const [pending, setPending] = useState<Action | null>(null);
   const [comment, setComment] = useState("");
   const [when, setWhen] = useState(defaultScheduleValue);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<unknown>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [quality, setQuality] = useState<QualityReport | null>(null);
   const [aiRework, setAiRework] = useState(true);
   const [checking, setChecking] = useState(false);
 
-  const c = content.data;
-  const allowed = c ? ALLOWED[c.status] : [];
+  const { me, readOnly } = useMe();
 
-  // Calendar deep links: /content/12?action=approve
+  const c = content.data;
+  // VIEWER: read-only (the backend refuses these anyway). While a publish is running,
+  // scheduling is hidden too — the worker owns the content until it settles.
+  const allowed = c && !readOnly ? ALLOWED[c.status].filter((a) => !(a === "schedule" && publishInFlight(c))) : [];
+  const canEdit = Boolean(c && !readOnly && EDITABLE.includes(c.status));
+
+  // Calendar deep links: /content/12?action=approve, ?action=edit — only when the
+  // current status (and role) allows it. Waits for auth/me so a VIEWER gets nothing.
   useEffect(() => {
-    const a = search.get("action") as Action | null;
-    if (c && a && a !== ("edit" as Action) && allowed.includes(a)) setPending(a);
+    const a = search.get("action");
+    if (!c || !me || !a) return;
+    if (a === "edit") {
+      if (canEdit) setEditing(true);
+    } else if (allowed.includes(a as Action)) {
+      setPending(a as Action);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [c?.id]);
+  }, [c?.id, me]);
 
   async function refresh() {
     await Promise.all([content.reload(), history.reload()]);
@@ -87,6 +100,7 @@ function Detail() {
     setBusy(true);
     setActionError(null);
     setMessage(null);
+    setWarning(null);
     const body = { expected_version: c.version, comment: comment || null };
     try {
       if (action === "approve") {
@@ -98,9 +112,19 @@ function Detail() {
         await api(`contents/${c.id}/request-edit`, { method: "POST", body });
         if (aiRework) {
           // Edit -> AI rework -> back to the review queue (never auto-approved).
-          const r = await runGeneration("ai/regenerate", { content_id: c.id, expected_version: c.version, instructions: comment || null });
-          if (r.quality) setQuality(r.quality);
-          setMessage("AI izohingiz asosida yangi versiya yaratdi va u ko‘rib chiqishga qaytdi.");
+          try {
+            const r = await runGeneration("ai/regenerate", { content_id: c.id, expected_version: c.version, instructions: comment || null });
+            if (r.quality) setQuality(r.quality);
+            setMessage("AI izohingiz asosida yangi versiya yaratdi va u ko‘rib chiqishga qaytdi.");
+          } catch (err) {
+            // The edit request itself is saved: close the panel and show the real state.
+            setPending(null);
+            setComment("");
+            setActionError(err);
+            setWarning("Tahrir so‘rovi saqlandi, lekin AI qayta ishlash bosqichi bajarilmadi. Kontentni qo‘lda tahrirlang yoki “Qayta yaratish (AI)” ni keyinroq bosing.");
+            await refresh();
+            return;
+          }
         }
       } else if (action === "revoke") {
         await api(`contents/${c.id}/revoke-approval`, { method: "POST", body });
@@ -108,7 +132,8 @@ function Detail() {
       } else if (action === "submit") {
         await api(`contents/${c.id}/submit-review`, { method: "POST" });
       } else if (action === "schedule") {
-        await api(`contents/${c.id}/schedule`, { method: "POST", body: { scheduled_at: new Date(when).toISOString() } });
+        // The input is Tashkent wall-clock time, independent of the browser's time zone.
+        await api(`contents/${c.id}/schedule`, { method: "POST", body: { scheduled_at: tashkentToIso(when) } });
         setMessage("Rejalashtirildi. Belgilangan vaqtda avtomatik nashr qilinadi (META_DRY_RUN=true bo‘lsa, yuborilmaydi).");
       } else if (action === "unschedule") {
         await api(`contents/${c.id}/schedule`, { method: "DELETE" });
@@ -164,6 +189,7 @@ function Detail() {
       </header>
 
       {message && <div className="mb-4"><Notice tone="success">{message}</Notice></div>}
+      {warning && <div className="mb-4"><Notice tone="warning"><span data-testid="action-warning">{warning}</span></Notice></div>}
       {actionError ? <div className="mb-4"><ErrorBox error={actionError} /></div> : null}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -227,7 +253,7 @@ function Detail() {
 
           <Card title="Amallar">
             <div className="flex flex-col gap-2" data-testid="actions">
-              {EDITABLE.includes(c.status) && !editing && (
+              {canEdit && !editing && (
                 <Button onClick={() => setEditing(true)} data-testid="action-edit">Tahrirlash</Button>
               )}
               {allowed.map((a) => (
@@ -243,12 +269,16 @@ function Detail() {
                   {ACTION_LABEL[a]}
                 </Button>
               ))}
-              {allowed.length === 0 && !EDITABLE.includes(c.status) && (
-                <p className="text-sm text-muted">Holat: {STATUS_LABEL[c.status]} — amallar mavjud emas.</p>
+              {readOnly ? (
+                <p className="text-sm text-muted">Kuzatuvchi roli: faqat ko‘rish mumkin.</p>
+              ) : (
+                allowed.length === 0 && !canEdit && (
+                  <p className="text-sm text-muted">Holat: {STATUS_LABEL[c.status]} — amallar mavjud emas.</p>
+                )
               )}
             </div>
 
-            {pending && (
+            {pending && allowed.includes(pending) && (
               <div className="mt-4 space-y-3 rounded-xl border border-border bg-background p-3" data-testid="confirm-panel">
                 <p className="text-sm font-medium">{ACTION_LABEL[pending]}</p>
                 {pending === "approve" && (
@@ -268,8 +298,8 @@ function Detail() {
                   <p className="text-sm text-muted">AI yangi versiya yozadi. U avtomatik tasdiqlanmaydi.</p>
                 )}
                 {pending === "schedule" && (
-                  <Field label="Vaqt (Toshkent vaqti bilan ko‘rsatiladi)" hint="Belgilangan vaqtda Celery worker nashr qiladi">
-                    <input type="datetime-local" className={inputClass} value={when} onChange={(e) => setWhen(e.target.value)} />
+                  <Field label="Vaqt (Toshkent vaqti, UTC+5)" hint="Belgilangan vaqtda Celery worker nashr qiladi">
+                    <input type="datetime-local" className={inputClass} data-testid="schedule-at" value={when} onChange={(e) => setWhen(e.target.value)} />
                   </Field>
                 )}
                 {(needsComment || pending === "approve" || pending === "revoke") && (
