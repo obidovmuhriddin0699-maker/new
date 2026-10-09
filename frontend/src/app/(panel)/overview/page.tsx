@@ -72,7 +72,7 @@ export default function OverviewPage() {
             testId="stat-engagement"
             label="Engagement"
             value={data.engagement_rate === null ? "—" : `${(data.engagement_rate * 100).toFixed(1)}%`}
-            hint={data.engagement_rate === null ? "Ma’lumot yo‘q: analitika PHASE 9 da" : undefined}
+            hint={data.engagement_rate === null ? "Ma’lumot yo‘q: statistika hali sinxronlanmagan" : undefined}
           />
         </div>
       )}
