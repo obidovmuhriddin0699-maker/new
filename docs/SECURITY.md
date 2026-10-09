@@ -83,7 +83,7 @@ the database itself keeps append-only.
 | Next.js' bundled PostCSS | Pinned to the patched 8.5.29 via `overrides` in `package.json` (no Next 16 major upgrade needed) | On the next Next.js upgrade |
 | Public `/media/<name>` | Meta's servers must download media without a session. Names are random 192-bit, files are inert and type-checked | — |
 | JWT in a cookie, not a server session store | Revocation is covered by the `jti` denylist and the per-user cut-off | — |
-| A DB superuser can drop the audit trigger | Outside the application's trust boundary. Use a separate, non-superuser DB role for the app in production (PHASE 12) | PHASE 12 |
+| A DB superuser can drop the audit trigger | **Closed for the app (PHASE 11):** the production stack runs the app as a least-privilege role that owns nothing (it cannot drop the trigger, alter tables or UPDATE/DELETE `audit_logs`). Only the owner credentials, used by the one-shot migrate service, can | — |
 
 ## 6. Operations
 

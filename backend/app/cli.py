@@ -56,6 +56,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("reconcile-publishing", help="settle schedules stuck in PROCESSING")
     sub.add_parser("sync-insights", help="pull Instagram insights now (read-only)")
     sub.add_parser(
+        "db-app-role",
+        help="create/update the least-privilege app DB role (APP_DB_USER, APP_DB_PASSWORD)",
+    )
+    sub.add_parser(
         "rotate-token-keys",
         help="re-encrypt stored OAuth tokens with the first TOKEN_ENCRYPTION_KEYS key",
     )
@@ -92,6 +96,16 @@ def main(argv: list[str] | None = None) -> int:
             for r in AnalyticsSyncService(db).sync_all():
                 print(asdict(r))
         return 0
+    if args.command == "db-app-role":
+        import os
+
+        role, password = os.environ.get("APP_DB_USER", ""), os.environ.get("APP_DB_PASSWORD", "")
+        if not role or len(password) < 16:
+            print("APP_DB_USER and APP_DB_PASSWORD (min 16 chars) are required")
+            return 2
+        setup_app_db_role(role, password)
+        print(f"app role {role!r}: privileges applied")
+        return 0
     if args.command == "rotate-token-keys":
         print(f"re-encrypted {rotate_token_keys()} token(s)")
         return 0
@@ -122,10 +136,6 @@ def seed(admin_email: str | None) -> int:
     return 0
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
-
-
 def rotate_token_keys() -> int:
     """Key rotation: put the NEW key first in TOKEN_ENCRYPTION_KEYS (keep the old one after
     it), run this, then remove the old key. Tokens are never printed."""
@@ -140,3 +150,60 @@ def rotate_token_keys() -> int:
             count += 1
         db.commit()
     return count
+
+
+def setup_app_db_role(role: str, password: str) -> None:
+    """Least-privilege database role for the running application (PostgreSQL only).
+
+    Run by the migrate service as the database owner, after ``alembic upgrade head``.
+    The app role can read/write rows but owns nothing: it cannot alter tables or drop the
+    audit-log trigger, and it may only SELECT/INSERT audit_logs. Idempotent."""
+    from psycopg import sql
+    from sqlalchemy import create_engine
+
+    from app.core.config import get_settings
+
+    url = get_settings().effective_database_url
+    if not url.startswith("postgresql"):
+        raise SystemExit("db-app-role needs PostgreSQL")
+    engine = create_engine(url)
+    raw = engine.raw_connection()
+    try:
+        cur = raw.cursor()
+        role_id = sql.Identifier(role)
+        cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (role,))
+        if cur.fetchone() is None:
+            cur.execute(
+                sql.SQL(
+                    "CREATE ROLE {} LOGIN PASSWORD {} NOSUPERUSER NOCREATEDB NOCREATEROLE"
+                ).format(role_id, sql.Literal(password))
+            )
+        else:
+            cur.execute(sql.SQL("ALTER ROLE {} PASSWORD {}").format(role_id, sql.Literal(password)))
+        cur.execute("SELECT current_database()")
+        db_name = cur.fetchone()[0]
+        statements = [
+            "GRANT CONNECT ON DATABASE {db} TO {role}",
+            "GRANT USAGE ON SCHEMA public TO {role}",
+            "REVOKE CREATE ON SCHEMA public FROM PUBLIC",
+            "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {role}",
+            "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {role}",
+            # History is append-only for the app (the trigger also blocks the owner).
+            "REVOKE UPDATE, DELETE, TRUNCATE ON audit_logs FROM {role}",
+        ]
+        cur.execute("SELECT to_regclass('public.alembic_version') IS NOT NULL")
+        if cur.fetchone()[0]:
+            statements += [
+                "REVOKE ALL ON alembic_version FROM {role}",
+                "GRANT SELECT ON alembic_version TO {role}",
+            ]
+        for statement in statements:
+            cur.execute(sql.SQL(statement).format(db=sql.Identifier(db_name), role=role_id))
+        raw.commit()
+    finally:
+        raw.close()
+        engine.dispose()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

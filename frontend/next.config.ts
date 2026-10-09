@@ -22,6 +22,9 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Self-contained server (node server.js) with only the files it needs: small, non-root
+  // production image (docker/frontend.prod.Dockerfile).
+  output: "standalone",
   async headers() {
     const headers = [
       { key: "X-Content-Type-Options", value: "nosniff" },

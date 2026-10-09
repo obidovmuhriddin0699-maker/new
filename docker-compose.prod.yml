@@ -1,0 +1,205 @@
+# Production stack (single host). TLS termination / public domain: PHASE 12.
+#
+#   cp .env.production.example .env.production   # fill in every value
+#   docker compose -f docker-compose.prod.yml --env-file .env.production build
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+#
+# Only the panel (Next.js) is published, on 127.0.0.1:${PANEL_PORT:-3000}, for a reverse
+# proxy with TLS in front of it. PostgreSQL and Redis sit on an internal network with no
+# route to the outside; the backend is not published at all (the panel proxies it).
+
+name: muxriddin-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  init: true
+  restart: unless-stopped
+  logging: *logging
+
+# Runtime settings shared by API, worker, beat and bot. The app connects with the
+# least-privilege role (APP_DB_USER); only the migrate service uses the owner.
+x-backend-env: &backend-env
+  APP_ENV: production
+  DATABASE_URL: postgresql+psycopg://${APP_DB_USER:?}:${APP_DB_PASSWORD:?}@postgres:5432/${POSTGRES_DB:-muxriddin}
+  REDIS_URL: redis://:${REDIS_PASSWORD:?}@redis:6379/0
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+  MEDIA_ROOT: /var/lib/muxriddin/media
+  # The panel container is the only peer allowed to send X-Forwarded-For.
+  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1,::1,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8}
+  PUBLISH_JOBS_MODE: ${PUBLISH_JOBS_MODE:-celery}
+  AI_JOBS_MODE: ${AI_JOBS_MODE:-celery}
+  LOG_JSON: "true"
+
+x-backend: &backend
+  image: muxriddin-backend:${IMAGE_TAG:-prod}
+  build:
+    context: .
+    dockerfile: docker/backend.prod.Dockerfile
+    target: production
+  env_file:
+    - path: ${ENV_FILE:-.env.production}
+      required: true
+  environment: *backend-env
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  <<: *hardening
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-muxriddin_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:-muxriddin}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    shm_size: 128m
+    restart: unless-stopped
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    command:
+      - sh
+      - -c
+      - exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes --save 300 10 --maxmemory 256mb --maxmemory-policy noeviction
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?}
+    volumes:
+      - redis_data:/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *logging
+
+  # One-shot: schema migrations + least-privilege app role, as the database owner.
+  migrate:
+    <<: *backend
+    environment:
+      <<: *backend-env
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-muxriddin_owner}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:-muxriddin}
+      APP_DB_USER: ${APP_DB_USER:?}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?}
+    command: ["sh", "-c", "alembic upgrade head && python -m app.cli db-app-role"]
+    restart: "no"
+    networks: [data]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  backend:
+    <<: *backend
+    volumes:
+      - media_data:/var/lib/muxriddin/media
+    networks: [data, edge]
+    mem_limit: 768m
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "-l", "info", "--concurrency=2"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.workers.celery_app inspect ping -d celery@$$HOSTNAME --timeout 10 | grep -q pong"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+    networks: [data, edge]
+    mem_limit: 1g
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Exactly one scheduler (publishing, reconciliation, token refresh, insights, report).
+  beat:
+    <<: *backend
+    command: ["celery", "-A", "app.workers.celery_app", "beat", "-l", "info", "--schedule", "/tmp/celerybeat-schedule"]
+    healthcheck:
+      disable: true
+    networks: [data]
+    mem_limit: 256m
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  telegram-bot:
+    <<: *backend
+    profiles: ["telegram"]
+    command: ["python", "-m", "app.integrations.telegram"]
+    healthcheck:
+      disable: true
+    networks: [data, edge]
+    mem_limit: 256m
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    image: muxriddin-frontend:${IMAGE_TAG:-prod}
+    build:
+      context: .
+      dockerfile: docker/frontend.prod.Dockerfile
+    environment:
+      BACKEND_URL: http://backend:8000
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
+    ports:
+      - "${PANEL_BIND:-127.0.0.1}:${PANEL_PORT:-3000}:3000"
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /app/.next/cache:size=64m,uid=10001,gid=10001
+    networks: [edge]
+    mem_limit: 512m
+    depends_on:
+      backend:
+        condition: service_healthy
+    <<: *hardening
+
+  # Optional local LLM in a container: docker compose ... --profile ollama up -d
+  # then set OLLAMA_BASE_URL=http://ollama:11434 and `docker compose exec ollama ollama pull qwen2.5:3b`.
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    volumes:
+      - ollama_data:/root/.ollama
+    networks: [edge]
+    restart: unless-stopped
+    logging: *logging
+
+networks:
+  # No external connectivity: PostgreSQL and Redis are reachable only from app services.
+  data:
+    internal: true
+  # Panel <-> backend, and outbound access (Meta, Telegram, Ollama) for app services.
+  edge: {}
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_data:
+  ollama_data:

@@ -68,3 +68,43 @@ def test_concurrent_workers_claim_a_schedule_once(db, human):
     for t in threads:
         t.join(timeout=30)
     assert sorted(wins) == [False] * 5 + [True]
+
+
+def test_app_db_role_is_least_privilege(db, human):
+    """The runtime role can use rows but cannot rewrite history or change the schema."""
+    import psycopg
+    from sqlalchemy.engine import make_url
+
+    from app.cli import setup_app_db_role
+    from tests.conftest import make_content
+
+    make_content(db, human)  # some audit rows exist
+    role, password = "mx_app_role_test", "app-role-test-password-123"
+    setup_app_db_role(role, password)
+    setup_app_db_role(role, password)  # idempotent
+    url = make_url(get_settings().effective_database_url)
+    conninfo = f"host={url.host} port={url.port or 5432} dbname={url.database}"
+    try:
+        with psycopg.connect(f"{conninfo} user={role} password={password}") as conn:
+            conn.execute("SELECT count(*) FROM contents").fetchone()
+            conn.execute(
+                "INSERT INTO audit_logs (timestamp, actor_type, action, status, details) "
+                "VALUES (now(), 'SYSTEM', 'ROLE_TEST', 'SUCCESS', '{}')"
+            )
+            conn.commit()
+            for statement in (
+                "UPDATE audit_logs SET action = 'X'",
+                "DELETE FROM audit_logs",
+                "TRUNCATE audit_logs",
+                "DROP TRIGGER audit_logs_no_update ON audit_logs",
+                "ALTER TABLE contents ADD COLUMN pwned int",
+                "CREATE TABLE pwned (id int)",
+            ):
+                with pytest.raises(psycopg.Error):
+                    conn.execute(statement)
+                conn.rollback()
+    finally:
+        with psycopg.connect(f"{conninfo} user={url.username} password={url.password}") as owner:
+            owner.execute(f"GRANT {role} TO {url.username}")  # PG16: needed for DROP OWNED
+            owner.execute(f"DROP OWNED BY {role}")
+            owner.execute(f"DROP ROLE {role}")

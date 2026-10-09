@@ -4,7 +4,12 @@ import re
 import subprocess
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
+
+# Needs the git checkout (not available inside the Docker test image).
+pytestmark = pytest.mark.skipif(not (ROOT / ".git").exists(), reason="not a git checkout")
 
 
 def _ignored(path: str) -> bool:
@@ -18,6 +23,8 @@ def test_env_files_are_gitignored():
     assert _ignored("backend/.env")
     assert _ignored("frontend/.env.local")
     assert not _ignored(".env.example")
+    assert not _ignored(".env.production.example")
+    assert _ignored(".env.production")
 
 
 def test_env_example_has_no_real_secrets():

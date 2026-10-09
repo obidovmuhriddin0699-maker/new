@@ -4,10 +4,10 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 10 — Security hardening.**
-> Nashr, statistika va AI Analyst ustiga xavfsizlik qatlami qo'shildi: rate limiting, login himoyasi,
-> sessiyani serverda bekor qilish, CSP/HSTS va audit logni ma'lumotlar bazasi darajasida himoyalash.
-> Default `META_DRY_RUN=true`: Instagram’ga hech narsa nashr qilinmaydi.
+> **Joriy holat: PHASE 11 — Docker production images.**
+> Nashr, statistika, AI Analyst va xavfsizlik qatlami (PHASE 10) tayyor. Production uchun alohida
+> image'lar va `docker-compose.prod.yml` qo'shildi: ilova root'siz va cheklangan DB rolida ishlaydi, faqat
+> panel porti ochiq. Default `META_DRY_RUN=true`: Instagram’ga hech narsa nashr qilinmaydi.
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
@@ -681,6 +681,26 @@ docker compose exec -e SEED_ADMIN_PASSWORD=kamida-12-belgili-parol backend pytho
 
 To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docker compose down -v`).
 
+### 15.1 Production image'lar (PHASE 11)
+
+Production uchun alohida `docker-compose.prod.yml` bor. To'liq qo'llanma: [`docs/DOCKER.md`](docs/DOCKER.md).
+
+- **Image'lar:** backend (Python 3.12) va panel (Next.js standalone) bir necha bosqichda (multi-stage) yig'iladi. Ular root bo'lmagan foydalanuvchi bilan ishlaydi, ichida pip/npm yo'q, base image digest bilan qotirilgan.
+- **Bog'liqliklar:** backend paketlari `backend/requirements.lock` dan aniq versiya va SHA-256 hash bilan o'rnatiladi.
+- **Tashqi kirish:** faqat panel porti ochiq (`127.0.0.1:3000`). Backend, PostgreSQL va Redis tashqariga ochilmagan; PostgreSQL va Redis internetga chiqa olmaydigan ichki tarmoqda.
+- **Ma'lumotlar bazasi:** ilova cheklangan DB rolida ishlaydi. Bu rol audit logni o'chira olmaydi va jadval tuzilmasini o'zgartira olmaydi; migratsiyani alohida `migrate` servisi bajaradi.
+- **Konteynerlar:** fayl tizimi faqat o'qish uchun, Linux capability'lari olib tashlangan, healthcheck, xotira limiti va log rotation bor.
+
+```powershell
+Copy-Item .env.production.example .env.production   # barcha change-me qiymatlarini almashtiring
+$env:ENV_FILE = ".env.production"
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env.production run --rm backend python -m app.cli create-admin --email siz@example.com
+.\scripts\prod-smoke.ps1 -EnvFile .env.production -Email siz@example.com -Password '...'
+```
+
+Smoke test 30 ta tekshiruvni bajaradi: servislar, tashqi kirish, header'lar, root bo'lmagan foydalanuvchi, read-only fayl tizimi, DB huquqlari, Redis paroli va logout'da token bekor qilinishi. Linux'da: `./scripts/prod-smoke.sh`.
+
 ## 16. Security
 
 To‘liq tahdidlar modeli, limitlar jadvali va qabul qilingan risklar: [`docs/SECURITY.md`](docs/SECURITY.md).
@@ -693,6 +713,7 @@ To‘liq tahdidlar modeli, limitlar jadvali va qabul qilingan risklar: [`docs/SE
 - **Brauzer himoyasi:** CSRF uchun same-origin tekshiruvi. CSP, `X-Frame-Options: DENY`, HSTS (HTTPS'da), Permissions-Policy. CORS faqat `CORS_ORIGINS` uchun ochiq.
 - **Kiruvchi ma'lumot:** yuklangan media fayl mazmuni bo'yicha tekshiriladi (faqat JPEG/MP4/MOV) va tasodifiy 192-bitli nom bilan saqlanadi. JSON so'rov 1 MB'dan katta bo'lsa rad etiladi. 500 xatolarda ichki tafsilot ko'rsatilmaydi.
 - **Audit log:** faqat qo'shiladi. UPDATE va DELETE'ni ma'lumotlar bazasi trigger'i taqiqlaydi. Unda parol, token va kalitlar saqlanmaydi.
+- **Production konteynerlari** (PHASE 11): ilova cheklangan DB rolida ishlaydi — audit logni o'chira olmaydi, jadvallarni o'zgartira olmaydi. Image'larda pip/npm yo'q, foydalanuvchi root emas, fayl tizimi read-only. Batafsil: [`docs/DOCKER.md`](docs/DOCKER.md).
 - **Reverse proxy ortida** (nginx va h.k.): frontend'da `TRUST_PROXY_HEADERS=true`, backend'da `TRUSTED_PROXIES` ga frontend manzilini, `ALLOWED_HOSTS` ga domeningizni yozing (§15, PHASE 12).
 
 ## 17. Troubleshooting
@@ -732,6 +753,9 @@ To‘liq tahdidlar modeli, limitlar jadvali va qabul qilingan risklar: [`docs/SE
 | `instagram_refresh_too_early` | Meta 24 soatdan yangi tokenni yangilamaydi. Keyinroq urinib ko‘ring |
 | "Qayta ulash kerak" | Token muddati o‘tgan yoki bekor qilingan. "Instagram’ni ulash" ni qayta bosing |
 | Callback'dan keyin login sahifasi chiqadi | Panelni redirect URI'dagi domen orqali oching (tunnel manzili), login qiling, oqim davom etadi |
+| Prod: `service "migrate" didn't complete successfully` | `docker compose -f docker-compose.prod.yml --env-file .env.production logs migrate` — odatda `.env.production` da parol/kalit yetishmaydi yoki `Invalid production configuration` |
+| Prod: panel ochilmaydi, `frontend` unhealthy | `backend` healthy ekanini tekshiring (`... ps`); `ALLOWED_HOSTS` da `backend` bo'lishi shart |
+| Prod: kirgandan keyin darhol login sahifasiga qaytadi | HTTP orqali test qilyapsiz: `SESSION_COOKIE_SECURE=false` faqat test uchun; production'da HTTPS (PHASE 12) |
 | `429 rate_limited` | Limitga yetdingiz. `Retry-After` soniya kuting. Login bloklangan bo'lsa — 15 daqiqa |
 | Barcha so'rovlar bir xil IP bilan cheklanmoqda | Reverse proxy ortida: frontend `TRUST_PROXY_HEADERS=true`, backend `TRUSTED_PROXIES` ni sozlang |
 | `401 session_revoked` | Sessiya bekor qilingan (chiqish, parol o'zgarishi yoki "barcha qurilmalardan chiqish"). Qayta kiring |
@@ -765,5 +789,5 @@ To‘liq tahdidlar modeli, limitlar jadvali va qabul qilingan risklar: [`docs/SE
 | 8 — Instagram Publishing | ✅ |
 | 9 — Analytics | ✅ |
 | 10 — Security hardening | ✅ |
-| 11 — Docker (production images) | ⏳ |
+| 11 — Docker (production images) | ✅ |
 | 12 — Production deployment | ⏳ |

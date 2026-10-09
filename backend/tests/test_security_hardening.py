@@ -294,3 +294,27 @@ def test_rotate_token_keys(db, ig_account, monkeypatch):
     row = db.scalars(select(OAuthToken)).one()
     assert TokenCipher([new]).decrypt(row.token_ciphertext) == PUBLISH_TOKEN  # old key not needed
     assert PUBLISH_TOKEN not in row.token_ciphertext
+
+
+def test_cli_commands_run_as_a_process(db):
+    """Regression: functions defined after the __main__ guard worked when imported by
+    tests but crashed as `python -m app.cli ...` (found by the PHASE 11 Docker smoke)."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    backend = Path(__file__).resolve().parents[1]
+    run = lambda *a, **env: subprocess.run(  # noqa: E731
+        [sys.executable, "-m", "app.cli", *a],
+        cwd=backend,
+        capture_output=True,
+        text=True,
+        env={**os.environ, **env},
+        timeout=60,
+    )
+    rotated = run("rotate-token-keys")
+    assert rotated.returncode == 0, rotated.stderr
+    assert "re-encrypted 0 token(s)" in rotated.stdout
+    role = run("db-app-role", APP_DB_USER="", APP_DB_PASSWORD="")
+    assert role.returncode == 2 and "APP_DB_USER" in role.stdout
