@@ -52,3 +52,14 @@ test("overview shows counters without invented analytics", async ({ page }) => {
   await expect(page.getByTestId("backend-status")).toHaveAttribute("data-status", /^(ok|degraded)$/);
   await expectNoHorizontalScroll(page);
 });
+
+test("overview shows the ops monitor's real problems (and nothing when healthy)", async ({ page }) => {
+  const status = await apiCall<{ ok: boolean; problems: { message: string }[] }>(page.request, "get", "system/ops-status");
+  await page.goto("/overview");
+  await expect(page.getByTestId("stat-total")).toBeVisible();
+  if (status.ok) {
+    await expect(page.getByTestId("ops-banner")).toHaveCount(0);
+  } else {
+    await expect(page.getByTestId("ops-banner")).toContainText(status.problems[0].message);
+  }
+});

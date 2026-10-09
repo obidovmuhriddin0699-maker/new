@@ -1,12 +1,11 @@
-# Production stack (single host). TLS termination / public domain: PHASE 12.
+# Production stack (single host). Full guide: docs/DEPLOYMENT.md.
 #
 #   cp .env.production.example .env.production   # fill in every value
-#   docker compose -f docker-compose.prod.yml --env-file .env.production build
-#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+#   ./scripts/deploy.sh                            # build, migrate, start, smoke test
 #
-# Only the panel (Next.js) is published, on 127.0.0.1:${PANEL_PORT:-3000}, for a reverse
-# proxy with TLS in front of it. PostgreSQL and Redis sit on an internal network with no
-# route to the outside; the backend is not published at all (the panel proxies it).
+# Only Caddy is published (80/443): automatic HTTPS for ${DOMAIN}, proxying the panel.
+# PostgreSQL and Redis sit on an internal network with no route to the outside; the
+# backend is not published at all (the panel proxies it server-side).
 
 name: muxriddin-prod
 
@@ -32,8 +31,8 @@ x-backend-env: &backend-env
   REDIS_URL: redis://:${REDIS_PASSWORD:?}@redis:6379/0
   OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
   MEDIA_ROOT: /var/lib/muxriddin/media
-  # The panel container is the only peer allowed to send X-Forwarded-For.
-  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1,::1,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8}
+  # Only the panel container (fixed address on the edge network) may send X-Forwarded-For.
+  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1,::1,172.30.0.10}
   PUBLISH_JOBS_MODE: ${PUBLISH_JOBS_MODE:-celery}
   AI_JOBS_MODE: ${AI_JOBS_MODE:-celery}
   LOG_JSON: "true"
@@ -167,18 +166,85 @@ services:
     environment:
       BACKEND_URL: http://backend:8000
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
-      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
-    ports:
-      - "${PANEL_BIND:-127.0.0.1}:${PANEL_PORT:-3000}:3000"
+      # Caddy (the only way in) overwrites X-Forwarded-For with the real client address.
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-true}
+      # Public legal pages (/privacy, /terms) — no secrets are given to the panel.
+      PANEL_PUBLIC_URL: ${PANEL_PUBLIC_URL:-}
+      LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-MUXRIDDIN DESIGN}
+      LEGAL_CONTACT_EMAIL: ${LEGAL_CONTACT_EMAIL:-}
     tmpfs:
       - /tmp:size=32m,mode=1777
       - /app/.next/cache:size=64m,uid=10001,gid=10001
-    networks: [edge]
+    networks:
+      edge:
+        ipv4_address: 172.30.0.10
     mem_limit: 512m
     depends_on:
       backend:
         condition: service_healthy
     <<: *hardening
+
+  # Daily database + media backups into ./backups (copy them off the server!).
+  backup:
+    image: postgres:16-alpine
+    command: ["sh", "/backup.sh", "daemon"]
+    # Runs as the owner of BACKUP_DIR (your deploy user: `id -u` / `id -g`), so the files can
+    # be copied off the server without sudo. scripts/deploy.sh checks that they match.
+    user: "${BACKUP_UID:-1000}:${BACKUP_GID:-1000}"
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-muxriddin_owner}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      PGDATABASE: ${POSTGRES_DB:-muxriddin}
+      BACKUP_TIME: ${BACKUP_TIME:-02:30}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_HEARTBEAT_URL: ${BACKUP_HEARTBEAT_URL:-}
+    volumes:
+      - ./docker/backup/backup.sh:/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+      - media_data:/media:ro
+    tmpfs:
+      - /tmp:size=16m
+    # data: PostgreSQL; edge: optional heartbeat ping (no published ports).
+    networks: [data, edge]
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # TLS edge: the only service with published ports.
+  caddy:
+    image: caddy:2-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN (e.g. panel.example.com)}
+      CADDY_TLS: ${CADDY_TLS:?set CADDY_TLS to your e-mail (Let's Encrypt) or internal}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    tmpfs:
+      - /tmp:size=16m
+    networks: [edge]
+    read_only: true
+    cap_drop: ["ALL"]
+    cap_add: ["NET_BIND_SERVICE"]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      frontend:
+        condition: service_healthy
 
   # Optional local LLM in a container: docker compose ... --profile ollama up -d
   # then set OLLAMA_BASE_URL=http://ollama:11434 and `docker compose exec ollama ollama pull qwen2.5:3b`.
@@ -195,10 +261,16 @@ networks:
   # No external connectivity: PostgreSQL and Redis are reachable only from app services.
   data:
     internal: true
-  # Panel <-> backend, and outbound access (Meta, Telegram, Ollama) for app services.
-  edge: {}
+  # Caddy <-> panel <-> backend, and outbound access (Meta, Telegram, Ollama). Fixed subnet
+  # so the panel has a stable address that the backend trusts for X-Forwarded-For.
+  edge:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
 
 volumes:
+  caddy_data:
+  caddy_config:
   postgres_data:
   redis_data:
   media_data:

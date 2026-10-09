@@ -12,3 +12,5 @@
 .git
 frontend/test-results
 frontend/playwright-report
+backups
+.deploy

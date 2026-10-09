@@ -4,10 +4,11 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 11 — Docker production images.**
-> Nashr, statistika, AI Analyst va xavfsizlik qatlami (PHASE 10) tayyor. Production uchun alohida
-> image'lar va `docker-compose.prod.yml` qo'shildi: ilova root'siz va cheklangan DB rolida ishlaydi, faqat
-> panel porti ochiq. Default `META_DRY_RUN=true`: Instagram’ga hech narsa nashr qilinmaydi.
+> **Joriy holat: PHASE 12 — Production deployment (barcha bosqichlar tugadi).**
+> Panel o'z domeningizda HTTPS bilan ishlaydi (Caddy, avtomatik Let's Encrypt sertifikati).
+> Har kuni avtomatik zaxira nusxa olinadi va tiklash skripti bor. Muammo bo'lsa Telegram'ga
+> ogohlantirish keladi. Yangilash va orqaga qaytarish bitta buyruq bilan bajariladi.
+> Default `META_DRY_RUN=true`: Instagram’ga hech narsa nashr qilinmaydi.
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
@@ -18,6 +19,8 @@ tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘lad
 - Nashr qilish (oqim, takroriy post'dan himoya, xatolar, media): [`docs/PUBLISHING.md`](docs/PUBLISHING.md)
 - Analitika va AI Analyst (metrikalar, sinxronlash, haftalik hisobot): [`docs/ANALYTICS.md`](docs/ANALYTICS.md)
 - Xavfsizlik (tahdidlar modeli, limitlar, sessiyalar, qabul qilingan risklar): [`docs/SECURITY.md`](docs/SECURITY.md)
+- Docker production image'lar: [`docs/DOCKER.md`](docs/DOCKER.md)
+- **Serverga o'rnatish** (VPS, domen, HTTPS, zaxira, monitoring, yangilash): [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -687,7 +690,7 @@ Production uchun alohida `docker-compose.prod.yml` bor. To'liq qo'llanma: [`docs
 
 - **Image'lar:** backend (Python 3.12) va panel (Next.js standalone) bir necha bosqichda (multi-stage) yig'iladi. Ular root bo'lmagan foydalanuvchi bilan ishlaydi, ichida pip/npm yo'q, base image digest bilan qotirilgan.
 - **Bog'liqliklar:** backend paketlari `backend/requirements.lock` dan aniq versiya va SHA-256 hash bilan o'rnatiladi.
-- **Tashqi kirish:** faqat panel porti ochiq (`127.0.0.1:3000`). Backend, PostgreSQL va Redis tashqariga ochilmagan; PostgreSQL va Redis internetga chiqa olmaydigan ichki tarmoqda.
+- **Tashqi kirish:** faqat Caddy portlari ochiq (80/443, PHASE 12). Panel, backend, PostgreSQL va Redis tashqariga ochilmagan; PostgreSQL va Redis internetga chiqa olmaydigan ichki tarmoqda.
 - **Ma'lumotlar bazasi:** ilova cheklangan DB rolida ishlaydi. Bu rol audit logni o'chira olmaydi va jadval tuzilmasini o'zgartira olmaydi; migratsiyani alohida `migrate` servisi bajaradi.
 - **Konteynerlar:** fayl tizimi faqat o'qish uchun, Linux capability'lari olib tashlangan, healthcheck, xotira limiti va log rotation bor.
 
@@ -699,7 +702,32 @@ docker compose -f docker-compose.prod.yml --env-file .env.production run --rm ba
 .\scripts\prod-smoke.ps1 -EnvFile .env.production -Email siz@example.com -Password '...'
 ```
 
-Smoke test 30 ta tekshiruvni bajaradi: servislar, tashqi kirish, header'lar, root bo'lmagan foydalanuvchi, read-only fayl tizimi, DB huquqlari, Redis paroli va logout'da token bekor qilinishi. Linux'da: `./scripts/prod-smoke.sh`.
+Smoke test 44 tagacha tekshiruvni bajaradi. Tekshiriladi: servislar, tashqi kirish, HTTPS, header'lar, root bo'lmagan foydalanuvchi, read-only fayl tizimi, zaxira nusxa, DB huquqlari, Redis paroli, haqiqiy mijoz IP'si va logout'da token bekor qilinishi. Linux'da: `./scripts/prod-smoke.sh`.
+
+### 15.2 Serverga o'rnatish (PHASE 12)
+
+To'liq qo'llanma: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). U quyidagilarni qamraydi: VPS tanlash (Ollama uchun RAM), SSH va firewall, Docker, DNS, Meta Live checklist, zaxira, monitoring va troubleshooting.
+
+```bash
+# serverda (Ubuntu 24.04), deploy foydalanuvchisi bilan:
+git clone https://github.com/<siz>/<repo>.git /opt/muxriddin && cd /opt/muxriddin
+cp .env.production.example .env.production && chmod 600 .env.production && nano .env.production
+#   DOMAIN=panel.sizningdomen.uz   CADDY_TLS=siz@example.com   BACKUP_UID=$(id -u) ...
+./scripts/deploy.sh             # build → zaxira → migratsiya → ishga tushirish → smoke test
+docker compose -f docker-compose.prod.yml --env-file .env.production run --rm backend python -m app.cli create-admin --email siz@example.com
+```
+
+| Qism | Nima qiladi |
+|---|---|
+| **Caddy** (`docker/caddy/Caddyfile`) | Let's Encrypt sertifikatini o'zi oladi va yangilaydi. HTTP so'rovlarni HTTPS'ga yo'naltiradi, HSTS qo'yadi. Mijozning haqiqiy IP'sini uzatadi (soxta `X-Forwarded-For` e'tiborga olinmaydi). Logda OAuth `code`/`state` yashiriladi |
+| **Zaxira** (`backup` servisi) | Har kuni `BACKUP_TIME` (UTC) da `pg_dump` va media arxivini sha256 bilan oladi. `BACKUP_RETENTION_DAYS` kun saqlaydi. Har deploy'dan oldin ham zaxira olinadi |
+| **Tiklash** | `./scripts/restore.sh backups/db-….dump backups/media-….tar.gz`. Avval joriy holatni zaxiralaydi |
+| **Yangilash / orqaga qaytarish** | `git pull && ./scripts/deploy.sh`, `./scripts/rollback.sh`. Har release git commit bilan teglanadi |
+| **Ops monitor** | Har 5 daqiqada tekshiradi: Redis, Instagram token, muvaffaqiyatsiz yoki osilib qolgan nashr, zaxira, statistika, disk. Muammo bo'lsa → Telegram va Umumiy ko'rinish sahifasida banner |
+| **Huquqiy sahifalar** | `https://DOMAIN/privacy` va `/terms` ochiq (Meta App Review uchun kerak). Matn shablon; o'z yurisdiksiyangiz bo'yicha tekshirtiring |
+
+Windows'dan server bilan ishlash: `ssh deploy@panel.sizningdomen.uz`. Zaxirani kompyuterga ko'chirish:
+`scp -r deploy@panel.sizningdomen.uz:/opt/muxriddin/backups "$env:USERPROFILE\Documents\muxriddin-backups"`.
 
 ## 16. Security
 
@@ -714,7 +742,8 @@ To‘liq tahdidlar modeli, limitlar jadvali va qabul qilingan risklar: [`docs/SE
 - **Kiruvchi ma'lumot:** yuklangan media fayl mazmuni bo'yicha tekshiriladi (faqat JPEG/MP4/MOV) va tasodifiy 192-bitli nom bilan saqlanadi. JSON so'rov 1 MB'dan katta bo'lsa rad etiladi. 500 xatolarda ichki tafsilot ko'rsatilmaydi.
 - **Audit log:** faqat qo'shiladi. UPDATE va DELETE'ni ma'lumotlar bazasi trigger'i taqiqlaydi. Unda parol, token va kalitlar saqlanmaydi.
 - **Production konteynerlari** (PHASE 11): ilova cheklangan DB rolida ishlaydi — audit logni o'chira olmaydi, jadvallarni o'zgartira olmaydi. Image'larda pip/npm yo'q, foydalanuvchi root emas, fayl tizimi read-only. Batafsil: [`docs/DOCKER.md`](docs/DOCKER.md).
-- **Reverse proxy ortida** (nginx va h.k.): frontend'da `TRUST_PROXY_HEADERS=true`, backend'da `TRUSTED_PROXIES` ga frontend manzilini, `ALLOWED_HOSTS` ga domeningizni yozing (§15, PHASE 12).
+- **HTTPS va tashqi chegara** (PHASE 12): faqat Caddy ochiq (80/443), TLS 1.2+, HSTS. `X-Forwarded-For` faqat Caddy → panel (172.30.0.10) zanjiri orqali qabul qilinadi. Har kuni zaxira olinadi, muammolar haqida ogohlantirish keladi. Batafsil: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+- **Boshqa reverse proxy ortida** (nginx va h.k.): frontend'da `TRUST_PROXY_HEADERS=true`, backend'da `TRUSTED_PROXIES` ga frontend manzilini, `ALLOWED_HOSTS` ga domeningizni yozing.
 
 ## 17. Troubleshooting
 
@@ -773,6 +802,10 @@ To‘liq tahdidlar modeli, limitlar jadvali va qabul qilingan risklar: [`docs/SE
 | Rejalashtirilgan post chiqmadi | Celery worker **va beat** ishlayaptimi? Yoki `python -m app.cli publish-due` |
 | `422 media_rejected` | Faqat JPEG rasm yoki MP4/MOV video; hajm chegarasi `MEDIA_MAX_*_MB` |
 | Migration `91ed60cfe649 requires 'approvals' to be empty` | Eski versiyasiz approval qatorlari bor; ularni xavfsiz ko'chirib bo'lmaydi |
+| Serverda sertifikat xatosi / Caddy `challenge failed` | DNS A yozuvi serverga ko'rsatmayapti yoki 80/443 port yopiq (`ufw status`, provayder firewall'i). `docker compose ... logs caddy` |
+| `deploy.sh`: "owned by uid …, but BACKUP_UID=…" | `.env.production` da `BACKUP_UID`/`BACKUP_GID` ni `id -u`/`id -g` qiymatiga to'g'rilang |
+| Telegram'da "Tizim ogohlantirishi" | Xabarda sabab yozilgan (masalan, zaxira eskirgan, Instagram'ni qayta ulash kerak). Hal bo'lgach "✅ Tizim holati tiklandi" keladi |
+| Deploy'dan keyin nimadir buzildi | `./scripts/rollback.sh`. Migratsiya bo'lgan bo'lsa, deploy oldidan olingan zaxirani `./scripts/restore.sh` bilan tiklang |
 
 ## Development phases
 
@@ -790,4 +823,4 @@ To‘liq tahdidlar modeli, limitlar jadvali va qabul qilingan risklar: [`docs/SE
 | 9 — Analytics | ✅ |
 | 10 — Security hardening | ✅ |
 | 11 — Docker (production images) | ✅ |
-| 12 — Production deployment | ⏳ |
+| 12 — Production deployment | ✅ |

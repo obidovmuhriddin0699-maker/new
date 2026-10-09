@@ -365,3 +365,8 @@ export type AnalyticsReport = {
   created_by: string;
   created_at: string;
 };
+
+export type OpsStatus = {
+  ok: boolean;
+  problems: { key: string; severity: "critical" | "warning"; message: string }[];
+};

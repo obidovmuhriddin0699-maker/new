@@ -4,7 +4,7 @@ const SESSION_COOKIE = "mx_session";
 // Meta redirects here cross-site, so the SameSite=Strict session cookie is not sent on
 // this navigation. The page itself finishes the flow with a same-origin request (which
 // does carry the cookie) and sends the user to /login if that request is unauthenticated.
-const PUBLIC_PATHS = new Set(["/instagram/callback"]);
+const PUBLIC_PATHS = new Set(["/instagram/callback", "/privacy", "/terms"]);
 // /media/<random-name>: uploaded post media that Meta's servers download (no session).
 
 // Cheap presence check only; the backend validates the token on every API call

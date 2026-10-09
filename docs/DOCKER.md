@@ -5,9 +5,10 @@ Two compose files:
 | File | Purpose |
 |---|---|
 | `docker-compose.yml` | Local development: source bind mounts, hot reload, dev servers, ports on 127.0.0.1 |
-| `docker-compose.prod.yml` | Production: immutable images, least privilege, internal network, only the panel exposed |
+| `docker-compose.prod.yml` | Production: immutable images, least privilege, internal network, only Caddy (HTTPS) exposed |
 
-TLS, a domain and the reverse proxy in front of the panel are PHASE 12.
+Server setup, the domain, TLS, backups, monitoring and updates are in
+[`DEPLOYMENT.md`](DEPLOYMENT.md) (PHASE 12).
 
 ## 1. Images
 
@@ -52,11 +53,12 @@ docker run --rm muxriddin-backend:test     # 545 passed, 8 skipped (git/Redis/Po
 ## 2. Production stack (`docker-compose.prod.yml`)
 
 ```
-            127.0.0.1:3000 (reverse proxy / TLS in PHASE 12)
-                      │
-                ┌─────▼─────┐   edge network (has internet: Meta, Telegram, Ollama)
-                │ frontend  │──────────────┐
-                └───────────┘              │
+              :80 / :443  ┌─────────┐
+              ───────────►│  caddy  │  TLS (Let's Encrypt), HTTP→HTTPS, real client IP
+                          └────┬────┘
+                ┌─────────────▼┐   edge network 172.30.0.0/24 (internet: Meta, Telegram, Ollama)
+                │ frontend     │ 172.30.0.10 ─┐
+                └──────────────┘              │
        ┌──────────┬──────────┬─────────────▼┐
        │ backend  │  worker  │ telegram-bot │   (beat and migrate: data network only)
        └────┬─────┴────┬─────┴──────┬───────┘
@@ -74,7 +76,9 @@ docker run --rm muxriddin-backend:test     # 545 passed, 8 skipped (git/Redis/Po
 | `backend` | API | Not published; reachable only from the panel |
 | `worker` | Celery worker | Healthcheck: `celery inspect ping` |
 | `beat` | Scheduler | Exactly one instance (publishing every minute, reconciliation, token refresh, insights, weekly report) |
-| `frontend` | Panel | The only published port: `${PANEL_BIND:-127.0.0.1}:${PANEL_PORT:-3000}` |
+| `frontend` | Panel | Not published; fixed address 172.30.0.10, the only proxy the backend trusts for `X-Forwarded-For` |
+| `caddy` | TLS edge (PHASE 12) | The only published ports: 80, 443 (TCP + UDP/HTTP3). Admin API off, read-only, only `NET_BIND_SERVICE` |
+| `backup` | Daily `pg_dump` + media archive (PHASE 12) | Runs as `BACKUP_UID`; see DEPLOYMENT.md §7 |
 | `telegram-bot` | Profile `telegram` | Long polling |
 | `ollama` | Profile `ollama` | Optional containerised LLM; pin its tag in production |
 
@@ -99,6 +103,10 @@ the migrate service.
 * json-file log rotation (10 MB × 5).
 
 ## 3. Deploy (Linux VPS or Windows 11 with Docker Desktop)
+
+On a server use `./scripts/deploy.sh` ([`DEPLOYMENT.md`](DEPLOYMENT.md)). The manual
+commands below are the same steps. Set `DOMAIN` and `CADDY_TLS`; for a local test,
+use `DOMAIN=localhost` and `CADDY_TLS=internal`.
 
 **PowerShell:**
 
@@ -130,15 +138,25 @@ new migrations and refreshes the app role's privileges before the app restarts.
 
 ## 4. Smoke test (`scripts/prod-smoke.sh`, `scripts/prod-smoke.ps1`)
 
-30 read-only checks. They never create users or content.
+Up to 44 read-only checks. They never create users or content. The panel is reached as
+`https://$DOMAIN` through Caddy, pinned to `SMOKE_HOST` / `-HostIp` (default 127.0.0.1)
+with curl's `--resolve`, so no DNS is needed. The PowerShell version uses the `curl.exe`
+built into Windows 10/11.
 
 * **Services:**
   - backend, worker, frontend, postgres and redis are healthy;
   - beat is running;
   - migrate exited with 0.
 * **Exposure:**
-  - backend, Postgres and Redis are not published;
+  - backend, Postgres, Redis and the panel are not published; Caddy publishes 443;
   - the data network has no internet.
+* **HTTPS (PHASE 12):**
+  - `http://` redirects to `https://`;
+  - the certificate is valid (skipped with `CADDY_TLS=internal`);
+  - TLS 1.0/1.1 are refused;
+  - there is no `Server` header;
+  - `/privacy` and `/terms` are public.
+* **Backups:** the directory exists and the last recorded backup succeeded.
 * **Panel:**
   - `/login` returns 200;
   - CSP, HSTS and `X-Frame-Options` are set; there is no `X-Powered-By`;
@@ -154,6 +172,9 @@ new migrations and refreshes the app role's privileges before the app restarts.
   - Redis requires a password.
 * **Session** (with credentials):
   - login through the panel works;
+  - the audit log records the real client IP, not the proxy and not a forged
+    `X-Forwarded-For`;
+  - the ops status endpoint answers;
   - logout revokes the token server-side (a replayed cookie gets 401);
   - rate-limit keys are stored in Redis.
 
@@ -191,16 +212,7 @@ reported as `FAIL worker healthy`.
   | backend | Debian OS | 44 | 0 (no upstream fix yet) |
 
   Rebuild on a new base digest when Debian ships fixes.
-* **Backups:**
-  - database:
-
-    ```bash
-    docker compose -f docker-compose.prod.yml --env-file .env.production exec -T postgres \
-      pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB" > backup.dump
-    ```
-
-  - media: back up the `muxriddin-prod_media_data` volume;
-  - keep `.env.production` (especially `TOKEN_ENCRYPTION_KEYS`) safely offline.
-    Without it the stored Instagram tokens cannot be decrypted.
-
-  Automated backups are PHASE 12.
+* **Backups:** automated (daily database + media, checksums, retention, ops alerts) with
+  `scripts/restore.sh`; see [`DEPLOYMENT.md`](DEPLOYMENT.md) §7. Keep `.env.production`
+  (especially `TOKEN_ENCRYPTION_KEYS`) safely offline. Without it the stored Instagram
+  tokens cannot be decrypted.

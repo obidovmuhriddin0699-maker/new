@@ -1,4 +1,4 @@
-# Security (PHASE 10)
+# Security (PHASE 10, production additions in PHASE 12)
 
 Principle: **AI = assistant, USER = final authority.** Nothing reaches Instagram without a
 human approval of the exact version, and every decision is recorded in an audit log that
@@ -24,7 +24,12 @@ the database itself keeps append-only.
 | Telegram impersonation | Allowlist plus account linking by one-time code (5 wrong codes / 15 min per Telegram id); one-time, user-bound callback tokens |
 | Tampering with history | `audit_logs` UPDATE and DELETE are rejected by a database trigger (PostgreSQL and SQLite) |
 | Host-header attacks | `ALLOWED_HOSTS` (TrustedHost) in production |
-| Spoofed client IP | `X-Forwarded-For` is honoured only from `TRUSTED_PROXIES`, and the right-most untrusted hop is used. The panel forwards it only with `TRUST_PROXY_HEADERS=true` |
+| Spoofed client IP | Caddy overwrites `X-Forwarded-For` with the TCP peer address (it never trusts the client's value). The panel forwards it only with `TRUST_PROXY_HEADERS=true`, and the backend honours it only from `TRUSTED_PROXIES` (the panel's fixed address 172.30.0.10), using the right-most untrusted hop. The production smoke test checks this with a forged header |
+| Eavesdropping / downgrade (PHASE 12) | HTTPS only: Caddy redirects HTTP, uses TLS 1.2+ with automatic Let's Encrypt renewal, and sends HSTS from both the proxy and the app. The session cookie is `Secure` |
+| Exposed internals (PHASE 12) | Only Caddy publishes ports (80/443); its admin API is off. The panel, API, PostgreSQL and Redis are reachable only inside Docker networks, and the data network has no internet |
+| Secrets in access logs (PHASE 12) | Caddy's JSON log replaces the OAuth `code` and `state` query values with `REDACTED` and hides `Cookie`/`Authorization` |
+| Data loss (PHASE 12) | Daily database + media backups (owner-only files, checksums), a backup before every deploy migration, tested restore, and an alert when backups fail or stop |
+| Silent failure (PHASE 12) | The ops monitor alerts owners on Telegram and the overview page (§6) |
 | Known-vulnerable dependencies | `pip-audit` and `npm audit` are part of the release checklist (below) |
 
 ## 2. Rate limits (`app/core/ratelimit.py`)
@@ -83,6 +88,8 @@ the database itself keeps append-only.
 | Next.js' bundled PostCSS | Pinned to the patched 8.5.29 via `overrides` in `package.json` (no Next 16 major upgrade needed) | On the next Next.js upgrade |
 | Public `/media/<name>` | Meta's servers must download media without a session. Names are random 192-bit, files are inert and type-checked | — |
 | JWT in a cookie, not a server session store | Revocation is covered by the `jti` denylist and the per-user cut-off | — |
+| Backups are not encrypted on the server | Files are 0600, owned by the deploy user, on the same disk as the database. Encrypt the **off-site** copy (for example an `rclone crypt` remote, or an encrypted drive) | When adding an off-site target |
+| `/privacy` and `/terms` are a template | They describe what the software actually does, but they are not legal advice. The operator must have them reviewed before going Live | Before Meta Live / App Review |
 | A DB superuser can drop the audit trigger | **Closed for the app (PHASE 11):** the production stack runs the app as a least-privilege role that owns nothing (it cannot drop the trigger, alter tables or UPDATE/DELETE `audit_logs`). Only the owner credentials, used by the one-shot migrate service, can | — |
 
 ## 6. Operations
@@ -99,6 +106,14 @@ the database itself keeps append-only.
   1. Settings → change the password (this signs out everywhere).
   2. Review the audit logs page for `AUTH_*`, `CONTENT_APPROVED` and
      `CONTENT_PUBLISH_*` events.
+* **Ops monitor (PHASE 12):** `app/services/ops.py`, run every 5 minutes by Celery beat.
+  - It checks Redis, Instagram tokens and permissions, failed/stuck/overdue publishing,
+    backups (production), insights sync and free disk space.
+  - On change it records an `OPS_ALERT` audit event, which goes to Telegram. While a
+    problem stays open it sends a 24 h reminder, and it reports when the problems are
+    resolved.
+  - Owners and admins also see `GET /api/v1/system/ops-status` and the overview banner.
+* **Backups and restore:** see [`DEPLOYMENT.md`](DEPLOYMENT.md) §7.
 * **Release checklist:**
   - `pip-audit` (backend venv) → no known vulnerabilities;
   - `npm audit --omit=dev` (frontend) → 0;
@@ -115,6 +130,11 @@ the database itself keeps append-only.
   - endpoint and global limits, headers/HSTS, request-ID sanitising, body-size limit,
     trusted hosts;
   - audit append-only, key rotation.
+* `tests/test_ops.py` (13 tests): every ops check, alert dedupe, reminder and resolve,
+  Telegram rendering, the beat schedule, and API access (viewers get 403; viewing never
+  sends alerts).
+* `scripts/prod-smoke.sh` / `.ps1` (against the real production stack): TLS, redirect,
+  exposure, real client IP versus a forged `X-Forwarded-For`, backups.
 * `tests/test_repo_hygiene.py`: `.env` ignored, no source folder hidden by `.gitignore`,
   no secrets in tracked files.
 * E2E `e2e/auth.spec.ts`: a replayed cookie after logout gets 401; the panel sends its

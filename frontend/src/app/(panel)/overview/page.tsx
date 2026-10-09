@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BackendStatus } from "@/components/BackendStatus";
 import { Card, ErrorBox, Loading, LinkButton, PageHeader } from "@/components/ui";
 import { formatDateTime, TYPE_LABEL } from "@/lib/format";
-import type { AIStatus, ContentType, DashboardSummary } from "@/lib/types";
+import type { AIStatus, ContentType, DashboardSummary, OpsStatus } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 
 function Stat({ label, value, href, testId, hint }: { label: string; value: number | string; href?: string; testId: string; hint?: string }) {
@@ -19,6 +19,27 @@ function Stat({ label, value, href, testId, hint }: { label: string; value: numb
   return href ? <Link href={href}>{body}</Link> : body;
 }
 
+/** Problems from the ops monitor (owners/admins only; others get 403 and see nothing). */
+function OpsBanner() {
+  const { data } = useApi<OpsStatus>("system/ops-status");
+  if (!data || data.ok) return null;
+  const critical = data.problems.some((p) => p.severity === "critical");
+  return (
+    <div
+      role="status"
+      data-testid="ops-banner"
+      className={`mb-4 rounded-2xl border p-4 text-sm ${critical ? "border-red-300 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100" : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100"}`}
+    >
+      <p className="font-semibold">Tizim ogohlantirishi</p>
+      <ul className="mt-1 list-disc space-y-0.5 pl-5">
+        {data.problems.map((p) => (
+          <li key={p.key}>{p.message}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function OverviewPage() {
   const { data, error, loading, reload } = useApi<DashboardSummary>("dashboard/summary");
   const ai = useApi<AIStatus>("ai/status");
@@ -30,6 +51,7 @@ export default function OverviewPage() {
         subtitle="AI kontent tayyorlaydi — nashr qilish faqat sizning tasdig‘ingizdan keyin."
         actions={<LinkButton href="/ai" variant="primary">AI bilan yaratish</LinkButton>}
       />
+      <OpsBanner />
       {loading && !data && <Loading />}
       <ErrorBox error={error} onRetry={reload} />
       {data && (

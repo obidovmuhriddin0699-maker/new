@@ -628,6 +628,15 @@ class TelegramService:
             if link:
                 text += f"\n{esc(link)}"
             return Reply(text)
+        if event.action == AuditAction.OPS_ALERT.value:
+            problems = details.get("problems") or []
+            if not problems:
+                return Reply("✅ <b>Tizim holati tiklandi</b> — barcha muammolar hal bo‘ldi.")
+            lines = ["⚠️ <b>Tizim ogohlantirishi</b>"]
+            for p in problems[:10]:
+                icon = "🔴" if p.get("severity") == "critical" else "🟡"
+                lines.append(f"{icon} {esc(_cut(str(p.get('message', '')), 300))}")
+            return Reply("\n".join(lines))
         if event.action == AuditAction.ANALYTICS_REPORT_CREATED.value:
             from app.models import AnalyticsReport
 

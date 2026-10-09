@@ -1,0 +1,48 @@
+# Edge reverse proxy: HTTPS (automatic Let's Encrypt certificates) -> Next.js panel.
+#   DOMAIN     panel host name, e.g. panel.example.com (DNS A/AAAA record -> this server)
+#   CADDY_TLS  your e-mail for Let's Encrypt, or "internal" (self-signed, for testing)
+{
+	# No admin API listening inside the container network.
+	admin off
+	# The container cannot (and should not) edit a system trust store.
+	skip_install_trust
+}
+
+{$DOMAIN} {
+	tls {$CADDY_TLS}
+
+	# Caddy is the first hop: never trust a client-supplied X-Forwarded-For. The panel
+	# forwards this value to the backend's rate limiter (TRUST_PROXY_HEADERS=true).
+	reverse_proxy frontend:3000 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto https
+	}
+
+	# Uploads up to the backend's media limit; everything else is far smaller.
+	request_body {
+		max_size 110MB
+	}
+
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		-Server
+		-Via
+	}
+
+	# JSON access log without secrets: Caddy already redacts Cookie/Authorization headers;
+	# the one-time OAuth code/state and the deletion code are removed from query strings.
+	log {
+		output stdout
+		format filter {
+			request>uri query {
+				replace code REDACTED
+				replace state REDACTED
+			}
+			wrap json
+		}
+	}
+}
