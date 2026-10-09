@@ -1,6 +1,6 @@
 """Import every model so Base.metadata is complete (Alembic autogenerate relies on this)."""
 
-from app.models.analytics import AnalyticsSnapshot
+from app.models.analytics import AnalyticsReport, AnalyticsSnapshot
 from app.models.base import Base
 from app.models.brand import BrandProfile
 from app.models.content import (
@@ -25,6 +25,7 @@ from app.models.user import User
 
 __all__ = [
     "AIJob",
+    "AnalyticsReport",
     "AnalyticsSnapshot",
     "Approval",
     "AuditLog",

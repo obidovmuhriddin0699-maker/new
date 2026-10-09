@@ -149,6 +149,8 @@ def me(version: str, fields: str = Query(""), access_token: str = Query("")) -> 
             "id": "app-scoped-1",
             "username": "muxriddin.design.e2e",
             "account_type": "BUSINESS",
+            "followers_count": 1234,
+            "media_count": len(_media),
         }
     )
 
@@ -207,6 +209,40 @@ def read_object(version: str, object_id: str, access_token: str = "") -> JSONRes
         return JSONResponse({"id": object_id, "status_code": _containers[object_id]["status"]})
     if object_id in _media:
         return JSONResponse(
-            {"id": object_id, "permalink": f"https://www.instagram.com/p/E2E{object_id}/"}
+            {
+                "id": object_id,
+                "permalink": f"https://www.instagram.com/p/E2E{object_id}/",
+                "media_product_type": "FEED",
+                "media_type": "IMAGE",
+            }
         )
     return JSONResponse({"error": {"message": "Unknown object", "code": 100}}, status_code=400)
+
+
+# ------------------------------------------------------------------ insights (fixed values)
+_MEDIA_VALUES = {"reach": 420, "views": 960, "likes": 37, "saved": 9, "total_interactions": 51}
+_ACCOUNT_VALUES = {"reach": 3100, "views": 8800, "accounts_engaged": 240}  # no total_interactions
+
+
+@app.get("/{version}/{object_id}/insights")
+def insights(
+    version: str, object_id: str, metric: str = "", access_token: str = "", period: str = ""
+) -> JSONResponse:
+    if access_token not in _tokens:
+        return _bad_token()
+    if object_id == IG_USER_ID:
+        values, total = _ACCOUNT_VALUES, True
+    elif object_id in _media:
+        values, total = _MEDIA_VALUES, False
+    else:
+        return JSONResponse({"error": {"message": "Unknown object", "code": 100}}, status_code=400)
+    data = []
+    for name in metric.split(","):
+        if name in values:
+            entry: dict = {"name": name, "period": period or "lifetime"}
+            if total:
+                entry["total_value"] = {"value": values[name]}
+            else:
+                entry["values"] = [{"value": values[name]}]
+            data.append(entry)
+    return JSONResponse({"data": data})

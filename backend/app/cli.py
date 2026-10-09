@@ -54,6 +54,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("refresh-instagram-tokens", help="refresh tokens close to expiry")
     sub.add_parser("publish-due", help="publish due schedules once (what Celery beat does)")
     sub.add_parser("reconcile-publishing", help="settle schedules stuck in PROCESSING")
+    sub.add_parser("sync-insights", help="pull Instagram insights now (read-only)")
+    sub.add_parser("weekly-report", help="create the analyst report for last week")
     args = parser.parse_args(argv)
     if args.command == "create-admin":
         return create_admin(args.email, args.password, args.full_name)
@@ -76,6 +78,22 @@ def main(argv: list[str] | None = None) -> int:
                 else service.reconcile_stale()
             )
             print(result)
+        return 0
+    if args.command == "sync-insights":
+        from dataclasses import asdict
+
+        from app.services.analytics_sync import AnalyticsSyncService
+
+        with get_sessionmaker()() as db:
+            for r in AnalyticsSyncService(db).sync_all():
+                print(asdict(r))
+        return 0
+    if args.command == "weekly-report":
+        from app.services.analytics_report import ANALYST_ACTOR, AnalyticsReportService
+
+        with get_sessionmaker()() as db:
+            report = AnalyticsReportService(db).create_weekly(ANALYST_ACTOR)
+            print(f"report #{report.id} ({report.source}, {report.status})\n{report.summary}")
         return 0
     return 1
 

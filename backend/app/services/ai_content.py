@@ -439,7 +439,20 @@ class AIContentService:
         return self._call(creator_calls[job_type])
 
     def _performance_summary(self) -> dict[str, Any] | None:
-        """Real stored metrics only (top items by engagement). None if there are none."""
+        """Real stored metrics only (top items by engagement) plus the latest analyst
+        report's recommendations (next content strategy). None if there is nothing."""
+        from app.services.analytics_report import AnalyticsReportService
+
+        report = AnalyticsReportService(self.session).latest()
+        latest_report = (
+            {
+                "period": f"{report.period_start.isoformat()}..{report.period_end.isoformat()}",
+                "summary": report.summary,
+                "recommendations": report.recommendations,
+            }
+            if report is not None and report.status == "READY"
+            else None
+        )
         rows = self.session.scalars(
             select(ContentPerformance)
             .where(ContentPerformance.engagement_rate.is_not(None))
@@ -447,7 +460,7 @@ class AIContentService:
             .limit(5)
         ).all()
         if not rows:
-            return None
+            return {"latest_weekly_report": latest_report} if latest_report else None
         items = []
         for row in rows:
             content = self.session.get(Content, row.content_id)
@@ -459,7 +472,13 @@ class AIContentService:
                     "metrics": row.metrics,
                 }
             )
-        return {"top_content": items}
+        summary: dict[str, Any] = {
+            "top_content": items,
+            "engagement_rate_definition": "total_interactions / reach",
+        }
+        if latest_report:
+            summary["latest_weekly_report"] = latest_report
+        return summary
 
     def _has_analytics(self) -> bool:
         return (self.session.scalar(select(func.count()).select_from(ContentPerformance)) or 0) > 0

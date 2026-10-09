@@ -55,6 +55,7 @@ def test_dashboard_uses_real_analytics_only(api, db, human, user):
         AnalyticsSnapshot(
             instagram_account_id=account.id,
             scope="account",
+            period="week",  # the dashboard shows the 7-day window
             captured_at=utcnow(),
             metrics={"reach": 1234},
         )

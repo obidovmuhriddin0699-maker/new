@@ -19,6 +19,7 @@ ENTITIES = [
     "SystemSetting",
     "OAuthState",
     "DataDeletionRequest",
+    "AnalyticsReport",
 ]
 
 
@@ -26,8 +27,8 @@ def test_all_entities_importable():
     for name in ENTITIES:
         assert hasattr(models, name), name
     # 13 core entities + content_versions + 2 Telegram tables (PHASE 5)
-    # + oauth_states and data_deletion_requests (PHASE 7)
-    assert len(Base.metadata.tables) == 18
+    # + oauth_states and data_deletion_requests (PHASE 7) + analytics_reports (PHASE 9)
+    assert len(Base.metadata.tables) == 19
 
 
 def test_no_instagram_password_column():

@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.health import health
 from app.api.v1 import (
     ai,
+    analytics,
     approvals,
     auth,
     contents,
@@ -25,3 +26,4 @@ api_router.include_router(approvals.router)
 api_router.include_router(instagram.router)
 api_router.include_router(publishing.router)
 api_router.include_router(publishing.media_router)
+api_router.include_router(analytics.router)

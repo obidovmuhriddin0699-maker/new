@@ -19,7 +19,7 @@ Telegram ──► aiogram (AccessMiddleware → handlers) ──► TelegramSer
 | `/reels mavzu`, `/story mavzu` | Generate a Reels script / Story concept |
 | `/plan` | Weekly plan from next Monday (shown only; save drafts in AI Studio) |
 | `/approve ID`, `/reject ID` | Show that item with buttons — text commands never decide by themselves |
-| `/status`, `/analytics`, `/settings`, `/help` | Counters, real analytics only, account info, help |
+| `/status`, `/analytics`, `/settings`, `/help` | Counters; real analytics only (7-day reach, engagement) plus the latest weekly AI Analyst report; account info; help |
 
 Buttons on a preview: **✅ TASDIQLASH**, **✏️ TAHRIR**, **❌ RAD ETISH**, **Panelda ochish**.
 
@@ -87,3 +87,5 @@ No test talks to Telegram.
 * Long polling only; one bot process per token.
 * In `AI_JOBS_MODE=sync` a generation command blocks that handler for the model's runtime
   (other users are still served — work runs in a thread).
+
+The notifier also sends publish results (PHASE 8) and each new weekly analyst report (PHASE 9) to linked approvers.

@@ -501,20 +501,37 @@ class TelegramService:
         )
 
     def analytics_text(self) -> str:
+        from app.services.analytics_report import AnalyticsReportService
         from app.services.dashboard import DashboardService
 
         s = DashboardService(self.session).summary()
-        if not s.analytics_available:
+        report = AnalyticsReportService(self.session).latest()
+        if not s.analytics_available and report is None:
             return (
-                "<b>Analitika</b>\nMa’lumot yo‘q: "
-                "insights sinxronizatsiyasi PHASE 9 da. Ko‘rsatkichlar taxmin qilinmaydi."
+                "<b>Analitika</b>\nMa’lumot yo‘q: Instagram statistikasi hali sinxronlanmagan. "
+                "Ko‘rsatkichlar taxmin qilinmaydi."
             )
         lines = ["<b>Analitika</b>"]
         if s.reach is not None:
-            lines.append(f"Qamrov (reach): {s.reach}")
+            lines.append(f"Qamrov (reach, 7 kun): {s.reach}")
         if s.engagement_rate is not None:
             lines.append(f"O‘rtacha engagement: {s.engagement_rate * 100:.2f}%")
+        if report is not None:
+            lines.append("")
+            lines.append(self._report_text(report))
         return "\n".join(lines)
+
+    @staticmethod
+    def _report_text(report: Any) -> str:
+        head = (
+            f"<b>Haftalik hisobot</b> ({report.period_start.isoformat()} – "
+            f"{report.period_end.isoformat()}, {'AI' if report.source == 'ai' else 'qoidalar'})"
+        )
+        body = [head, esc(_cut(report.summary, 1200))]
+        if report.recommendations:
+            body.append("<b>Tavsiyalar:</b>")
+            body += [f"• {esc(_cut(r, 300))}" for r in report.recommendations[:5]]
+        return "\n".join(body)
 
     def settings_text(self, telegram_id: int) -> str:
         user = self.resolve_user(telegram_id)
@@ -603,6 +620,11 @@ class TelegramService:
             if link:
                 text += f"\n{esc(link)}"
             return Reply(text)
+        if event.action == AuditAction.ANALYTICS_REPORT_CREATED.value:
+            from app.models import AnalyticsReport
+
+            report = self.session.get(AnalyticsReport, details.get("report_id") or 0)
+            return Reply(self._report_text(report)) if report is not None else None
         if event.action == AuditAction.CONTENT_PUBLISH_FAILED.value and event.status == "FAILED":
             error = _cut(event.error or "noma’lum xato", 300)
             return Reply(

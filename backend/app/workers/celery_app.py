@@ -4,6 +4,7 @@ On Windows use the solo pool: ... worker -l info --pool=solo
 """
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.core.config import get_settings
 
@@ -18,6 +19,7 @@ celery_app = Celery(
         "app.workers.tasks.ai",
         "app.workers.tasks.instagram",
         "app.workers.tasks.publish",
+        "app.workers.tasks.analytics",
     ],
 )
 celery_app.conf.update(
@@ -39,5 +41,12 @@ celery_app.conf.update(
         },
         "publish-due-schedules": {"task": "publish.process_due", "schedule": 60},
         "reconcile-publishing": {"task": "publish.reconcile", "schedule": 5 * 60},
+        # Insights change slowly and Meta rate-limits calls: every 6 hours is plenty.
+        "sync-insights": {"task": "analytics.sync", "schedule": 6 * 60 * 60},
+        # Monday 03:10 UTC = 08:10 Asia/Tashkent, for the previous Monday–Sunday.
+        "weekly-analytics-report": {
+            "task": "analytics.weekly_report",
+            "schedule": crontab(minute=10, hour=3, day_of_week=1),
+        },
     },
 )

@@ -317,3 +317,51 @@ export type PublishingLimit = {
   quota_duration_seconds: number | null;
   from_meta: boolean;
 };
+
+export type MetricValues = Record<string, number>;
+export type AnalyticsWindow = {
+  period: "day" | "week" | "days_28";
+  window_start: string | null;
+  window_end: string | null;
+  metrics: MetricValues;
+  unavailable: string[];
+  captured_at: string;
+};
+export type ContentStat = {
+  content_id: number;
+  topic: string | null;
+  content_type: ContentType;
+  published_at: string | null;
+  permalink: string | null;
+  metrics: MetricValues;
+  unavailable: string[];
+  engagement_rate: number | null;
+  last_synced_at: string | null;
+};
+export type AnalyticsOverview = {
+  account_id: number | null;
+  username: string | null;
+  windows: AnalyticsWindow[];
+  followers_count: number | null;
+  content: ContentStat[];
+  last_sync: { at: string; status: string; message: string | null } | null;
+  engagement_rate_definition: string;
+  note: string;
+};
+export type AnalyticsPoint = { date: string; metrics: MetricValues };
+export type AnalyticsReport = {
+  id: number;
+  period_start: string;
+  period_end: string;
+  status: "READY" | "NO_DATA";
+  summary: string;
+  highlights: { content_id: number; reason: string }[];
+  recommendations: string[];
+  facts: { data_gaps?: string[]; published_count?: number } & Record<string, unknown>;
+  source: "ai" | "rules";
+  provider: string | null;
+  model: string | null;
+  ai_rejected_reason: string | null;
+  created_by: string;
+  created_at: string;
+};

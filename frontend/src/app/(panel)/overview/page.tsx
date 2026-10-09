@@ -42,9 +42,9 @@ export default function OverviewPage() {
           <Stat testId="stat-drafts" label="Qoralama" value={data.drafts} href="/content?status=DRAFT" />
           <Stat
             testId="stat-reach"
-            label="Qamrov (reach)"
+            label="Qamrov (reach, 7 kun)"
             value={data.reach ?? "—"}
-            hint={data.reach === null ? "Ma’lumot yo‘q: Instagram ulanmagan" : undefined}
+            hint={data.reach === null ? "Ma’lumot yo‘q: statistika hali sinxronlanmagan" : undefined}
           />
           <Stat
             testId="stat-engagement"

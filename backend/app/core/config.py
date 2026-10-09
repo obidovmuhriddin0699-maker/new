@@ -138,6 +138,13 @@ class Settings(BaseSettings):
     # Used only when Meta's content_publishing_limit response has no quota_total.
     meta_publish_limit_fallback: int = 50
 
+    # --- Analytics (PHASE 9). See docs/ANALYTICS.md.
+    # Insights are synced for media published within this many days (bounded API usage).
+    analytics_media_days: int = 30
+    # Analyst report language (uz | ru | en) and whether to ask the AI to phrase it.
+    analytics_report_language: Literal["uz", "ru", "en"] = "uz"
+    analytics_report_use_ai: bool = True
+
     # --- Media storage (uploads served to Meta over a public HTTPS URL)
     media_root: str = "./data/media"
     # Public base URL Meta downloads media from; empty = PANEL_PUBLIC_URL.

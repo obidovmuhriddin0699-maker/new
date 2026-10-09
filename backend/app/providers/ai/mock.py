@@ -170,6 +170,17 @@ def builtin_response(prompt: str) -> str:
         }
     elif task == "hashtags":
         payload = {"hashtags": ["#interiordesign", "#minimalism", "#3dvisualization"]}
+    elif task == "weekly_analytics_report":
+        # Deliberately number-free: the mock never invents statistics.
+        payload = {
+            "summary": "Hafta natijalari faqat sinxronlangan Meta statistikasi asosida "
+            "ko'rib chiqildi. Ta'limiy kontent eng barqaror natija berdi.",
+            "highlights": [],
+            "recommendations": [
+                "Eng yaxshi natija bergan mavzuni davom ettiring.",
+                "Statistika to'liq bo'lmagan formatlarni yana sinab ko'ring.",
+            ],
+        }
     else:
         payload = {"error": "unknown task"}
     return json.dumps(payload, ensure_ascii=False)

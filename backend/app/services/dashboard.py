@@ -1,7 +1,7 @@
 """Read models for the admin panel: overview counters and calendar.
 
-Reach / engagement are shown only when real analytics rows exist (PHASE 9
-fills them from the Meta API). Otherwise they are ``None`` — never estimated.
+Reach / engagement are shown only when real analytics rows exist (filled from the
+Meta API by the insights sync). Otherwise they are ``None`` — never estimated.
 """
 
 from dataclasses import dataclass, field
@@ -100,7 +100,7 @@ class DashboardService:
     def _latest_account_metric(self, name: str) -> int | None:
         snap = self.session.scalars(
             select(AnalyticsSnapshot)
-            .where(AnalyticsSnapshot.scope == "account")
+            .where(AnalyticsSnapshot.scope == "account", AnalyticsSnapshot.period == "week")
             .order_by(AnalyticsSnapshot.captured_at.desc())
             .limit(1)
         ).first()

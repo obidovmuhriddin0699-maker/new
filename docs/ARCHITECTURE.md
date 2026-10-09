@@ -213,7 +213,7 @@ API qo‘llamaydigan narsalar (masalan, music/stickers, story link sticker va h.
 ### 5.5 Insights
 `GET /{ig-media-id}/insights` va `GET /{ig-user-id}/insights` — faqat API qaytargan metrikalar
 saqlanadi (`AnalyticsSnapshot.metrics` JSON). Qaytmagan metrika `null`, hech qachon taxmin qilinmaydi.
-(Eslatma: Meta ba'zi metrikalarni, masalan `impressions`, yangi versiyalarda `views` bilan almashtirgan — PHASE 9 da tekshiriladi.)
+PHASE 9 da tekshirildi: `impressions`/`plays` 2025-yilda bekor qilingan, `views` ishlatiladi. Amaldagi metrikalar va qoidalar: [`ANALYTICS.md`](ANALYTICS.md).
 
 ### 5.6 Error mapping
 `integrations/meta/errors.py`: Meta `error.code/subcode` → `MetaErrorKind`

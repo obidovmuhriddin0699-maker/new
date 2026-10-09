@@ -4,10 +4,10 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 8 — Instagram Publishing.**
-> Tasdiqlangan kontentni rasmiy Meta Content Publishing API orqali nashr qilish (darhol yoki rejalashtirib),
-> media yuklash va takroriy post'dan himoya tayyor. Default `META_DRY_RUN=true`: tekshiruv va reja ko‘rsatiladi,
-> lekin Instagram’ga hech narsa yuborilmaydi.
+> **Joriy holat: PHASE 9 — Analytics va AI Analyst.**
+> Nashr (PHASE 8) va Meta insights statistikasi (faqat API qaytargan qiymatlar), haftalik AI Analyst hisoboti va
+> keyingi kontent strategiyasi uchun tavsiyalar tayyor. Default `META_DRY_RUN=true`: Instagram’ga hech narsa
+> nashr qilinmaydi (statistikani o‘qish bunga ta’sir qilmaydi).
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
@@ -16,6 +16,7 @@ tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘lad
 - Telegram bot (buyruqlar, xavfsizlik, sozlash): [`docs/TELEGRAM_BOT.md`](docs/TELEGRAM_BOT.md)
 - Meta OAuth (oqim, xavfsizlik, token hayoti, callback'lar): [`docs/META_OAUTH.md`](docs/META_OAUTH.md)
 - Nashr qilish (oqim, takroriy post'dan himoya, xatolar, media): [`docs/PUBLISHING.md`](docs/PUBLISHING.md)
+- Analitika va AI Analyst (metrikalar, sinxronlash, haftalik hisobot): [`docs/ANALYTICS.md`](docs/ANALYTICS.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -129,6 +130,15 @@ PHASE 8 da qo'shilganlar (Instagram'ga nashr qilish):
 - **Audit va Telegram:** kim tasdiqlagani, kim nashrni boshlagani, container, media id va natija audit'ga yoziladi. Natija Telegram botga ham yuboriladi.
 - **Xavfsizlik:** token parametrlarini barcha jarayonlarda (API, Celery, CLI) logdan yashiruvchi filtr qo'shildi.
 
+PHASE 9 da qo'shilganlar (Analytics va AI Analyst):
+
+- **Insights sinxronlash:** har bir nashr uchun reach, views, likes, comments, shares, saved va total_interactions olinadi. Akkaunt bo'yicha 1, 7 va 28 kunlik reach, views, faol akkauntlar va interaksiyalar hamda obunachilar soni olinadi. Celery beat har 6 soatda ishga tushadi; panelda tugma, terminalda CLI buyrug'i ham bor.
+- **Uydirma yo'q:** faqat Meta qaytargan qiymatlar saqlanadi. Qaytmagan ko'rsatkich "unavailable" deb yoziladi va panelda "—" bo'lib qoladi. 2025-yilda bekor qilingan `impressions` va `plays` so'ralmaydi, ularning o'rnida `views` ishlatiladi.
+- **Engagement:** `total_interactions / reach`. Bu Instagram'ning rasmiy ko'rsatkichi emas, shuning uchun faqat ikkala qiymat ham Meta'dan kelgandagina hisoblanadi.
+- **AI Analyst haftalik hisoboti:** har dushanba (yoki tugma bilan) o'tgan hafta uchun yaratiladi va "haftaning eng yaxshi kontenti" hamda tavsiyalarni beradi. Faktlarni kod hisoblaydi, AI esa faqat ularni matnga aylantiradi. AI faktlarda yo'q son yozsa, javobi rad etiladi va qoidalar asosidagi matn ishlatiladi. Ma'lumot bo'lmasa, hisobot buni ochiq aytadi.
+- **Keyingi strategiya:** hisobot tavsiyalari va eng yaxshi kontent AI Strategist'ga beriladi.
+- **Panel:** analitika sahifasi (1/7/28 kun, kontent jadvali, kunlik qiymatlar, hisobotlar). Hisobot Telegram'ga yuboriladi, `/analytics` buyrug'i ham bor.
+
 ## 2. Requirements (Windows 11)
 
 | Dastur | Versiya | Majburiymi |
@@ -238,6 +248,8 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 | `MEDIA_ROOT`, `MEDIA_MAX_IMAGE_MB`, `MEDIA_MAX_VIDEO_MB` | Yuklangan media joyi va chegaralari |
 | `META_CONTAINER_POLL_INTERVAL_SECONDS`, `META_CONTAINER_MAX_WAIT_SECONDS` | Video qayta ishlanishini kutish |
 | `PUBLISH_MAX_ATTEMPTS`, `PUBLISH_RECONCILE_AFTER_MINUTES` | Avtomatik qayta urinish va "osilib qolgan" nashrlarni tekshirish |
+| `ANALYTICS_MEDIA_DAYS` | Shuncha kun ichida nashr qilingan kontent statistikasi yangilanadi (default 30) |
+| `ANALYTICS_REPORT_USE_AI`, `ANALYTICS_REPORT_LANGUAGE` | Haftalik hisobot matnini AI yozsinmi (`true`), qaysi tilda (`uz`/`ru`/`en`) |
 | `BACKEND_URL` | Next.js server tomoni backend'ga shu manzil orqali ulanadi (brauzerga yuborilmaydi) |
 | `APPROVAL_MAX_AGE_HOURS` | Tasdiq amal qilish muddati (0 = cheksiz) |
 | `APPROVAL_REQUIRE_DIFFERENT_APPROVER` | "To'rt ko'z": versiyani yozgan odam uni o'zi tasdiqlay olmaydi |
@@ -503,6 +515,16 @@ python -m app.cli publish-due
 python -m app.cli reconcile-publishing
 ```
 
+### Statistika va haftalik hisobot (PHASE 9)
+
+Panel → **Analitika** → **Statistikani yangilash** (yoki Celery beat har 6 soatda). Hisobot har dushanba
+avtomatik yaratiladi yoki **Hisobot yaratish** tugmasi bilan. Qo‘lda ishga tushirish:
+
+```powershell
+python -m app.cli sync-insights
+python -m app.cli weekly-report
+```
+
 ## 11. OAuth configuration (local dev va production)
 
 Meta redirect URI uchun **https** talab qiladi. Lokal kompyuterda tunnel ishlating
@@ -533,7 +555,7 @@ Xavfsizlik:
 |---|---|---|---|---|---|
 | `instagram_business_basic` | Profil: ID, username, akkaunt turi. **Majburiy** | `GET /me` | Ruxsat berilgan rolli (o‘z) akkauntlar bilan ishlaydi | Boshqa odamlarning akkauntlari uchun kerak | Majburiy |
 | `instagram_business_content_publish` | Post/Reels/Carousel nashr qilish (PHASE 8). **Majburiy** | `POST /{ig-user-id}/media`, `POST /{ig-user-id}/media_publish` | Rolli akkauntlar bilan | Boshqa akkauntlar uchun kerak | Majburiy |
-| `instagram_business_manage_insights` | Statistika (PHASE 9) | `GET /{ig-media-id}/insights`, `GET /{ig-user-id}/insights` | Rolli akkauntlar bilan | Boshqa akkauntlar uchun kerak | Default so‘raladi, ixtiyoriy |
+| `instagram_business_manage_insights` | Statistika (PHASE 9). Berilmasa, sinxronlash "ruxsat berilmagan" deb o‘tkazib yuboriladi | `GET /{ig-media-id}/insights`, `GET /{ig-user-id}/insights` | Rolli akkauntlar bilan | Boshqa akkauntlar uchun kerak | Default so‘raladi, ixtiyoriy |
 | `instagram_business_manage_comments` | Izohlar | `/{ig-media-id}/comments` | — | — | **So‘ralmaydi** (funksiya yo‘q) |
 | `instagram_business_manage_messages` | Direct xabarlar | Messaging API | — | — | **So‘ralmaydi** (funksiya yo‘q) |
 
@@ -623,7 +645,7 @@ docker compose logs -f backend
 |---|---|
 | frontend | http://localhost:3000 |
 | backend | http://localhost:8000 (ishga tushishda `alembic upgrade head` avtomatik bajariladi) |
-| worker | Celery worker + beat (`-B`): rejalashtirilgan nashr (har daqiqa), nashrni tekshirish (har 5 daqiqa), token yangilash (har 6 soat). Docker'da `PUBLISH_JOBS_MODE=celery` |
+| worker | Celery worker + beat (`-B`): rejalashtirilgan nashr (har daqiqa), nashrni tekshirish (har 5 daqiqa), token yangilash va statistika (har 6 soat), haftalik hisobot (dushanba 08:10 Toshkent). Docker'da `PUBLISH_JOBS_MODE=celery` |
 | postgres | localhost:5432 |
 | redis | localhost:6379 |
 
@@ -697,6 +719,10 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | `instagram_refresh_too_early` | Meta 24 soatdan yangi tokenni yangilamaydi. Keyinroq urinib ko‘ring |
 | "Qayta ulash kerak" | Token muddati o‘tgan yoki bekor qilingan. "Instagram’ni ulash" ni qayta bosing |
 | Callback'dan keyin login sahifasi chiqadi | Panelni redirect URI'dagi domen orqali oching (tunnel manzili), login qiling, oqim davom etadi |
+| Analitikada hamma joyda "—" | Statistika hali sinxronlanmagan: "Statistikani yangilash" tugmasini bosing. Ba’zi ko‘rsatkichlarni Meta umuman qaytarmaydi (masalan, Story uchun like) — bu xato emas |
+| Sinxronlash "ruxsat berilmagan" | `instagram_business_manage_insights` ruxsati yo‘q: akkauntni qayta ulang va ruxsatni belgilang |
+| Hisobot "qoidalar asosida", AI emas | Ollama ishlamayapti yoki AI faktlarda yo‘q son yozgan. Sabab hisobotda ko‘rsatiladi; faktlar baribir to‘g‘ri |
+| Haftalik hisobot `NO_DATA` | O‘tgan hafta uchun 7 kunlik akkaunt statistikasi saqlanmagan. Sinxronlash har kuni ishlab turishi kerak (Celery beat) |
 | Nashr natijasi `dry_run` | `META_DRY_RUN=true`. Real nashr uchun `false` qiling va backend'ni qayta ishga tushiring |
 | Readiness: "HTTPS bo‘lmagan media" | Lokal `http://localhost` manzilni Meta ocholmaydi. `MEDIA_PUBLIC_BASE_URL` yoki `PANEL_PUBLIC_URL` ga HTTPS tunnel manzilini yozing (§11) va media’ni qayta yuklang |
 | Readiness: "JPEG bo‘lmagan rasm" | Rasmni JPEG formatida saqlab, qayta yuklang |
@@ -720,7 +746,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | 6 — Approval System | ✅ |
 | 7 — Meta OAuth | ✅ |
 | 8 — Instagram Publishing | ✅ |
-| 9 — Analytics | ⏳ |
+| 9 — Analytics | ✅ |
 | 10 — Security hardening | ⏳ |
 | 11 — Docker (production images) | ⏳ |
 | 12 — Production deployment | ⏳ |
