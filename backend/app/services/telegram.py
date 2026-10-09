@@ -18,7 +18,7 @@ import hashlib
 import html
 import secrets
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select
@@ -38,6 +38,7 @@ from app.services.guards import APPROVER_ROLES, require_active_human
 
 CALLBACK_PREFIX = "mx:"
 NOTIFY_CURSOR_KEY = "telegram.notify_cursor"
+REMINDER_KEY = "telegram.last_reminder_at"
 CONFIRM_TTL = timedelta(minutes=10)
 EDIT_TTL = timedelta(minutes=30)
 MAX_MESSAGE = 3900
@@ -100,6 +101,11 @@ class Reply:
 
 def _hash(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
+
+
+def _parse_ts(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 def esc(value: object) -> str:
@@ -281,7 +287,15 @@ class TelegramService:
                 row = self.consume_token(
                     telegram_id,
                     token,
-                    {"approve", "reject", "edit", "approve_confirm", "reject_confirm", "cancel"},
+                    {
+                        "approve",
+                        "reject",
+                        "edit",
+                        "approve_confirm",
+                        "reject_confirm",
+                        "cancel",
+                        "rework",
+                    },
                 )
                 content = ContentRepository(self.session).get(row.content_id)
                 if content is None:
@@ -315,6 +329,8 @@ class TelegramService:
         # 2) The decision runs in ApprovalService's own transaction, so denied
         #    attempts are audited even though the decision itself fails.
         action, content_id, version = decision
+        if action == "rework":
+            return self._rework(actor, content_id, version)
         approvals = ApprovalService(self.session, self.audit)
         try:
             if action == "approve_confirm":
@@ -365,9 +381,52 @@ class TelegramService:
             return Reply(str(exc))
         except AppError as exc:
             return Reply(ERROR_TEXT.get(exc.code, exc.message))
+        content = ContentRepository(self.session).get(row.content_id)
+        buttons: list[list[Button]] = []
+        if content is not None:
+            with atomic(self.session):
+                rework = self.issue_token(telegram_id, "rework", content)
+            buttons = [
+                [Button("🤖 AI qayta ishlasin", CALLBACK_PREFIX + rework)],
+                [Button("Panelda tahrirlash", url=self.panel_link(content))],
+            ]
         return Reply(
-            f"✏️ #{row.content_id} uchun tahrir so‘raldi. Panelda yoki AI orqali qayta "
-            "yaratish mumkin."
+            f"✏️ #{row.content_id} uchun tahrir so‘raldi. AI izohingiz asosida qayta ishlashi "
+            "mumkin yoki panelda o‘zingiz tahrirlang.",
+            buttons=buttons,
+        )
+
+    def _rework(self, actor: HumanActor, content_id: int, version: int) -> Reply:
+        """Edit -> AI rework -> back to the approval queue (approvers get notified)."""
+        from app.services.ai_content import AIContentService, JobType
+
+        service = AIContentService(self.session)
+        try:
+            job = service.request(
+                JobType.REGENERATE,
+                {"content_id": content_id, "expected_version": version},
+                actor,
+            )
+        except AppError as exc:
+            return Reply(ERROR_TEXT.get(exc.code, exc.message))
+        if self.settings.ai_jobs_mode == "celery":
+            from app.workers.tasks.ai import run_ai_job
+
+            run_ai_job.delay(job.id)
+            return Reply(
+                f"⏳ AI #{content_id} ni qayta ishlamoqda (vazifa #{job.id}). Tayyor bo‘lgach, "
+                "tasdiqlash uchun xabar keladi."
+            )
+        outcome = service.execute(job.id)
+        if outcome.job.status.value == "FAILED":
+            return Reply(
+                f"⚠️ AI qayta ishlay olmadi: {esc(outcome.job.error or '')}\n"
+                "Panelda tahrirlang yoki keyinroq urinib ko‘ring."
+            )
+        new_version = outcome.content.version if outcome.content else "?"
+        return Reply(
+            f"🤖 #{content_id} qayta ishlandi (v{new_version}) va ko‘rib chiqish navbatiga "
+            "qaytdi. Tasdiqlash uchun xabar keladi."
         )
 
     def _fresh_buttons(self, telegram_id: int, content: Content) -> list[list[Button]]:
@@ -529,6 +588,29 @@ class TelegramService:
                 if len(seen) >= limit:
                     break
         return out, last
+
+    def collect_reminders(self) -> list[tuple[int, Reply]]:
+        """Digest of content waiting longer than APPROVAL_REMINDER_HOURS (once per period)."""
+        hours = self.settings.approval_reminder_hours
+        if hours <= 0:
+            return []
+        repo = SystemSettingRepository(self.session)
+        now = utcnow()
+        last = repo.get_value(REMINDER_KEY)
+        if last and (now - _parse_ts(last)) < timedelta(hours=hours):
+            return []
+        threshold = now - timedelta(hours=hours)
+        waiting = [c for c in self.pending_reviews(limit=50) if c.updated_at <= threshold]
+        with atomic(self.session):
+            repo.set_value(REMINDER_KEY, now.isoformat(), "Last approval reminder digest")
+        if not waiting:
+            return []
+        lines = [f"⏰ <b>{len(waiting)} ta kontent {hours} soatdan ko‘proq tasdiq kutmoqda</b>"]
+        for c in waiting[:10]:
+            lines.append(f"• #{c.id} {esc(_cut(c.topic or c.content_type.value, 60))}")
+        lines.append("Ko‘rish: /content")
+        text = "\n".join(lines)
+        return [(int(u.telegram_user_id or 0), Reply(text)) for u in self.recipients()]
 
     def advance_cursor(self, last_id: int) -> None:
         with atomic(self.session):

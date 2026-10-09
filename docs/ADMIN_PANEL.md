@@ -30,6 +30,7 @@ Browser ──(same origin, httpOnly cookie)──► Next.js  /api/auth/login|l
 | `/overview` | Total / pending approval / scheduled / published / failed / drafts, reach & engagement (real analytics only, otherwise "Ma’lumot yo‘q"), upcoming, AI + system status |
 | `/content` | Content queue with status tabs, type filter, pagination |
 | `/content/new` | Manual draft |
+| `/approvals` | Review queue (longest waiting first) and decision history (PHASE 6) |
 | `/content/[id]` | **Approval UI**: preview (media / caption / hashtags / slides / scenes / frames), info (platform, scheduled time, version), actions, quality check, history |
 | `/ai` | AI Studio: post, carousel, reels, story, ideas, content plan, strategy, hashtags (polls jobs in Celery mode) |
 | `/calendar` | Day / week / month views; item panel with Preview, Edit, Regenerate, Approve, Schedule, Delete |
@@ -50,8 +51,8 @@ Actions shown per status (the backend enforces the same rules):
 |---|---|
 | DRAFT, EDIT_REQUESTED | Edit, Submit for review, Regenerate, Delete |
 | READY_FOR_REVIEW | **Approve**, Request edit, Reject, Edit, Regenerate, Delete |
-| APPROVED | Schedule, Request edit, Edit (warns: new version → re-approval), Delete |
-| SCHEDULED | Cancel schedule, Request edit, Edit, Delete |
+| APPROVED | Schedule, Revoke approval, Request edit, Edit (warns: new version → re-approval), Delete |
+| SCHEDULED | Cancel schedule, Revoke approval, Request edit, Edit, Delete |
 | FAILED | Edit, Regenerate, Delete |
 | REJECTED | Delete |
 | GENERATING, PUBLISHING, PUBLISHED | none |
@@ -61,6 +62,9 @@ Actions shown per status (the backend enforces the same rules):
 * The approve confirmation states the exact version and that **it does not publish**.
 * "Approve & publish" is shown disabled ("PHASE 8"): there is no publish endpoint.
 * Scheduling works (human-only, approved version only) but nothing is published until PHASE 8.
+
+The content page also shows **Nashrga tayyorlik** (preflight checklist) and
+**O‘zgarishlar** (line diff vs. the last approved version) — PHASE 6.
 
 ## 4. New backend endpoints
 

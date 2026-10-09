@@ -3,7 +3,7 @@
 There is intentionally no publish endpoint in PHASE 2.
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query, status
 
@@ -25,7 +25,9 @@ from app.schemas.content import (
 )
 from app.schemas.errors import error_responses
 from app.schemas.panel import ScheduleRead, ScheduleRequest
+from app.schemas.review import FieldDiffRead, ReadinessCheckRead, ReadinessRead, VersionDiffRead
 from app.services import ApprovalService, ContentService, ScheduleService
+from app.services.review import ReviewService
 
 router = APIRouter(prefix="/contents", tags=["contents"])
 
@@ -57,10 +59,11 @@ def list_contents(
     content_type: ContentType | None = None,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    sort: Literal["newest", "oldest", "updated", "waiting"] = "newest",
 ) -> ContentList:
     service = ContentService(db)
     rows, total = service.list(
-        status=status_, content_type=content_type, offset=offset, limit=limit
+        status=status_, content_type=content_type, offset=offset, limit=limit, sort=sort
     )
     return ContentList(
         items=[_read(service, c) for c in rows], total=total, offset=offset, limit=limit
@@ -256,3 +259,72 @@ def unschedule(content_id: int, db: DbSession, actor: HumanActorDep) -> ContentR
 )
 def delete_content(content_id: int, db: DbSession, actor: HumanActorDep) -> None:
     ContentService(db).soft_delete(content_id, actor)
+
+
+@router.get(
+    "/{content_id}/readiness",
+    response_model=ReadinessRead,
+    summary="Publish readiness checklist (preflight)",
+    description="Read-only. Shows every condition that must hold before publishing "
+    "(status, valid human approval of this version, quality, format, media, Instagram account, "
+    "publisher). The PHASE 8 publisher uses the same checks.",
+    responses=error_responses(401, 404),
+)
+def readiness(content_id: int, db: DbSession, _: HumanActorDep) -> ReadinessRead:
+    r = ReviewService(db).readiness(content_id)
+    return ReadinessRead(
+        ready=r.ready,
+        content_id=r.content_id,
+        version=r.version,
+        checks=[
+            ReadinessCheckRead(key=c.key, ok=c.ok, severity=c.severity, message=c.message)
+            for c in r.checks
+        ],
+    )
+
+
+@router.get(
+    "/{content_id}/diff",
+    response_model=VersionDiffRead,
+    summary="What changed between two versions",
+    description="Defaults: compare the current version with the last approved one (or the "
+    "previous version). Text fields include a line diff.",
+    responses=error_responses(400, 401, 404),
+)
+def diff(
+    content_id: int,
+    db: DbSession,
+    _: HumanActorDep,
+    from_version: Annotated[int | None, Query(ge=1)] = None,
+    to_version: Annotated[int | None, Query(ge=1)] = None,
+) -> VersionDiffRead:
+    d = ReviewService(db).diff(content_id, from_version, to_version)
+    return VersionDiffRead(
+        content_id=d.content_id,
+        from_version=d.from_version,
+        to_version=d.to_version,
+        from_label=d.from_label,
+        changed_fields=d.changed_fields,
+        fields=[
+            FieldDiffRead(field=f.field, changed=f.changed, old=f.old, new=f.new, lines=f.lines)
+            for f in d.fields
+        ],
+    )
+
+
+@router.post(
+    "/{content_id}/revoke-approval",
+    response_model=ContentRead,
+    summary="Revoke the approval (human only)",
+    description="APPROVED / SCHEDULED -> READY_FOR_REVIEW. The approval stops authorising "
+    "publishing and pending schedules are cancelled.",
+    responses=error_responses(401, 403, 404, 409, 422),
+)
+def revoke_approval(
+    content_id: int, body: DecisionRequest, db: DbSession, actor: HumanActorDep
+) -> ContentRead:
+    ApprovalService(db).revoke(
+        content_id, actor, expected_version=body.expected_version, comment=body.comment
+    )
+    service = ContentService(db)
+    return _read(service, service.get(content_id))

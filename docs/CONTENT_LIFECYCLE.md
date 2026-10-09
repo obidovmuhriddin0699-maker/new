@@ -122,3 +122,46 @@ recursively redacted (`password`, `token`, `secret`, `authorization`,
 `api_key`, `encryption_key`, …). Successful events are written in the same
 transaction as the change; denied attempts are written after rollback so they
 are never lost.
+
+## 8. PHASE 6 additions
+
+### Approval evaluation
+`ApprovalService.evaluate(content)` returns `valid` plus machine-readable reasons:
+`no_active_approval`, `snapshot_hash_mismatch`, `content_modified`, `approver_inactive`,
+`approval_expired`. `require_valid_approval` includes these reasons in its 409 error.
+
+### Policies (`.env`)
+| Setting | Default | Effect |
+|---|---|---|
+| `APPROVAL_MAX_AGE_HOURS` | `0` (off) | Older approvals stop authorising publishing; re-approval needed |
+| `APPROVAL_REQUIRE_DIFFERENT_APPROVER` | `false` | "Four eyes": a human cannot approve a version they wrote (AI-written versions are fine) |
+| `APPROVAL_REMINDER_HOURS` | `24` | Telegram digest for content waiting longer than this (0 = off) |
+
+### Revoke
+`POST /contents/{id}/revoke-approval` (human approver, `expected_version`):
+APPROVED/SCHEDULED → READY_FOR_REVIEW, approval invalidated (`revoked`), schedules
+cancelled, audited as `CONTENT_APPROVAL_REVOKED`. The same version may be approved again.
+
+### Edit → AI rework → review queue
+* Panel: "Tahrir so‘rash" with "AI qayta ishlab chiqsin" (default on) records the edit
+  request and runs `ai/regenerate` with the comment; the new version returns to
+  READY_FOR_REVIEW.
+* Telegram: after the ✏️ comment the bot offers **🤖 AI qayta ishlasin** (one-time token);
+  the result is announced to approvers like any new review item.
+* Nothing is ever approved automatically.
+
+### Publish readiness (preflight)
+`GET /contents/{id}/readiness` — read-only checklist with blockers: status, valid
+approval (with reasons), quality errors, aspect ratio, media (count, kind, public HTTPS
+URLs), connected Instagram account with a live token, publisher (PHASE 8). PHASE 8 must
+call this before publishing so the panel and the publisher share one rulebook.
+
+### Version diff
+`GET /contents/{id}/diff[?from_version=&to_version=]` — defaults to "last approved
+version → current" (or previous version). Text fields come with a line diff; hashtags as
+added/removed; structure and media as JSON diff.
+
+### Approvals log and queue
+`GET /approvals` (filters: decision, channel, active_only) and
+`GET /contents?status=READY_FOR_REVIEW&sort=waiting` (longest waiting first).
+Bulk approval is intentionally not provided.

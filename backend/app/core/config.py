@@ -77,6 +77,15 @@ class Settings(BaseSettings):
     image_provider: Literal["none", "mock"] = "none"
     video_provider: Literal["none", "mock"] = "none"
 
+    # --- Approval policy (PHASE 6) ---
+    # 0 = approvals never expire. Otherwise an approval older than this no longer
+    # authorises publishing and the content must be re-approved.
+    approval_max_age_hours: int = 0
+    # "Four eyes": the approver must not be the person who wrote the current version.
+    approval_require_different_approver: bool = False
+    # Telegram digest for content waiting longer than this (0 = off).
+    approval_reminder_hours: int = 24
+
     # --- Telegram bot (PHASE 5) ---
     telegram_enabled: bool = False
     telegram_bot_token: SecretStr = SecretStr("")

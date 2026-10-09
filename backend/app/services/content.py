@@ -114,9 +114,10 @@ class ContentService:
         content_type: ContentType | None = None,
         offset: int = 0,
         limit: int = 50,
+        sort: str = "newest",
     ) -> tuple[Sequence[Content], int]:
         return self.contents.search(
-            status=status, content_type=content_type, offset=offset, limit=limit
+            status=status, content_type=content_type, offset=offset, limit=limit, sort=sort
         )
 
     def list_assets(self, content_id: int) -> Sequence[ContentAsset]:

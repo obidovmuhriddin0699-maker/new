@@ -20,13 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 def _collect(s: TelegramService):  # type: ignore[no-untyped-def]
-    return s.collect_review_notifications()
+    messages, last_id = s.collect_review_notifications()
+    reminders = s.collect_reminders()
+    return messages, reminders, last_id
 
 
 async def notify_once(bot: Bot) -> int:
-    messages, last_id = await with_service(_collect)
+    messages, reminders, last_id = await with_service(_collect)
     sent = 0
-    for telegram_id, reply in messages:
+    for telegram_id, reply in [*messages, *reminders]:
         try:
             await bot.send_message(telegram_id, reply.text, reply_markup=keyboard(reply.buttons))
             sent += 1
@@ -43,7 +45,7 @@ async def notify_once(bot: Bot) -> int:
                 AuditLogService(s.session).record(
                     AuditAction.TELEGRAM_NOTIFICATION_SENT,
                     SystemActor("telegram_bot"),
-                    details={"messages": sent, "cursor": last_id},
+                    details={"messages": sent, "cursor": last_id, "reminders": len(reminders)},
                 )
 
     await with_service(finish)

@@ -314,3 +314,73 @@ def test_link_code_requires_human(db, tg_settings):
         TelegramService(db).create_link_code(AgentActor(name="x"))
     with pytest.raises(PermissionDeniedError):
         TelegramService(db).create_link_code(HumanActor(user_id=4242))
+
+
+# ------------------------------------------------------------------ PHASE 6: rework + reminders
+def test_edit_then_ai_rework_returns_to_queue(db, human, linked_owner, brand, monkeypatch):
+    import app.services.ai_content as module
+    from tests.conftest import mock_factory
+
+    monkeypatch.setattr(module, "create_ai_provider", mock_factory())
+    content = make_ready(db, human)
+    TelegramService(db).init_notify_cursor()  # bot already running
+    buttons = _review(db, TG_OWNER, content)
+    ask = TelegramService(db).handle_callback(TG_OWNER, buttons[1][0].callback_data)
+    done = TelegramService(db).submit_edit_comment(
+        TG_OWNER, ask.await_comment_token, "Qisqaroq qiling"
+    )
+    rework_cb = _cb(done, "🤖")
+    reply = TelegramService(db).handle_callback(TG_OWNER, rework_cb)
+    assert "qayta ishlandi (v2)" in reply.text
+    db.expire_all()
+    fresh = ContentService(db).get(content.id)
+    assert fresh.status == ContentStatus.READY_FOR_REVIEW and fresh.version == 2
+    # The new version is announced to approvers by the notifier:
+    svc = TelegramService(db)
+    messages, _ = svc.collect_review_notifications()
+    assert any(f"#{content.id} · v2" in r.text for _, r in messages)
+    assert "allaqachon" in TelegramService(db).handle_callback(TG_OWNER, rework_cb).text
+
+
+def test_rework_failure_marks_failed(db, human, linked_owner, brand, monkeypatch):
+    import app.services.ai_content as module
+    from app.providers.ai.base import AIProviderUnavailableError
+    from tests.conftest import mock_factory
+
+    monkeypatch.setattr(
+        module, "create_ai_provider", mock_factory(AIProviderUnavailableError("down"))
+    )
+    content = make_ready(db, human)
+    buttons = _review(db, TG_OWNER, content)
+    ask = TelegramService(db).handle_callback(TG_OWNER, buttons[1][0].callback_data)
+    done = TelegramService(db).submit_edit_comment(TG_OWNER, ask.await_comment_token, None)
+    reply = TelegramService(db).handle_callback(TG_OWNER, _cb(done, "🤖"))
+    assert "qayta ishlay olmadi" in reply.text
+    db.expire_all()
+    assert ContentService(db).get(content.id).status == ContentStatus.FAILED
+
+
+def test_reminder_digest(db, human, linked_owner, monkeypatch):
+    from sqlalchemy import update as sa_update
+
+    from app.models import Content
+
+    content = make_ready(db, human)
+    svc = TelegramService(db)
+    assert svc.collect_reminders() == []  # nothing old yet (marks the period start)
+    db.execute(sa_update(Content).values(updated_at=utcnow() - timedelta(hours=30)))
+    db.commit()
+    assert TelegramService(db).collect_reminders() == []  # once per period
+    from app.models import SystemSetting
+
+    db.execute(
+        sa_update(SystemSetting)
+        .where(SystemSetting.key == "telegram.last_reminder_at")
+        .values(value={"value": (utcnow() - timedelta(hours=25)).isoformat()})
+    )
+    db.commit()
+    reminders = TelegramService(db).collect_reminders()
+    assert [tg for tg, _ in reminders] == [TG_OWNER]
+    assert f"#{content.id}" in reminders[0][1].text and "24 soatdan" in reminders[0][1].text
+    monkeypatch.setattr(TelegramService(db).settings, "approval_reminder_hours", 0)
+    assert TelegramService(db).collect_reminders() == []

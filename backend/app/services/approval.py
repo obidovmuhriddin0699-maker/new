@@ -11,20 +11,25 @@ Rules enforced here:
 """
 
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import cast
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.actors import Actor, HumanActor
+from app.core.config import get_settings
 from app.core.errors import (
     AppError,
+    ApprovalForbiddenError,
     ApprovalRequiredError,
+    InvalidStateTransitionError,
     NotFoundError,
     VersionMismatchError,
 )
 from app.core.transaction import atomic
 from app.models import Approval, Content
+from app.models.base import utcnow
 from app.models.enums import (
     ApprovalDecision,
     AuditAction,
@@ -42,6 +47,24 @@ from app.services.content_hash import compute_hash, content_snapshot, media_snap
 from app.services.content_state import apply_transition, assert_transition
 from app.services.guards import APPROVER_ROLES, require_human_approver
 from app.services.invalidation import cancel_pending_schedules, invalidate_active_approvals
+
+
+@dataclass(frozen=True, slots=True)
+class ApprovalCheck:
+    """Why an approval does or does not authorise publishing the current version."""
+
+    valid: bool
+    approval: Approval | None
+    reasons: tuple[str, ...]
+
+
+APPROVAL_REASON_TEXT = {
+    "no_active_approval": "Joriy versiya uchun amaldagi tasdiq yo‘q.",
+    "snapshot_hash_mismatch": "Tasdiq versiya snapshot'iga mos kelmaydi.",
+    "content_modified": "Kontent tasdiqlangandan keyin o‘zgartirilgan.",
+    "approver_inactive": "Tasdiqlagan foydalanuvchi faol emas yoki huquqi yo‘q.",
+    "approval_expired": "Tasdiq muddati o‘tgan; qayta tasdiqlash kerak.",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +102,7 @@ class ApprovalService:
                     return ApprovalResult(existing, content, created=False)
 
                 assert_transition(content.status, ContentStatus.APPROVED)
+                self._check_four_eyes(content, human)
                 content_hash = self._verified_hash(content)
                 approval = Approval(
                     content_id=content.id,
@@ -141,31 +165,85 @@ class ApprovalService:
         )
 
     # ------------------------------------------------------------ authorization
-    def get_valid_approval(self, content: Content) -> Approval | None:
-        """Active approval that authorises publishing *this exact* content, else None."""
+    def evaluate(self, content: Content) -> ApprovalCheck:
+        """Check every condition an approval must meet to authorise publishing."""
         approval = self.approvals.get_active_approval(content.id, content.version)
         if approval is None or approval.content_version != content.version:
-            return None
+            return ApprovalCheck(False, None, ("no_active_approval",))
+        reasons: list[str] = []
         version_row = self.versions.get_version(content.id, content.version)
         if version_row is None or version_row.content_hash != approval.content_hash:
-            return None
+            reasons.append("snapshot_hash_mismatch")
         if self._current_hash(content) != approval.content_hash:
-            return None
+            reasons.append("content_modified")
         approver = UserRepository(self.session).get_active(approval.decided_by_user_id)
         if approver is None or approver.role not in APPROVER_ROLES:
-            return None
-        return approval
+            reasons.append("approver_inactive")
+        max_age = get_settings().approval_max_age_hours
+        if max_age > 0 and approval.created_at < utcnow() - timedelta(hours=max_age):
+            reasons.append("approval_expired")
+        return ApprovalCheck(not reasons, approval, tuple(reasons))
+
+    def get_valid_approval(self, content: Content) -> Approval | None:
+        """Active approval that authorises publishing *this exact* content, else None."""
+        check = self.evaluate(content)
+        return check.approval if check.valid else None
 
     def require_valid_approval(self, content: Content) -> Approval:
         approval = self.get_valid_approval(content)
         if approval is None:
+            check = self.evaluate(content)
             raise ApprovalRequiredError(
                 "A human approval of the current content version is required",
-                details={"content_id": content.id, "version": content.version},
+                details={
+                    "content_id": content.id,
+                    "version": content.version,
+                    "reasons": list(check.reasons),
+                },
             )
         return approval
 
+    def revoke(
+        self, content_id: int, actor: Actor, *, expected_version: int, comment: str | None = None
+    ) -> Content:
+        """Withdraw an approval: APPROVED/SCHEDULED -> READY_FOR_REVIEW, schedules cancelled."""
+        try:
+            with atomic(self.session):
+                require_human_approver(self.session, actor)
+                content = self._load(content_id)
+                self._check_version(content, expected_version)
+                if content.status not in (ContentStatus.APPROVED, ContentStatus.SCHEDULED):
+                    raise InvalidStateTransitionError(
+                        "Only APPROVED or SCHEDULED content can have its approval revoked"
+                    )
+                invalidated = invalidate_active_approvals(
+                    self.session, self.audit, content, actor, reason="revoked"
+                )
+                cancel_pending_schedules(self.session, self.audit, content, actor, "revoked")
+                apply_transition(content, ContentStatus.READY_FOR_REVIEW)
+                self.audit.record(
+                    AuditAction.CONTENT_APPROVAL_REVOKED,
+                    actor,
+                    content_id=content.id,
+                    content_version=content.version,
+                    details={"approval_ids": [a.id for a in invalidated], "comment": comment},
+                )
+                return content
+        except AppError as exc:
+            self._record_denial(AuditAction.CONTENT_APPROVAL_REVOKED, actor, content_id, exc)
+            raise
+
     # ------------------------------------------------------------------ helpers
+    def _check_four_eyes(self, content: Content, human: HumanActor) -> None:
+        if not get_settings().approval_require_different_approver:
+            return
+        version_row = self.versions.get_version(content.id, content.version)
+        if version_row is not None and version_row.created_by_user_id == human.user_id:
+            raise ApprovalForbiddenError(
+                "Four-eyes policy: you wrote this version, another approver must approve it",
+                code="four_eyes_required",
+            )
+
     def _decide(
         self,
         content_id: int,

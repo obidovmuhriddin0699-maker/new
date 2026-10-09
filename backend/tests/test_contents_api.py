@@ -212,8 +212,9 @@ def test_responses_do_not_expose_sensitive_fields(client, auth_headers):
 def test_openapi_documents_security_and_errors(client):
     spec = client.get("/openapi.json").json()
     paths = {p: v for p, v in spec["paths"].items() if p.startswith(BASE)}
-    # collection, item, 4 decision/review actions, history, schedule (PHASE 4)
-    assert len(paths) == 8
+    # collection, item, 4 decision/review actions, history, schedule (PHASE 4),
+    # readiness, diff, revoke-approval (PHASE 6)
+    assert len(paths) == 11
     for path, ops in spec["paths"].items():
         if not path.startswith(BASE):
             continue

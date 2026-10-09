@@ -25,6 +25,11 @@ def test_seed_creates_safe_dev_data_and_is_idempotent(db, monkeypatch):
     content = db.get(Content, first.content_id)
     assert content.status == ContentStatus.DRAFT
     assert len(ContentAssetRepository(db).list_for_content(content.id)) == 3
+    assert len(content.structure["slides"]) == 3
+    from app.services.review import ReviewService
+
+    checks = {c.key: c.ok for c in ReviewService(db).readiness(content.id).checks}
+    assert checks["quality"] and checks["format"]  # the example is a valid carousel draft
     assert SystemSettingRepository(db).get_value("content.default_language") == "uz"
     # No Instagram accounts or tokens are ever seeded.
     assert db.scalar(select(func.count()).select_from(InstagramAccount)) == 0

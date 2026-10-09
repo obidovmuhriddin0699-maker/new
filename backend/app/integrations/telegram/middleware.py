@@ -42,7 +42,9 @@ class AccessMiddleware(BaseMiddleware):
             return None  # ignore groups/channels silently
         if user.id not in get_settings().telegram_allowed_user_ids:
             now = time.monotonic()
-            if now - _last_denied.get(user.id, 0) > _DENY_AUDIT_EVERY:
+            last = _last_denied.get(user.id)
+            # Note: compare against None, not 0 — monotonic() can be small after boot.
+            if last is None or now - last > _DENY_AUDIT_EVERY:
                 _last_denied[user.id] = now
                 logger.warning("telegram_access_denied", extra={"telegram_user_id": user.id})
                 await with_service(lambda s: s.record_denied(user.id, "not in allowlist"))

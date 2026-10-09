@@ -4,7 +4,7 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 5 — Telegram bot.**
+> **Joriy holat: PHASE 6 — Approval system.**
 > Real Instagram OAuth va real publishing hali **yo‘q** (PHASE 7–8).
 > Meta credentials kerak emas va so‘ralmaydi.
 
@@ -94,6 +94,16 @@ PHASE 5 da qo'shilganlar (Telegram bot):
   - Telegram ID `TELEGRAM_ALLOWED_USER_IDS` ro'yxatida bo'lishi;
   - hisob panel orqali bir martalik kod bilan bog'langan bo'lishi.
 - Yangi kontent ko'rib chiqishga tushganda tasdiqlovchilarga avtomatik xabar yuboriladi.
+
+PHASE 6 da qo'shilganlar (approval tizimi):
+
+- **Nashrga tayyorlik tekshiruvi (preflight).** Status, tasdiq (sababi bilan), sifat, format, media, Instagram akkaunt va publisher holati tekshiriladi. PHASE 8 da publish servisi aynan shu tekshiruvdan foydalanadi.
+- **Versiyalar farqi (diff).** Tasdiqlovchi oxirgi tasdiqlangan versiyaga nisbatan nima o'zgarganini satrma-satr ko'radi.
+- **Tasdiqni bekor qilish (revoke).**
+- **"Tahrir → AI qayta ishlaydi → yana navbatga" sikli.** Panelda ham, Telegram'da ham ishlaydi (🤖 tugmasi).
+- **Ixtiyoriy siyosatlar:** "to'rt ko'z" qoidasi va tasdiq muddati.
+- **"Tasdiqlar" sahifasi:** kutayotganlar navbati (eng uzoq kutayotgani birinchi) va qarorlar tarixi (kanal va qaror bo'yicha filtr bilan).
+- **Telegram eslatmalari:** uzoq kutib qolgan kontent haqida.
 
 ## 2. Requirements (Windows 11)
 
@@ -195,6 +205,9 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 | `META_GRAPH_API_VERSION` | Graph API versiyasi (rasmiy changelog bilan tekshiring) |
 | `META_DRY_RUN` | `true` bo‘lsa real akkauntga hech narsa yuborilmaydi |
 | `BACKEND_URL` | Next.js server tomoni backend'ga shu manzil orqali ulanadi (brauzerga yuborilmaydi) |
+| `APPROVAL_MAX_AGE_HOURS` | Tasdiq amal qilish muddati (0 = cheksiz) |
+| `APPROVAL_REQUIRE_DIFFERENT_APPROVER` | "To'rt ko'z": versiyani yozgan odam uni o'zi tasdiqlay olmaydi |
+| `APPROVAL_REMINDER_HOURS` | Shuncha soatdan ko'p kutgan kontent haqida Telegram eslatmasi (0 = o'chiq) |
 | `SESSION_COOKIE_SECURE` | `auto` (HTTPS bo'lsa Secure), `true` yoki `false` |
 
 Production'da `APP_ENV=production` bo‘lsa, backend quyidagi holatlarda **ishga tushmaydi**:
@@ -498,6 +511,8 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | Bot "ruxsat berilmagan" deydi | Telegram ID'ingizni `TELEGRAM_ALLOWED_USER_IDS` ga qo'shing va botni qayta ishga tushiring |
 | Bot "hisob bog'lanmagan" deydi | Panel → Telegram → kod oling, botga `/start KOD` yuboring (kod 10 daqiqa amal qiladi) |
 | "Bu tugma allaqachon ishlatilgan / muddati tugagan" | `/content` buyrug'i bilan yangi tugmalar oling |
+| `403 four_eyes_required` | "To'rt ko'z" siyosati yoqilgan: bu versiyani boshqa admin tasdiqlashi kerak |
+| `409 approval_required` (reasons: `approval_expired`) | Tasdiq muddati o'tgan, kontentni qayta tasdiqlang |
 | `429 too_many_requests` | Oldingi AI job'lar tugashini kuting (`GET /api/v1/ai/jobs`) |
 | `400 language_not_supported` | Bu til brend profilida yoqilmagan (`languages`) |
 | Migration `91ed60cfe649 requires 'approvals' to be empty` | Eski versiyasiz approval qatorlari bor; ularni xavfsiz ko'chirib bo'lmaydi |
@@ -512,7 +527,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | 3 — AI Content Creator | ✅ |
 | 4 — Admin Panel | ✅ |
 | 5 — Telegram Bot | ✅ |
-| 6 — Approval System | ⏳ |
+| 6 — Approval System | ✅ |
 | 7 — Meta OAuth | ⏳ |
 | 8 — Instagram Publishing | ⏳ |
 | 9 — Analytics | ⏳ |

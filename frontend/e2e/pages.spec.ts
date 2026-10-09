@@ -5,6 +5,7 @@ import { expectNoHorizontalScroll, loginAPI, appAlerts } from "./helpers";
 const PAGES: [string, string][] = [
   ["/overview", "Umumiy ko‘rinish"],
   ["/content", "Kontent navbati"],
+  ["/approvals", "Tasdiqlar"],
   ["/content/new", "Qo‘lda kontent yaratish"],
   ["/ai", "AI Studio"],
   ["/calendar", "Kalendar"],

@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from "react";
 import { EditForm } from "@/components/content/EditForm";
 import { CaptionView, MediaBox, StructureView } from "@/components/content/Preview";
 import { QualityView } from "@/components/content/Quality";
+import { DiffCard, ReadinessCard } from "@/components/content/Review";
 import { Button, Card, ErrorBox, Field, KeyValue, Loading, Notice, StatusBadge, TypeBadge, inputClass } from "@/components/ui";
 import { api } from "@/lib/api";
 import { runGeneration } from "@/lib/ai";
@@ -14,15 +15,15 @@ import { formatDate, formatDateTime, STATUS_LABEL } from "@/lib/format";
 import type { Content, ContentHistory, ContentStatus, QualityReport } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 
-type Action = "approve" | "reject" | "request-edit" | "submit" | "regenerate" | "schedule" | "unschedule" | "delete";
+type Action = "approve" | "reject" | "request-edit" | "submit" | "regenerate" | "schedule" | "unschedule" | "revoke" | "delete";
 
 const ALLOWED: Record<ContentStatus, Action[]> = {
   DRAFT: ["submit", "regenerate", "delete"],
   GENERATING: [],
   READY_FOR_REVIEW: ["approve", "request-edit", "reject", "regenerate", "delete"],
   EDIT_REQUESTED: ["submit", "regenerate", "delete"],
-  APPROVED: ["schedule", "request-edit", "delete"],
-  SCHEDULED: ["unschedule", "request-edit", "delete"],
+  APPROVED: ["schedule", "revoke", "request-edit", "delete"],
+  SCHEDULED: ["unschedule", "revoke", "request-edit", "delete"],
   PUBLISHING: [],
   PUBLISHED: [],
   FAILED: ["regenerate", "delete"],
@@ -38,6 +39,7 @@ const ACTION_LABEL: Record<Action, string> = {
   regenerate: "Qayta yaratish (AI)",
   schedule: "Rejalashtirish",
   unschedule: "Rejani bekor qilish",
+  revoke: "Tasdiqni bekor qilish",
   delete: "O‘chirish",
 };
 
@@ -62,6 +64,7 @@ function Detail() {
   const [actionError, setActionError] = useState<unknown>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [quality, setQuality] = useState<QualityReport | null>(null);
+  const [aiRework, setAiRework] = useState(true);
   const [checking, setChecking] = useState(false);
 
   const c = content.data;
@@ -92,6 +95,15 @@ function Detail() {
         await api(`contents/${c.id}/reject`, { method: "POST", body });
       } else if (action === "request-edit") {
         await api(`contents/${c.id}/request-edit`, { method: "POST", body });
+        if (aiRework) {
+          // Edit -> AI rework -> back to the review queue (never auto-approved).
+          const r = await runGeneration("ai/regenerate", { content_id: c.id, expected_version: c.version, instructions: comment || null });
+          if (r.quality) setQuality(r.quality);
+          setMessage("AI izohingiz asosida yangi versiya yaratdi va u ko‘rib chiqishga qaytdi.");
+        }
+      } else if (action === "revoke") {
+        await api(`contents/${c.id}/revoke-approval`, { method: "POST", body });
+        setMessage("Tasdiq bekor qilindi. Kontent qayta ko‘rib chiqishda.");
       } else if (action === "submit") {
         await api(`contents/${c.id}/submit-review`, { method: "POST" });
       } else if (action === "schedule") {
@@ -185,6 +197,8 @@ function Detail() {
             {quality ? <QualityView report={quality} /> : <p className="text-sm text-muted">Avtomatik qoidalar bo‘yicha tekshirish uchun tugmani bosing. Holat o‘zgarmaydi.</p>}
           </Card>
 
+          <DiffCard contentId={c.id} version={c.version} versions={history.data?.versions ?? []} />
+
           <HistoryCard history={history.data} />
         </div>
 
@@ -203,6 +217,8 @@ function Detail() {
             />
             {c.last_error && <p className="mt-3 text-sm text-red-700 dark:text-red-300">Oxirgi xato: {c.last_error}</p>}
           </Card>
+
+          <ReadinessCard key={`${c.version}-${c.status}`} contentId={c.id} version={c.version} />
 
           <Card title="Amallar">
             <div className="flex flex-col gap-2" data-testid="actions">
@@ -245,6 +261,13 @@ function Detail() {
                   </p>
                 )}
                 {pending === "delete" && <p className="text-sm text-muted">Kontent arxivlanadi (soft delete), tasdiqlar bekor qilinadi.</p>}
+                {pending === "revoke" && <p className="text-sm text-muted">Tasdiq kuchini yo‘qotadi, rejalashtirish bekor qilinadi, kontent qayta ko‘rib chiqishga qaytadi.</p>}
+                {pending === "request-edit" && (
+                  <label className="flex items-start gap-2 text-sm">
+                    <input type="checkbox" className="mt-1" checked={aiRework} onChange={(e) => setAiRework(e.target.checked)} data-testid="ai-rework" />
+                    <span>AI izoh asosida qayta ishlab chiqsin va yana ko‘rib chiqishga yuborsin</span>
+                  </label>
+                )}
                 {pending === "regenerate" && (
                   <p className="text-sm text-muted">AI yangi versiya yozadi. U avtomatik tasdiqlanmaydi.</p>
                 )}
@@ -253,7 +276,7 @@ function Detail() {
                     <input type="datetime-local" className={inputClass} value={when} onChange={(e) => setWhen(e.target.value)} />
                   </Field>
                 )}
-                {(needsComment || pending === "approve") && (
+                {(needsComment || pending === "approve" || pending === "revoke") && (
                   <Field label={pending === "regenerate" ? "AI uchun ko‘rsatma (ixtiyoriy)" : "Izoh (ixtiyoriy)"}>
                     <textarea className={`${inputClass} min-h-20`} maxLength={1000} value={comment} onChange={(e) => setComment(e.target.value)} />
                   </Field>

@@ -25,6 +25,7 @@ class ContentRepository(BaseRepository[Content]):
         content_type: ContentType | None = None,
         offset: int = 0,
         limit: int = 50,
+        sort: str = "newest",
     ) -> tuple[Sequence[Content], int]:
         stmt = self._select()
         if status is not None:
@@ -32,9 +33,14 @@ class ContentRepository(BaseRepository[Content]):
         if content_type is not None:
             stmt = stmt.where(Content.content_type == content_type)
         total = self.session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-        rows = self.session.scalars(
-            stmt.order_by(Content.created_at.desc(), Content.id.desc()).offset(offset).limit(limit)
-        ).all()
+        order = {
+            "newest": (Content.created_at.desc(), Content.id.desc()),
+            "oldest": (Content.created_at.asc(), Content.id.asc()),
+            "updated": (Content.updated_at.desc(), Content.id.desc()),
+            # Review queue: what has been waiting longest comes first.
+            "waiting": (Content.updated_at.asc(), Content.id.asc()),
+        }[sort]
+        rows = self.session.scalars(stmt.order_by(*order).offset(offset).limit(limit)).all()
         return rows, total
 
 

@@ -226,3 +226,24 @@ export type Health = {
   environment: string;
   components: Record<string, { ok: boolean; error?: string | null }>;
 };
+
+export type ReadinessCheck = { key: string; ok: boolean; severity: "blocker" | "warning" | "info"; message: string };
+export type Readiness = { ready: boolean; content_id: number; version: number; checks: ReadinessCheck[]; note: string };
+
+export type DiffLine = { op: "equal" | "add" | "remove"; text: string };
+export type FieldDiff = { field: string; changed: boolean; old: unknown; new: unknown; lines: DiffLine[] };
+export type VersionDiff = {
+  content_id: number;
+  from_version: number;
+  to_version: number;
+  from_label: string;
+  changed_fields: string[];
+  fields: FieldDiff[];
+};
+
+export type ApprovalLogItem = Approval & {
+  content_id: number;
+  content_topic: string | null;
+  decided_by_email: string | null;
+  active: boolean;
+};

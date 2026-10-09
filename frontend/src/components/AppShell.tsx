@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 const NAV: { href: string; label: string; group?: string }[] = [
   { href: "/overview", label: "Umumiy ko‘rinish" },
   { href: "/content", label: "Kontent navbati" },
+  { href: "/approvals", label: "Tasdiqlar" },
   { href: "/ai", label: "AI Studio" },
   { href: "/calendar", label: "Kalendar" },
   { href: "/media", label: "Media kutubxona" },

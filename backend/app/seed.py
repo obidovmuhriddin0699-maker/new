@@ -188,6 +188,27 @@ def run_seed(session: Session, *, admin_email: str | None = None) -> SeedResult:
                 cta="Foydali bo‘lsa, saqlab qo‘ying.",
                 visual_prompt=BRAND["visual_style"],
                 aspect_ratio="4:5",
+                structure={
+                    "kind": "carousel",
+                    "title": "Minimalist yotoqxona",
+                    "slides": [
+                        {
+                            "index": 1,
+                            "heading": "Ochiq ranglar",
+                            "body": "Bej va oq ranglar xonani kengroq ko‘rsatadi.",
+                        },
+                        {
+                            "index": 2,
+                            "heading": "Yashirin saqlash",
+                            "body": "Ko‘rinadigan buyumlar qancha kam bo‘lsa, shuncha tinch.",
+                        },
+                        {
+                            "index": 3,
+                            "heading": "Tabiiy yorug‘lik",
+                            "body": "Yengil pardalar kunduzgi yorug‘likni saqlaydi.",
+                        },
+                    ],
+                },
                 change_note="seed",
             )
             for position in range(3):
