@@ -199,7 +199,7 @@ Worker: muddati tugashidan oldin long-lived token refresh; muvaffaqiyatsiz bo‘
    - IMAGE: `image_url` (JPEG, ommaviy HTTPS URL)
    - REELS: `media_type=REELS`, `video_url`
    - CAROUSEL: har bir element `is_carousel_item=true`, so‘ng `media_type=CAROUSEL` + `children`
-   - STORIES: `media_type=STORIES` — **faqat Business akkaunt** (Creator emas). PHASE 8 da tekshiriladi.
+   - STORIES: `media_type=STORIES`. PHASE 8 da tekshirildi: Meta hujjatlari Creator akkauntlar uchun aniq emas, shuning uchun ular bloklanmaydi, faqat ogohlantirish chiqadi. Amaldagi oqim: [`PUBLISHING.md`](PUBLISHING.md).
 2. Video uchun `GET /{container-id}?fields=status_code` — `FINISHED` bo‘lguncha polling.
 3. `POST /{ig-user-id}/media_publish` (`creation_id`).
 4. Publish limiti (`content_publishing_limit`) oldindan tekshiriladi.

@@ -11,7 +11,8 @@ Verified against Meta's documentation (October 2026):
 * profile: GET {graph}/{version}/me?fields=user_id,username,account_type,...
   ``user_id`` is the Instagram professional account id; ``id`` is app-scoped.
 
-Never logs tokens (httpx loggers are capped at WARNING in configure_logging).
+Never logs tokens: httpx loggers are capped at WARNING and token parameters are redacted
+(app.core.logging.install_secret_filters).
 """
 
 from dataclasses import dataclass, field

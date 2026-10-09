@@ -1,8 +1,8 @@
 """Review helpers for approvers: publish readiness (preflight) and version diffs.
 
-``readiness`` is a read-only checklist. PHASE 8's publish service must call
-it (together with ``ApprovalService.require_valid_approval``) before doing
-anything, so the UI and the publisher share exactly the same rules.
+``readiness`` is a read-only checklist. The publish service calls it (together with
+``ApprovalService.require_valid_approval``) before contacting Meta, so the panel and
+the publisher share exactly the same rules.
 """
 
 import difflib
@@ -16,7 +16,8 @@ from sqlalchemy.orm import Session
 from app.agents.quality import EvaluationInput, QualityEvaluator
 from app.core.config import get_settings
 from app.core.errors import AppError, NotFoundError
-from app.models import Content, ContentVersion, InstagramAccount, OAuthToken
+from app.integrations.meta.capabilities import account_warning
+from app.models import Content, ContentAsset, ContentVersion, InstagramAccount
 from app.models.base import utcnow
 from app.models.enums import ApprovalDecision, AssetKind, ContentStatus, ContentType
 from app.providers.media import ALLOWED_ASPECT_RATIOS
@@ -26,8 +27,29 @@ from app.repositories import (
     ContentAssetRepository,
     ContentRepository,
     ContentVersionRepository,
+    OAuthTokenRepository,
 )
 from app.services.approval import APPROVAL_REASON_TEXT, ApprovalService
+
+PUBLISH_SCOPE = "instagram_business_content_publish"
+
+
+def _status_hint(status: ContentStatus) -> str:
+    if status in PUBLISHABLE_STATUSES:
+        return ""
+    if status == ContentStatus.PUBLISHED:
+        return " — allaqachon nashr qilingan"
+    if status == ContentStatus.PUBLISHING:
+        return " — nashr jarayonda"
+    return " — avval tasdiqlash kerak"
+
+
+def _is_jpeg(asset: ContentAsset) -> bool:
+    if asset.mime_type:
+        return asset.mime_type.lower() in ("image/jpeg", "image/jpg")
+    path = (asset.public_url or "").split("?", 1)[0].lower()
+    return path.endswith((".jpg", ".jpeg"))
+
 
 Severity = Literal["blocker", "warning", "info"]
 PUBLISHABLE_STATUSES = (ContentStatus.APPROVED, ContentStatus.SCHEDULED, ContentStatus.FAILED)
@@ -99,8 +121,7 @@ class ReviewService:
         add(
             "status",
             content.status in PUBLISHABLE_STATUSES,
-            f"Holat: {content.status.value}"
-            + ("" if content.status in PUBLISHABLE_STATUSES else " — avval tasdiqlash kerak"),
+            f"Holat: {content.status.value}" + _status_hint(content.status),
         )
         check = ApprovalService(self.session).evaluate(content)
         add(
@@ -155,42 +176,77 @@ class ReviewService:
                 if not bad_urls
                 else f"HTTPS bo‘lmagan media: {bad_urls} (Meta media’ni HTTPS URL orqali oladi)",
             )
+            not_jpeg = [a.id for a in usable if a.kind == AssetKind.IMAGE and not _is_jpeg(a)]
+            if any(a.kind == AssetKind.IMAGE for a in usable):
+                add(
+                    "media_format",
+                    not not_jpeg,
+                    "Rasmlar JPEG formatida"
+                    if not not_jpeg
+                    else f"JPEG bo‘lmagan rasm: {not_jpeg} "
+                    "(Meta faqat JPEG’ni ishonchli qabul qiladi)",
+                )
 
-        account_ok = self._instagram_ready(content)
+        account = self.publish_account(content)
         add(
             "instagram_account",
-            account_ok,
-            "Instagram akkaunt ulangan va token amalda"
-            if account_ok
-            else "Instagram akkaunt ulanmagan yoki tokenni yangilash kerak (Instagram sahifasi)",
+            account is not None,
+            f"Instagram akkaunt: @{account.username or account.ig_user_id}, token amalda"
+            if account is not None
+            else self._account_problem(content),
         )
+        if account is not None:
+            token = OAuthTokenRepository(self.session).get_active_for_account(account.id)
+            scopes = set(((token.scopes if token else None) or "").replace(",", " ").split())
+            add(
+                "publish_permission",
+                PUBLISH_SCOPE in scopes,
+                f"{PUBLISH_SCOPE} ruxsati berilgan"
+                if PUBLISH_SCOPE in scopes
+                else f"{PUBLISH_SCOPE} ruxsati yo‘q — akkauntni qayta ulang",
+            )
+            warning = account_warning(content.content_type, account.account_type)
+            if warning:
+                add("account_type", False, warning, "warning")
 
-        add("publisher", False, "Nashr servisi hali yo‘q (PHASE 8)")
         if get_settings().meta_dry_run:
             add(
                 "dry_run",
-                True,
-                "META_DRY_RUN=true — real akkauntga hech narsa yuborilmaydi",
-                "info",
+                False,
+                "META_DRY_RUN=true — tekshiruv va reja ko‘rsatiladi, Instagram’ga hech narsa "
+                "yuborilmaydi",
+                "warning",
             )
+        else:
+            add("publisher", True, "Nashr servisi tayyor (rasmiy Meta Content Publishing API)")
 
         ready = all(c.ok for c in checks if c.severity == "blocker")
         return Readiness(ready=ready, content_id=content.id, version=content.version, checks=checks)
 
-    def _instagram_ready(self, content: Content) -> bool:
+    def publish_account(self, content: Content) -> InstagramAccount | None:
+        """The account this content will be published to: the one set on the content,
+        else the only connected account. Requires a live (unexpired) token."""
         stmt = select(InstagramAccount).where(InstagramAccount.deleted_at.is_(None))
         if content.instagram_account_id:
             stmt = stmt.where(InstagramAccount.id == content.instagram_account_id)
-        for account in self.session.scalars(stmt):
-            token = self.session.scalar(
-                select(OAuthToken).where(
-                    OAuthToken.instagram_account_id == account.id,
-                    OAuthToken.revoked_at.is_(None),
-                )
+        accounts = [a for a in self.session.scalars(stmt) if self._token_live(a)]
+        return accounts[0] if len(accounts) == 1 else None
+
+    def _account_problem(self, content: Content) -> str:
+        live = [
+            a
+            for a in self.session.scalars(
+                select(InstagramAccount).where(InstagramAccount.deleted_at.is_(None))
             )
-            if token and (token.expires_at is None or token.expires_at > utcnow()):
-                return True
-        return False
+            if self._token_live(a)
+        ]
+        if not content.instagram_account_id and len(live) > 1:
+            return "Bir nechta Instagram akkaunt ulangan — kontent uchun akkauntni tanlang"
+        return "Instagram akkaunt ulanmagan yoki tokenni yangilash kerak (Instagram sahifasi)"
+
+    def _token_live(self, account: InstagramAccount) -> bool:
+        token = OAuthTokenRepository(self.session).get_active_for_account(account.id)
+        return token is not None and (token.expires_at is None or token.expires_at > utcnow())
 
     # ------------------------------------------------------------------ diff
     def default_base_version(self, content: Content) -> tuple[int, str]:

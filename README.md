@@ -4,9 +4,10 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 7 — Meta OAuth (Instagram Login).**
-> Instagram akkauntni rasmiy Meta OAuth orqali ulash, tokenni shifrlab saqlash va avtomatik yangilash tayyor.
-> Real publishing hali **yo‘q** (PHASE 8). `META_DRY_RUN=true` default.
+> **Joriy holat: PHASE 8 — Instagram Publishing.**
+> Tasdiqlangan kontentni rasmiy Meta Content Publishing API orqali nashr qilish (darhol yoki rejalashtirib),
+> media yuklash va takroriy post'dan himoya tayyor. Default `META_DRY_RUN=true`: tekshiruv va reja ko‘rsatiladi,
+> lekin Instagram’ga hech narsa yuborilmaydi.
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
@@ -14,6 +15,7 @@ tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘lad
 - Admin panel (sahifalar, xavfsizlik, approval UI): [`docs/ADMIN_PANEL.md`](docs/ADMIN_PANEL.md)
 - Telegram bot (buyruqlar, xavfsizlik, sozlash): [`docs/TELEGRAM_BOT.md`](docs/TELEGRAM_BOT.md)
 - Meta OAuth (oqim, xavfsizlik, token hayoti, callback'lar): [`docs/META_OAUTH.md`](docs/META_OAUTH.md)
+- Nashr qilish (oqim, takroriy post'dan himoya, xatolar, media): [`docs/PUBLISHING.md`](docs/PUBLISHING.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -54,7 +56,7 @@ PHASE 2 da qo'shilganlar:
 - Idempotency: approve, schedule va kelajakdagi publish bir xil key bilan takrorlansa dublikat yaratilmaydi.
 - `python -m app.cli seed`: xavfsiz development ma'lumotlari.
 - Content API: `/api/v1/contents` (list, create, get, patch, submit-review, request-edit, approve, reject, history).
-- **Publish endpoint yo'q.** U PHASE 8 da qo'shiladi.
+- **Publish endpoint yo'q edi.** U PHASE 8 da qo'shildi (faqat inson, faqat tasdiqlangan versiya).
 
 PHASE 3 da qo'shilganlar:
 
@@ -78,7 +80,7 @@ PHASE 4 da qo'shilganlar (admin panel):
   - Kalendar: kun, hafta va oy ko'rinishi;
   - Media kutubxona, Instagram, Analitika, AI sozlamalari, Brend sozlamalari, Telegram, Tizim loglari, Sozlamalar.
 - Approval UI tugmalari: **Tahrirlash, Qayta yaratish, Rad etish, Tasdiqlash**.
-  - "Tasdiqlash va nashr qilish" tugmasi PHASE 8 gacha o'chirilgan.
+  - "Tasdiqlash va nashr qilish" tugmasi PHASE 8 gacha o'chirilgan edi; endi alohida, tasdiqlanadigan "Instagram'ga nashr" bo'limi bor.
   - Tasdiq kontentning aniq versiyasiga bog'lanadi.
 - Xavfsiz sessiya:
   - JWT faqat httpOnly cookie'da saqlanadi, brauzer JavaScript'i uni o'qiy olmaydi.
@@ -98,7 +100,7 @@ PHASE 5 da qo'shilganlar (Telegram bot):
 
 PHASE 6 da qo'shilganlar (approval tizimi):
 
-- **Nashrga tayyorlik tekshiruvi (preflight).** Status, tasdiq (sababi bilan), sifat, format, media, Instagram akkaunt va publisher holati tekshiriladi. PHASE 8 da publish servisi aynan shu tekshiruvdan foydalanadi.
+- **Nashrga tayyorlik tekshiruvi (preflight).** Status, tasdiq (sababi bilan), sifat, format, media, Instagram akkaunt va publisher holati tekshiriladi. PHASE 8 publish servisi aynan shu tekshiruvdan foydalanadi.
 - **Versiyalar farqi (diff).** Tasdiqlovchi oxirgi tasdiqlangan versiyaga nisbatan nima o'zgarganini satrma-satr ko'radi.
 - **Tasdiqni bekor qilish (revoke).**
 - **"Tahrir → AI qayta ishlaydi → yana navbatga" sikli.** Panelda ham, Telegram'da ham ishlaydi (🤖 tugmasi).
@@ -115,6 +117,17 @@ PHASE 7 da qo'shilganlar (Meta OAuth, Instagram Login):
 - **Meta callback'lari:** deauthorize va data deletion (`signed_request` HMAC bilan tekshiriladi) hamda deletion status sahifasi.
 - **Xatolar:** Meta xato kodlari tasniflanadi (token muddati, ruxsat, limit, tarmoq) va o'zbekcha tushunarli xabar sifatida ko'rsatiladi.
 - **Instagram sahifasi:** holat, ruxsatlar, token muddati, ogohlantirishlar, "qayta ulash kerak" belgisi.
+
+PHASE 8 da qo'shilganlar (Instagram'ga nashr qilish):
+
+- **Nashr:** Post, Carousel, Reels va Story rasmiy Content Publishing API orqali chiqadi (container → `status_code` → `media_publish`). Nashr darhol (tugma bilan) yoki rejalashtirilgan vaqtda (Celery beat har daqiqada tekshiradi) bo'ladi.
+- **Faqat tasdiqlangan versiya:** tasdiqlangan versiyaning snapshot'i nashr qilinadi. Meta'ga murojaatdan oldin tasdiq hash'i va panel ko'rsatadigan barcha tekshiruvlar qayta bajariladi. Nashrni faqat OWNER/ADMIN boshlay oladi, AI hech qachon.
+- **Takroriy post yo'q:** har bir versiya uchun bitta idempotency key bor. Worker schedule'ni "claim" qiladi, container id `media_publish`'dan oldin saqlanadi. Meta javob bermasa, natija container holati bo'yicha aniqlanadi, ko'r-ko'rona qayta yuborilmaydi.
+- **Limit va xatolar:** Meta'ning jonli nashr limiti tekshiriladi (tugagan bo'lsa nashr keyinga suriladi). Tarmoq va limit xatolarida avtomatik qayta urinadi. Token, ruxsat yoki media xatolari tushunarli o'zbekcha xabar bilan chiqadi.
+- **Media:** kontent sahifasida JPEG yoki MP4/MOV yuklash mumkin. Fayl mazmuni tekshiriladi va Meta yuklab olishi uchun tasodifiy nomli ochiq URL'da beriladi. Tayyor HTTPS havolani ham biriktirish mumkin.
+- **Panel:** "Nimalar yuborilishini ko'rish" (Meta'ga murojaatsiz reja), nashrni tasdiqlash oynasi, natija va permalink, Instagram sahifasida limit va "Not supported by current Meta API" ro'yxati.
+- **Audit va Telegram:** kim tasdiqlagani, kim nashrni boshlagani, container, media id va natija audit'ga yoziladi. Natija Telegram botga ham yuboriladi.
+- **Xavfsizlik:** token parametrlarini barcha jarayonlarda (API, Celery, CLI) logdan yashiruvchi filtr qo'shildi.
 
 ## 2. Requirements (Windows 11)
 
@@ -219,7 +232,12 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 | `PANEL_PUBLIC_URL` | Panelning tashqi manzili (bot havolalari va Meta data-deletion status URL) |
 | `META_LOGIN_MODE` | `instagram` (default, amalga oshirilgan) yoki `facebook` (hali yo‘q) |
 | `META_GRAPH_API_VERSION` | Graph API versiyasi (rasmiy changelog bilan tekshiring) |
-| `META_DRY_RUN` | `true` bo‘lsa real akkauntga hech narsa yuborilmaydi |
+| `META_DRY_RUN` | `true` (default): tekshiruv va reja ko‘rsatiladi, Instagram’ga hech narsa yuborilmaydi. Real nashr uchun `false` |
+| `PUBLISH_JOBS_MODE` | `sync` (so‘rov ichida) yoki `celery` (worker; Reels uchun tavsiya, Docker'da default) |
+| `MEDIA_PUBLIC_BASE_URL` | Meta media’ni yuklab oladigan ochiq **HTTPS** manzil (bo‘sh = `PANEL_PUBLIC_URL`) |
+| `MEDIA_ROOT`, `MEDIA_MAX_IMAGE_MB`, `MEDIA_MAX_VIDEO_MB` | Yuklangan media joyi va chegaralari |
+| `META_CONTAINER_POLL_INTERVAL_SECONDS`, `META_CONTAINER_MAX_WAIT_SECONDS` | Video qayta ishlanishini kutish |
+| `PUBLISH_MAX_ATTEMPTS`, `PUBLISH_RECONCILE_AFTER_MINUTES` | Avtomatik qayta urinish va "osilib qolgan" nashrlarni tekshirish |
 | `BACKEND_URL` | Next.js server tomoni backend'ga shu manzil orqali ulanadi (brauzerga yuborilmaydi) |
 | `APPROVAL_MAX_AGE_HOURS` | Tasdiq amal qilish muddati (0 = cheksiz) |
 | `APPROVAL_REQUIRE_DIFFERENT_APPROVER` | "To'rt ko'z": versiyani yozgan odam uni o'zi tasdiqlay olmaydi |
@@ -229,7 +247,7 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 Production'da `APP_ENV=production` bo‘lsa, backend quyidagi holatlarda **ishga tushmaydi**:
 dev JWT kaliti ishlatilgan bo‘lsa, Fernet kaliti yo‘q bo‘lsa, `DATABASE_URL` PostgreSQL bo‘lmasa,
 CORS'da `*` bo‘lsa, `DEBUG=true` bo‘lsa, `META_APP_ID` bor-u `META_APP_SECRET` yo‘q bo‘lsa yoki
-`META_REDIRECT_URI` https bo‘lmasa.
+`META_REDIRECT_URI` https bo‘lmasa yoki `META_DRY_RUN=false` bo‘lib media manzili https bo‘lmasa.
 
 ## 5. Local development
 
@@ -463,7 +481,27 @@ python -m app.cli refresh-instagram-tokens
 **Uzish** tokenlarni bekor qiladi va akkauntni o‘chiradi (soft delete). Instagram tomonida
 ham ruxsatni olib tashlash: Instagram → Settings → Website permissions → Apps and websites.
 
-Creator akkauntlar uchun ogohlantirish chiqadi: Stories'ni API orqali nashr qilish faqat Business akkauntlarda ishlaydi.
+Creator akkauntlar uchun ogohlantirish chiqadi: Meta hujjatlari Stories'ni API orqali nashr qilishni faqat Business akkauntlar uchun aniq ko‘rsatadi.
+
+### Nashr qilish (PHASE 8)
+
+1. Kontent sahifasi → **Media**: JPEG rasm yoki MP4/MOV video yuklang (yoki ochiq HTTPS havola bering).
+   Media o‘zgarsa, yangi versiya yaratiladi va uni qayta tasdiqlash kerak bo‘ladi.
+2. Kontentni **tasdiqlang** (OWNER/ADMIN).
+3. **Nimalar yuborilishini ko‘rish**: Meta’ga yuboriladigan caption va container parametrlari ko‘rinadi.
+   Bu bosqichda Meta’ga murojaat qilinmaydi.
+4. **Instagram’ga nashr qilish** → **Ha, nashr qilish**. Natija, holat va Instagram havolasi (permalink) chiqadi.
+   Kontentni rejalashtirish ham mumkin: belgilangan vaqtda worker nashr qiladi.
+5. Real nashr uchun `.env` da `META_DRY_RUN=false` qo‘ying. Media ochiq **HTTPS** manzilda bo‘lishi
+   kerak (`MEDIA_PUBLIC_BASE_URL` yoki §11 dagi tunnel manzili), chunki Meta uni o‘sha manzildan yuklab oladi.
+
+Rejalashtirilgan nashr va "osilib qolgan" nashrlarni tekshirish uchun Celery worker va beat kerak (§5).
+Ularsiz qo‘lda ishga tushirish mumkin:
+
+```powershell
+python -m app.cli publish-due
+python -m app.cli reconcile-publishing
+```
 
 ## 11. OAuth configuration (local dev va production)
 
@@ -519,7 +557,8 @@ yetarli. Meta hujjatlariga ko‘ra bu holatda App Review shart emas. Buni o‘z 
    holatni `https://<panel>/api/meta/data-deletion-status?code=…` da ko‘rish mumkin.
 5. App'ni **Live** rejimga o‘tkazish.
 
-Real publishing (PHASE 8) default `META_DRY_RUN=true` bilan o‘chiq bo‘ladi.
+Real nashr default holatda o‘chiq (`META_DRY_RUN=true`). Screencast uchun avval o‘z akkauntingizda
+`META_DRY_RUN=false` bilan sinab ko‘ring.
 
 ## 14. Testing
 
@@ -562,7 +601,7 @@ npm run typecheck
 npm run build
 ```
 
-**E2E (Playwright)** alohida stack ishga tushiradi: backend 8100-portda (yangi SQLite baza, mock AI, migration + seed), frontend 3100-portda, soxta Meta server (`backend/tests/fake_meta.py`) 8200-portda. Sizning dev bazangiz va real AI/Meta ishlatilmaydi. Testlar desktop va mobil (Pixel 7) rejimlarida bajariladi.
+**E2E (Playwright)** alohida stack ishga tushiradi: backend 8100-portda (yangi SQLite baza, mock AI, migration + seed), frontend 3100-portda, soxta Meta server (`backend/tests/fake_meta.py`, OAuth + nashr) 8200-portda. E2E'da `META_DRY_RUN=false`: nashrning haqiqiy kod yo‘li ishlaydi, lekin faqat soxta Meta’ga. Sizning dev bazangiz va real AI/Meta ishlatilmaydi. Testlar desktop va mobil (Pixel 7) rejimlarida bajariladi.
 
 ```powershell
 npx playwright install chromium        # bir marta
@@ -584,9 +623,11 @@ docker compose logs -f backend
 |---|---|
 | frontend | http://localhost:3000 |
 | backend | http://localhost:8000 (ishga tushishda `alembic upgrade head` avtomatik bajariladi) |
-| worker | Celery worker |
+| worker | Celery worker + beat (`-B`): rejalashtirilgan nashr (har daqiqa), nashrni tekshirish (har 5 daqiqa), token yangilash (har 6 soat). Docker'da `PUBLISH_JOBS_MODE=celery` |
 | postgres | localhost:5432 |
 | redis | localhost:6379 |
+
+Yuklangan media `media_data` nomli volume'da saqlanadi (`/var/lib/muxriddin/media`). `docker compose down` uni o‘chirmaydi; `down -v` o‘chiradi.
 
 Portlar faqat `127.0.0.1` ga ochiladi.
 
@@ -607,14 +648,15 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 ## 16. Security
 
 - Instagram login/paroli **hech qachon** so‘ralmaydi va saqlanmaydi. Ulanish faqat rasmiy Meta OAuth orqali. `state` bir martalik va foydalanuvchiga bog‘langan. Meta callback'lari (`signed_request`) HMAC bilan tekshiriladi.
-- httpx/httpcore loglari WARNING darajasida cheklangan, chunki ular to‘liq URL'ni (ichida `access_token`) yozadi.
+- httpx/httpcore loglari WARNING darajasida cheklangan, chunki ular to‘liq URL'ni (ichida `access_token`) yozadi. Bundan tashqari, `access_token`/`client_secret` qiymatlari har qanday log darajasida va har qanday jarayonda (API, Celery worker, CLI) `***` bilan almashtiriladi.
 - OAuth tokenlar faqat Fernet bilan shifrlangan holda saqlanadi (`oauth_tokens.token_ciphertext`). Kalit faqat `.env` dan olinadi.
 - `.env` va `.env.*` `.gitignore` da (`.env.example` bundan mustasno). Buni test ham tekshiradi.
 - Brauzer backend'ga to'g'ridan-to'g'ri murojaat qilmaydi. Sessiya tokeni httpOnly + SameSite=Strict cookie'da saqlanadi va Next.js proxy uni server tomonida qo'shadi. Boshqa saytdan kelgan so'rovlar (CSRF) rad etiladi. Frontendga hech qanday secret berilmaydi.
 - CORS faqat `CORS_ORIGINS` ro‘yxatidagi manzillarga ochiq. Production'da `*` taqiqlangan.
 - 500 xatolarda ichki tafsilotlar foydalanuvchiga ko‘rsatilmaydi, ular faqat logga yoziladi.
 - AI agentlar uchun `PUBLISH_TO_INSTAGRAM` / `APPROVE_CONTENT` ruxsatlarini berib bo‘lmaydi (`ForbiddenAgentPermissionError`).
-- Publish endpoint **yo'q**. Approve endpoint faqat inson sessiyasi (JWT `actor=human`) uchun ochiq, OWNER/ADMIN rolini talab qiladi va publish qilmaydi.
+- Approve va publish endpoint'lari faqat inson sessiyasi (JWT `actor=human`) uchun ochiq va OWNER/ADMIN rolini talab qiladi. Approve publish qilmaydi. Publish faqat backend `publish_service` orqali bo'ladi va tasdiqni qayta tekshiradi. Takroriy post'dan himoya: [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
+- Yuklangan media fayl mazmuni bo'yicha tekshiriladi (faqat JPEG/MP4/MOV) va tasodifiy 192-bitli nom bilan saqlanadi. `/media/<nom>` sessiyasiz ochiq, chunki Meta serverlari uni yuklab oladi.
 - Approval kontentning aniq versiyasi va hash'iga bog'langan. Approve'dan keyin kontent o'zgarsa, approval kuchini yo'qotadi. Batafsil: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md).
 - Audit log faqat qo'shiladi, o'zgartirilmaydi. Unda parol, token va kalitlar saqlanmaydi.
 
@@ -655,6 +697,14 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | `instagram_refresh_too_early` | Meta 24 soatdan yangi tokenni yangilamaydi. Keyinroq urinib ko‘ring |
 | "Qayta ulash kerak" | Token muddati o‘tgan yoki bekor qilingan. "Instagram’ni ulash" ni qayta bosing |
 | Callback'dan keyin login sahifasi chiqadi | Panelni redirect URI'dagi domen orqali oching (tunnel manzili), login qiling, oqim davom etadi |
+| Nashr natijasi `dry_run` | `META_DRY_RUN=true`. Real nashr uchun `false` qiling va backend'ni qayta ishga tushiring |
+| Readiness: "HTTPS bo‘lmagan media" | Lokal `http://localhost` manzilni Meta ocholmaydi. `MEDIA_PUBLIC_BASE_URL` yoki `PANEL_PUBLIC_URL` ga HTTPS tunnel manzilini yozing (§11) va media’ni qayta yuklang |
+| Readiness: "JPEG bo‘lmagan rasm" | Rasmni JPEG formatida saqlab, qayta yuklang |
+| `409 publish_in_progress` | Nashr ketmoqda yoki Meta javobi kelmagan. Natija avtomatik tekshiriladi, qayta bosmang |
+| `409 already_published` | Bu versiya allaqachon nashr qilingan; takroriy post yaratilmaydi |
+| Nashr "keyinga surildi" (limit) | Meta’ning 24 soatlik nashr limiti tugagan. Avtomatik qayta urinadi; limitni Instagram sahifasida tekshiring |
+| Rejalashtirilgan post chiqmadi | Celery worker **va beat** ishlayaptimi? Yoki `python -m app.cli publish-due` |
+| `422 media_rejected` | Faqat JPEG rasm yoki MP4/MOV video; hajm chegarasi `MEDIA_MAX_*_MB` |
 | Migration `91ed60cfe649 requires 'approvals' to be empty` | Eski versiyasiz approval qatorlari bor; ularni xavfsiz ko'chirib bo'lmaydi |
 
 ## Development phases
@@ -669,7 +719,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | 5 — Telegram Bot | ✅ |
 | 6 — Approval System | ✅ |
 | 7 — Meta OAuth | ✅ |
-| 8 — Instagram Publishing | ⏳ |
+| 8 — Instagram Publishing | ✅ |
 | 9 — Analytics | ⏳ |
 | 10 — Security hardening | ⏳ |
 | 11 — Docker (production images) | ⏳ |

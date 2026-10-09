@@ -71,7 +71,7 @@ def test_schedule_unschedule_and_calendar(api, db, human):
     when = (datetime.now(UTC) + timedelta(days=2)).replace(microsecond=0)
     r = api.post(f"/api/v1/contents/{content.id}/schedule", json={"scheduled_at": when.isoformat()})
     assert r.status_code == 200, r.text
-    assert r.json()["content_version"] == 1 and "PHASE 8" in r.json()["note"]
+    assert r.json()["content_version"] == 1 and "publish worker" in r.json()["note"]
     again = api.post(
         f"/api/v1/contents/{content.id}/schedule", json={"scheduled_at": when.isoformat()}
     )
@@ -273,6 +273,6 @@ def test_panel_endpoints_require_auth(make_client, method, path):
         assert getattr(c, method)(path).status_code == 401
 
 
-def test_no_publish_endpoint_still(api):
+def test_panel_and_ai_routes_cannot_publish(api):
     paths = api.get("/openapi.json").json()["paths"]
-    assert not any("publish" in p for p in paths)
+    assert not any("publish" in p for p in paths if p.startswith(("/api/v1/panel", "/api/v1/ai")))

@@ -15,7 +15,10 @@ RUN mkdir app && touch app/__init__.py \
 
 COPY backend/ ./
 
-RUN useradd --create-home --uid 1000 appuser && mkdir -p /app/data && chown -R appuser /app
+# /var/lib/muxriddin/media: uploaded post media (MEDIA_ROOT), kept outside the source
+# bind mount on a named volume so the non-root user can write to it.
+RUN useradd --create-home --uid 1000 appuser && mkdir -p /app/data /var/lib/muxriddin/media \
+    && chown -R appuser /app /var/lib/muxriddin
 USER appuser
 
 EXPOSE 8000

@@ -127,11 +127,12 @@ def test_readiness_blocks_everything_today(db, human):
     assert not r.ready
     assert not c["status"].ok and not c["approval"].ok
     assert not c["media"].ok and not c["instagram_account"].ok
-    assert not c["publisher"].ok and "PHASE 8" in c["publisher"].message
-    assert c["dry_run"].severity == "info"
+    # META_DRY_RUN=true (default): a warning, never a pass, and no "publisher" check.
+    assert c["dry_run"].severity == "warning" and not c["dry_run"].ok
+    assert "publisher" not in c
 
 
-def test_readiness_passes_all_but_publisher_when_prepared(db, human, user):
+def test_readiness_passes_when_prepared(db, human, user, monkeypatch):
     content = make_content(db, human, aspect_ratio="4:5", cta="Saqlab qo‘ying")
     ContentService(db).add_asset(
         content.id,
@@ -150,11 +151,16 @@ def test_readiness_passes_all_but_publisher_when_prepared(db, human, user):
         OAuthToken(
             instagram_account_id=account.id,
             token_ciphertext="x",
+            scopes="instagram_business_basic instagram_business_content_publish",
             expires_at=datetime.now(UTC) + timedelta(days=30),
         )
     )
     db.commit()
-    c = _checks(ReviewService(db).readiness(content.id))
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "meta_dry_run", False)
+    r = ReviewService(db).readiness(content.id)
+    c = _checks(r)
     for key in (
         "status",
         "approval",
@@ -162,10 +168,13 @@ def test_readiness_passes_all_but_publisher_when_prepared(db, human, user):
         "format",
         "media",
         "media_https",
+        "media_format",
         "instagram_account",
+        "publish_permission",
+        "publisher",
     ):
         assert c[key].ok, (key, c[key].message)
-    assert not c["publisher"].ok  # honest: nothing can publish before PHASE 8
+    assert r.ready
 
 
 def test_readiness_detects_wrong_media(db, human):
@@ -239,7 +248,7 @@ def api(client, auth_headers):
 def test_api_readiness_diff_revoke(api, db, human):
     content = make_approved(db, human)
     r = api.get(f"/api/v1/contents/{content.id}/readiness").json()
-    assert r["ready"] is False and {c["key"] for c in r["checks"]} >= {"approval", "publisher"}
+    assert r["ready"] is False and {c["key"] for c in r["checks"]} >= {"approval", "dry_run"}
     assert next(c for c in r["checks"] if c["key"] == "approval")["ok"] is True
     api.patch(f"/api/v1/contents/{content.id}", json={"expected_version": 1, "caption": "B"})
     d = api.get(f"/api/v1/contents/{content.id}/diff").json()

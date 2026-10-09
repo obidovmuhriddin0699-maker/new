@@ -8,6 +8,9 @@ import { SESSION_COOKIE, backendUrl, isSameOrigin, jsonError } from "@/lib/serve
 const SEGMENT = /^[A-Za-z0-9_.-]+$/;
 const BLOCKED = new Set(["auth/login"]); // must go through /api/auth/login (keeps token server-side)
 const MAX_BODY = 1_000_000;
+// Raw media uploads (JPEG / MP4 / MOV); the backend validates bytes and size again.
+const UPLOAD_PATH = /^contents\/\d+\/assets\/upload$/;
+const MAX_UPLOAD = 110 * 1024 * 1024;
 
 type Ctx = { params: Promise<{ path: string[] }> };
 
@@ -31,8 +34,14 @@ async function proxy(request: Request, ctx: Ctx): Promise<Response> {
   const requestId = request.headers.get("x-request-id");
   if (requestId) headers["X-Request-ID"] = requestId.slice(0, 64);
 
-  let body: string | undefined;
-  if (mutating) {
+  let body: string | ArrayBuffer | undefined;
+  if (mutating && method === "POST" && UPLOAD_PATH.test(joined)) {
+    const declared = Number(request.headers.get("content-length") ?? "0");
+    if (declared > MAX_UPLOAD) return jsonError(413, "body_too_large", "Fayl juda katta");
+    body = await request.arrayBuffer();
+    if (body.byteLength > MAX_UPLOAD) return jsonError(413, "body_too_large", "Fayl juda katta");
+    headers["Content-Type"] = "application/octet-stream";
+  } else if (mutating) {
     body = await request.text();
     if (body.length > MAX_BODY) return jsonError(413, "body_too_large", "Request body too large");
     headers["Content-Type"] = "application/json";

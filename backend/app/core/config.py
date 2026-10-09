@@ -124,6 +124,27 @@ class Settings(BaseSettings):
     # Refresh long-lived tokens (60 days) when fewer than this many days remain.
     meta_token_refresh_window_days: int = 15
 
+    # --- Publishing (PHASE 8). See docs/PUBLISHING.md.
+    # sync: the publish request runs in the API process (simple local dev);
+    # celery: it is queued for the worker (recommended for Reels: video processing takes minutes).
+    publish_jobs_mode: Literal["sync", "celery"] = "sync"
+    # Meta recommends polling a container's status_code (at most once per minute for
+    # long videos); images are usually FINISHED immediately.
+    meta_container_poll_interval_seconds: float = 5.0
+    meta_container_max_wait_seconds: float = 300.0
+    # A PROCESSING schedule untouched for this long is reconciled against Meta.
+    publish_reconcile_after_minutes: int = 10
+    publish_max_attempts: int = 3
+    # Used only when Meta's content_publishing_limit response has no quota_total.
+    meta_publish_limit_fallback: int = 50
+
+    # --- Media storage (uploads served to Meta over a public HTTPS URL)
+    media_root: str = "./data/media"
+    # Public base URL Meta downloads media from; empty = PANEL_PUBLIC_URL.
+    media_public_base_url: str = ""
+    media_max_image_mb: int = 8
+    media_max_video_mb: int = 100
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:
@@ -142,6 +163,10 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [v.strip() for v in value.replace(" ", ",").split(",") if v.strip()]
         return value
+
+    @property
+    def effective_media_base_url(self) -> str:
+        return (self.media_public_base_url or self.panel_public_url).rstrip("/")
 
     @property
     def meta_configured(self) -> bool:
@@ -185,6 +210,11 @@ class Settings(BaseSettings):
                 problems.append("META_APP_SECRET must be set when META_APP_ID is set")
             if self.meta_redirect_uri and not self.meta_redirect_uri.startswith("https://"):
                 problems.append("META_REDIRECT_URI must use https in production")
+            if not self.meta_dry_run and not self.effective_media_base_url.startswith("https://"):
+                problems.append(
+                    "MEDIA_PUBLIC_BASE_URL (or PANEL_PUBLIC_URL) must use https when "
+                    "META_DRY_RUN=false: Meta downloads media from it"
+                )
             if "mock" in (self.image_provider, self.video_provider):
                 problems.append("mock media providers are not allowed in production")
             if problems:

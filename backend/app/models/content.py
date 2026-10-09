@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     Date,
     Float,
     ForeignKey,
@@ -11,6 +12,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -175,6 +177,16 @@ class ContentSchedule(TimestampMixin, Base):
     # Prevents duplicate posts on retry: one publish per content version.
     idempotency_key: Mapped[str] = mapped_column(String(128), unique=True)
     ig_container_id: Mapped[str | None] = mapped_column(String(64))
+    # Containers expire 24 h after creation; an expired one is never published.
+    ig_container_created_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    ig_media_id: Mapped[str | None] = mapped_column(String(64))
+    instagram_account_id: Mapped[int | None] = mapped_column(
+        ForeignKey("instagram_accounts.id", ondelete="SET NULL"), index=True
+    )
+    # Set when a worker claims the schedule; a stale PROCESSING row is reconciled.
+    processing_started_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    # media_publish was sent but no answer arrived: only the container status may decide.
+    outcome_unknown: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     last_error: Mapped[str | None] = mapped_column(Text)
 

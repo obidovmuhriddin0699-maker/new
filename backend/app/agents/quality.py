@@ -22,6 +22,7 @@ from app.agents.schemas import (
     QualityReport,
     Severity,
 )
+from app.core.caption import published_caption
 from app.models import BrandProfile, Content
 from app.models.enums import ContentType
 
@@ -268,14 +269,21 @@ class QualityEvaluator:
         return []
 
     def _limits(self, item: EvaluationInput) -> list[QualityFinding]:
-        assembled = "\n\n".join(p for p in [item.caption, item.cta, " ".join(item.hashtags)] if p)
+        assembled = published_caption(
+            hook=item.hook,
+            caption=item.caption,
+            cta=item.cta,
+            hashtags=item.hashtags,
+            is_story=item.content_type == ContentType.STORY,
+        )
         if len(assembled) > MAX_CAPTION:
             return [
                 self._f(
                     Severity.ERROR,
                     "caption_too_long",
                     "caption",
-                    f"Caption + CTA + hashtags is {len(assembled)} chars (limit {MAX_CAPTION}).",
+                    f"Published caption (hook + caption + CTA + hashtags) is {len(assembled)} "
+                    f"chars (limit {MAX_CAPTION}).",
                     "Shorten the caption.",
                 )
             ]

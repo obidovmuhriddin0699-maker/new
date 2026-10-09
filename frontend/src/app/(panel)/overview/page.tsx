@@ -71,7 +71,7 @@ export default function OverviewPage() {
           ) : (
             <p className="text-sm text-muted">Rejalashtirilgan kontent yo‘q.</p>
           )}
-          <p className="mt-3 text-xs text-muted">Avtomatik nashr PHASE 8 da qo‘shiladi; hozir rejalashtirish hech narsani joylamaydi.</p>
+          <p className="mt-3 text-xs text-muted">Rejalashtirilgan kontent belgilangan vaqtda avtomatik nashr qilinadi (META_DRY_RUN=true bo‘lsa — yo‘q).</p>
         </Card>
 
         <Card title="AI holati">

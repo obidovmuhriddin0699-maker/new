@@ -85,7 +85,7 @@ An approval row stores `content_id`, `content_version`, `content_hash`,
 `decided_by_user_id`, `channel`, `decision`, `created_at`, and
 `invalidated_at`/`invalidation_reason`.
 
-Publishing (PHASE 8) is authorised **only** by
+Publishing (`app/services/publish.py`, see [PUBLISHING.md](PUBLISHING.md)) is authorised **only** by
 `ApprovalService.require_valid_approval(content)`, which requires all of:
 
 1. an APPROVED, non-invalidated approval for `content.version`;
@@ -104,7 +104,7 @@ content version, which also makes `approve` idempotent under concurrency.
 |---|---|
 | approve | same version → returns existing approval (`created=false`); DB partial unique index for races |
 | schedule | `idempotency_key = publish:content:{id}:v{version}` (unique); repeat returns existing |
-| future publish | the same key; `start_publishing` refuses a version whose schedule is DONE |
+| publish | the same key; a worker must claim the schedule (PENDING → PROCESSING); the container id is stored before `media_publish` and reused; `start_publishing` refuses a version whose schedule is DONE; a lost Meta response is reconciled from the container status |
 
 ## 7. Audit events
 
@@ -112,7 +112,9 @@ content version, which also makes `approve` idempotent under concurrency.
 CONTENT_SUBMITTED_FOR_REVIEW, CONTENT_EDIT_REQUESTED, CONTENT_APPROVED,
 CONTENT_APPROVAL_INVALIDATED, CONTENT_REJECTED, CONTENT_SCHEDULED,
 CONTENT_SCHEDULE_CANCELLED, CONTENT_PUBLISH_STARTED, CONTENT_PUBLISH_SUCCEEDED,
-CONTENT_PUBLISH_FAILED, APPROVAL_DENIED, STATE_TRANSITION_DENIED`, plus asset,
+CONTENT_PUBLISH_FAILED, CONTENT_PUBLISH_REQUESTED, CONTENT_PUBLISH_DRY_RUN,
+CONTENT_PUBLISH_DEFERRED, CONTENT_PUBLISH_RECONCILED, INSTAGRAM_CONTAINER_CREATED,
+APPROVAL_DENIED, STATE_TRANSITION_DENIED`, plus asset,
 brand, AI job, Instagram account and token events.
 
 Each row: timestamp, actor type, actor user id (only if the user really
@@ -153,8 +155,9 @@ cancelled, audited as `CONTENT_APPROVAL_REVOKED`. The same version may be approv
 ### Publish readiness (preflight)
 `GET /contents/{id}/readiness` — read-only checklist with blockers: status, valid
 approval (with reasons), quality errors, aspect ratio, media (count, kind, public HTTPS
-URLs), connected Instagram account with a live token, publisher (PHASE 8). PHASE 8 must
-call this before publishing so the panel and the publisher share one rulebook.
+URLs, JPEG), the Instagram account (one live token, `instagram_business_content_publish`
+scope), the publisher / dry-run state. The publish service runs exactly this before
+contacting Meta, so the panel and the publisher share one rulebook.
 
 ### Version diff
 `GET /contents/{id}/diff[?from_version=&to_version=]` — defaults to "last approved

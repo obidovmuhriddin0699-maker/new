@@ -213,8 +213,9 @@ def test_openapi_documents_security_and_errors(client):
     spec = client.get("/openapi.json").json()
     paths = {p: v for p, v in spec["paths"].items() if p.startswith(BASE)}
     # collection, item, 4 decision/review actions, history, schedule (PHASE 4),
-    # readiness, diff, revoke-approval (PHASE 6)
-    assert len(paths) == 11
+    # readiness, diff, revoke-approval (PHASE 6), publish, publish-preview, assets,
+    # assets/upload, assets/{asset_id} (PHASE 8)
+    assert len(paths) == 16
     for path, ops in spec["paths"].items():
         if not path.startswith(BASE):
             continue
@@ -228,4 +229,5 @@ def test_openapi_documents_security_and_errors(client):
     approve = spec["paths"][f"{BASE}/{{content_id}}/approve"]["post"]
     assert {"401", "403", "404", "409", "422"} <= set(approve["responses"])
     assert "ErrorResponse" in spec["components"]["schemas"]
-    assert not any("publish" in p for p in spec["paths"])
+    publish = spec["paths"][f"{BASE}/{{content_id}}/publish"]["post"]
+    assert {"401", "403", "404", "409", "422"} <= set(publish["responses"])

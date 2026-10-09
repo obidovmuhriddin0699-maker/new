@@ -5,6 +5,7 @@ const SESSION_COOKIE = "mx_session";
 // this navigation. The page itself finishes the flow with a same-origin request (which
 // does carry the cookie) and sends the user to /login if that request is unauthenticated.
 const PUBLIC_PATHS = new Set(["/instagram/callback"]);
+// /media/<random-name>: uploaded post media that Meta's servers download (no session).
 
 // Cheap presence check only; the backend validates the token on every API call
 // and the proxy clears the cookie when the backend answers 401.
@@ -16,7 +17,7 @@ export function middleware(request: NextRequest) {
     if (hasSession) return NextResponse.redirect(new URL("/overview", request.url));
     return NextResponse.next();
   }
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
+  if (PUBLIC_PATHS.has(pathname) || pathname.startsWith("/media/")) return NextResponse.next();
   if (!hasSession) {
     const url = new URL("/login", request.url);
     if (pathname !== "/") url.searchParams.set("next", pathname + search);

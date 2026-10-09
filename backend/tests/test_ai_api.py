@@ -224,7 +224,6 @@ def test_openapi_ai_endpoints(api):
             assert op.get("security"), f"{method} {path}"
             assert "401" in op["responses"] and op.get("summary")
     assert not any("publish" in p or "approve" in p for p in ai_paths)
-    assert not any("publish" in p for p in spec["paths"])
 
 
 def test_provider_errors_do_not_leak_internal_urls(make_client, user, brand):

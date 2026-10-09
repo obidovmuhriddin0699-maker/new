@@ -421,7 +421,13 @@ class ContentService:
             raise
 
     def mark_published(
-        self, content_id: int, actor: Actor, *, ig_media_id: str, permalink: str | None = None
+        self,
+        content_id: int,
+        actor: Actor,
+        *,
+        ig_media_id: str | None,
+        permalink: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> Content:
         with atomic(self.session):
             require_publish_service(actor)
@@ -442,7 +448,7 @@ class ContentService:
                 actor,
                 content_id=content.id,
                 content_version=content.version,
-                details={"ig_media_id": ig_media_id},
+                details={**(details or {}), "ig_media_id": ig_media_id, "permalink": permalink},
             )
             return content
 

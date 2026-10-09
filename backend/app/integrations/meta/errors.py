@@ -81,6 +81,10 @@ _EXPIRED_SUBCODES = {458, 459, 460, 463, 464, 467, 492}
 
 
 def classify(code: int | None, subcode: int | None, error_type: str | None) -> MetaErrorKind:
+    if subcode == 2207042:  # content publishing limit reached (24 h moving window)
+        return MetaErrorKind.RATE_LIMIT
+    if subcode is not None and 2207000 <= subcode <= 2207999:  # media/publishing errors
+        return MetaErrorKind.MEDIA_VALIDATION
     if code == 190:
         return (
             MetaErrorKind.TOKEN_EXPIRED

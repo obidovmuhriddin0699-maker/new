@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from "react";
 import { EditForm } from "@/components/content/EditForm";
 import { CaptionView, MediaBox, StructureView } from "@/components/content/Preview";
 import { QualityView } from "@/components/content/Quality";
+import { MediaManager, PublishCard } from "@/components/content/Publish";
 import { DiffCard, ReadinessCard } from "@/components/content/Review";
 import { Button, Card, ErrorBox, Field, KeyValue, Loading, Notice, StatusBadge, TypeBadge, inputClass } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -90,7 +91,7 @@ function Detail() {
     try {
       if (action === "approve") {
         await api(`contents/${c.id}/approve`, { method: "POST", body });
-        setMessage(`${c.version}-versiya tasdiqlandi. Nashr qilinmadi — avtomatik nashr PHASE 8 da.`);
+        setMessage(`${c.version}-versiya tasdiqlandi. Tasdiqlash nashr qilmaydi — nashr uchun “Instagram’ga nashr” bo‘limidan foydalaning.`);
       } else if (action === "reject") {
         await api(`contents/${c.id}/reject`, { method: "POST", body });
       } else if (action === "request-edit") {
@@ -108,7 +109,7 @@ function Detail() {
         await api(`contents/${c.id}/submit-review`, { method: "POST" });
       } else if (action === "schedule") {
         await api(`contents/${c.id}/schedule`, { method: "POST", body: { scheduled_at: new Date(when).toISOString() } });
-        setMessage("Rejalashtirildi. Eslatma: avtomatik nashr hali yo‘q (PHASE 8).");
+        setMessage("Rejalashtirildi. Belgilangan vaqtda avtomatik nashr qilinadi (META_DRY_RUN=true bo‘lsa, yuborilmaydi).");
       } else if (action === "unschedule") {
         await api(`contents/${c.id}/schedule`, { method: "DELETE" });
       } else if (action === "delete") {
@@ -206,7 +207,7 @@ function Detail() {
           <Card title="Ma’lumot">
             <KeyValue
               items={[
-                ["Platforma", "Instagram (akkaunt ulanmagan)"],
+                ["Platforma", "Instagram"],
                 ["Rejalashtirilgan vaqt", formatDateTime(c.scheduled_at)],
                 ["Reja sanasi", formatDate(c.planned_date)],
                 ["Format", c.aspect_ratio ?? "—"],
@@ -219,6 +220,10 @@ function Detail() {
           </Card>
 
           <ReadinessCard key={`${c.version}-${c.status}`} contentId={c.id} version={c.version} />
+
+          <PublishCard key={`p-${c.version}`} content={c} onChanged={refresh} />
+
+          <MediaManager content={c} onChanged={refresh} />
 
           <Card title="Amallar">
             <div className="flex flex-col gap-2" data-testid="actions">
@@ -238,15 +243,6 @@ function Detail() {
                   {ACTION_LABEL[a]}
                 </Button>
               ))}
-              <button
-                type="button"
-                disabled
-                title="Instagram'ga nashr qilish PHASE 8 da qo‘shiladi"
-                className="min-h-10 cursor-not-allowed rounded-lg border border-dashed border-border px-4 py-2 text-sm text-muted"
-                data-testid="publish-disabled"
-              >
-                Tasdiqlash va nashr qilish — PHASE 8
-              </button>
               {allowed.length === 0 && !EDITABLE.includes(c.status) && (
                 <p className="text-sm text-muted">Holat: {STATUS_LABEL[c.status]} — amallar mavjud emas.</p>
               )}
@@ -272,7 +268,7 @@ function Detail() {
                   <p className="text-sm text-muted">AI yangi versiya yozadi. U avtomatik tasdiqlanmaydi.</p>
                 )}
                 {pending === "schedule" && (
-                  <Field label="Vaqt (Toshkent vaqti bilan ko‘rsatiladi)" hint="Avtomatik nashr hali yo‘q (PHASE 8)">
+                  <Field label="Vaqt (Toshkent vaqti bilan ko‘rsatiladi)" hint="Belgilangan vaqtda Celery worker nashr qiladi">
                     <input type="datetime-local" className={inputClass} value={when} onChange={(e) => setWhen(e.target.value)} />
                   </Field>
                 )}

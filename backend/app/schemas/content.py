@@ -184,6 +184,22 @@ class ContentRead(BaseModel):
         default=False,
         description="True only if a valid human approval exists for the current version",
     )
+    publish_state: "PublishStateRead | None" = Field(
+        default=None, description="Latest publish attempt of the current version"
+    )
+
+
+class PublishStateRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    schedule_id: int = Field(validation_alias="id")
+    status: str
+    scheduled_at: datetime
+    attempts: int
+    outcome_unknown: bool
+    last_error: str | None
+    ig_container_id: str | None
+    ig_media_id: str | None
 
 
 class ContentList(BaseModel):
@@ -245,3 +261,6 @@ class ContentHistoryRead(BaseModel):
     versions: list[ContentVersionRead]
     approvals: list[ApprovalRead]
     events: list[AuditEventRead]
+
+
+ContentRead.model_rebuild()

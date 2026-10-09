@@ -109,7 +109,7 @@ export default function TelegramPage() {
               <li>Tasdiqlash tugmalari bir martalik va faqat sizning Telegram hisobingiz uchun ishlaydi.</li>
               <li>Tasdiqlash va rad etish ikki bosqichli: avval tugma, keyin “Ha”.</li>
               <li>Tugma kontentning aniq versiyasiga bog‘langan; kontent o‘zgarsa, eski tugma ishlamaydi.</li>
-              <li>Tasdiqlash nashr qilmaydi — avtomatik nashr PHASE 8 da.</li>
+              <li>Tasdiqlash nashr qilmaydi. Nashr natijasi (muvaffaqiyat yoki xato) botga xabar qilinadi.</li>
             </ul>
           </Card>
         </div>

@@ -229,8 +229,8 @@ class InstagramOAuthService:
         warnings = []
         if account_type == InstagramAccountType.CREATOR:
             warnings.append(
-                "Creator akkaunt: Stories'ni API orqali nashr qilish faqat Business "
-                "akkauntlarda mavjud."
+                "Creator akkaunt: Meta hujjatlari Stories'ni API orqali nashr qilishni "
+                "faqat Business akkauntlar uchun aniq ko‘rsatadi."
             )
         if account_type == InstagramAccountType.UNKNOWN:
             warnings.append("Akkaunt turi aniqlanmadi.")

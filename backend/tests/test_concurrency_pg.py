@@ -40,3 +40,31 @@ def test_concurrent_approvals_create_exactly_one(db, human):
     assert sum(1 for r in results if r.created) == 1
     assert len({r.approval.id for r in results}) == 1
     assert len(ApprovalRepository(db).list_for_content(content.id)) == 1
+
+
+def test_concurrent_workers_claim_a_schedule_once(db, human):
+    from sqlalchemy import select
+
+    from app.models import ContentSchedule
+    from app.models.base import utcnow
+    from app.services import ScheduleService
+    from app.services.publish import PublishService
+    from tests.conftest import make_approved
+
+    content = make_approved(db, human)
+    ScheduleService(db).schedule(content.id, human, scheduled_at=utcnow())
+    schedule_id = db.scalars(select(ContentSchedule.id)).one()
+    barrier = threading.Barrier(6)
+    wins: list[bool] = []
+
+    def claim() -> None:
+        with get_sessionmaker()() as session:
+            barrier.wait()
+            wins.append(PublishService(session)._claim(schedule_id))
+
+    threads = [threading.Thread(target=claim) for _ in range(6)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=30)
+    assert sorted(wins) == [False] * 5 + [True]

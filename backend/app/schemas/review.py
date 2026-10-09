@@ -18,7 +18,9 @@ class ReadinessRead(BaseModel):
     content_id: int
     version: int
     checks: list[ReadinessCheckRead]
-    note: str = "Read-only preflight. Publishing itself arrives in PHASE 8."
+    note: str = (
+        "Read-only preflight. The publisher runs exactly these checks before contacting Meta."
+    )
 
 
 class FieldDiffRead(BaseModel):

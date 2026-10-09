@@ -552,7 +552,8 @@ class TelegramService:
         return [u for u in users if u.telegram_user_id in allowed and u.role in APPROVER_ROLES]
 
     def collect_review_notifications(self, limit: int = 20) -> tuple[list[tuple[int, Reply]], int]:
-        """New READY_FOR_REVIEW events since the cursor -> (telegram_id, message) pairs."""
+        """New READY_FOR_REVIEW and publish-outcome events since the cursor ->
+        (telegram_id, message) pairs."""
         cursor = self.init_notify_cursor()
         events = self.session.scalars(
             select(AuditLog).where(AuditLog.id > cursor).order_by(AuditLog.id).limit(200)
@@ -564,6 +565,10 @@ class TelegramService:
         with atomic(self.session):
             for event in events:
                 last = event.id
+                outcome = self._publish_outcome(event)
+                if outcome is not None:
+                    out += [(int(u.telegram_user_id or 0), outcome) for u in recipients]
+                    continue
                 if (
                     event.action != AuditAction.CONTENT_SUBMITTED_FOR_REVIEW.value
                     or event.content_id is None
@@ -588,6 +593,23 @@ class TelegramService:
                 if len(seen) >= limit:
                     break
         return out, last
+
+    def _publish_outcome(self, event: AuditLog) -> Reply | None:
+        """Publish success / final failure → one short message (no buttons)."""
+        details = event.details or {}
+        if event.action == AuditAction.CONTENT_PUBLISH_SUCCEEDED.value:
+            link = details.get("permalink")
+            text = f"✅ <b>Instagram’da nashr qilindi</b> — kontent #{event.content_id}"
+            if link:
+                text += f"\n{esc(link)}"
+            return Reply(text)
+        if event.action == AuditAction.CONTENT_PUBLISH_FAILED.value and event.status == "FAILED":
+            error = _cut(event.error or "noma’lum xato", 300)
+            return Reply(
+                f"❌ <b>Nashr muvaffaqiyatsiz</b> — kontent #{event.content_id}\n{esc(error)}\n"
+                "Panelda ko‘ring va qayta urinib ko‘ring."
+            )
+        return None
 
     def collect_reminders(self) -> list[tuple[int, Reply]]:
         """Digest of content waiting longer than APPROVAL_REMINDER_HOURS (once per period)."""

@@ -13,7 +13,12 @@ celery_app = Celery(
     "muxriddin",
     broker=settings.effective_celery_broker_url,
     backend=settings.effective_celery_result_backend,
-    include=["app.workers.tasks.system", "app.workers.tasks.ai", "app.workers.tasks.instagram"],
+    include=[
+        "app.workers.tasks.system",
+        "app.workers.tasks.ai",
+        "app.workers.tasks.instagram",
+        "app.workers.tasks.publish",
+    ],
 )
 celery_app.conf.update(
     task_always_eager=settings.celery_task_always_eager,
@@ -32,5 +37,7 @@ celery_app.conf.update(
             "task": "instagram.refresh_tokens",
             "schedule": 6 * 60 * 60,  # every 6 hours; refresh only happens inside the window
         },
+        "publish-due-schedules": {"task": "publish.process_due", "schedule": 60},
+        "reconcile-publishing": {"task": "publish.reconcile", "schedule": 5 * 60},
     },
 )

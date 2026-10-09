@@ -62,6 +62,7 @@ export type Content = {
   updated_at: string;
   assets: Asset[];
   publish_authorized: boolean;
+  publish_state: PublishState | null;
 };
 
 export type ContentList = { items: Content[]; total: number; offset: number; limit: number };
@@ -273,3 +274,46 @@ export type InstagramStatus = {
   accounts: InstagramAccountStatus[];
 };
 export type InstagramConnectResult = { account: InstagramAccountStatus; warnings: string[] };
+
+export type PublishState = {
+  schedule_id: number;
+  status: "PENDING" | "PROCESSING" | "DONE" | "FAILED" | "CANCELLED";
+  scheduled_at: string;
+  attempts: number;
+  outcome_unknown: boolean;
+  last_error: string | null;
+  ig_container_id: string | null;
+  ig_media_id: string | null;
+};
+export type PublishStep = { endpoint: string; params: Record<string, string>; note: string };
+export type PublishPreview = {
+  dry_run: boolean;
+  ready: boolean;
+  problems: string[];
+  readiness: Readiness;
+  plan: {
+    content_type: string;
+    version: number;
+    caption: string;
+    caption_length: number;
+    account_username: string | null;
+    steps: PublishStep[];
+  } | null;
+};
+export type PublishResponse = {
+  status: "dry_run" | "queued" | "published" | "failed" | "deferred" | "in_progress" | "skipped";
+  message: string;
+  content: Content | null;
+  publish_state: PublishState | null;
+  preview: PublishPreview | null;
+};
+export type Capability = { key: string; label: string; supported: boolean; note: string };
+export type PublishingLimit = {
+  instagram_account_id: number;
+  username: string | null;
+  quota_usage: number;
+  quota_total: number;
+  remaining: number;
+  quota_duration_seconds: number | null;
+  from_meta: boolean;
+};

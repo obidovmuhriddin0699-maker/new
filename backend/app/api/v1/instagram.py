@@ -8,8 +8,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.deps import DbSession, HumanActorDep
 from app.core.config import get_settings
+from app.core.errors import NotFoundError
+from app.integrations.meta.capabilities import CAPABILITIES
+from app.models import InstagramAccount
 from app.schemas.errors import error_responses
+from app.schemas.publish import CapabilityRead, PublishingLimitRead
 from app.services.instagram_oauth import InstagramOAuthService
+from app.services.publish import PublishService
 
 router = APIRouter(prefix="/instagram", tags=["instagram"])
 
@@ -150,6 +155,43 @@ def refresh_token(account_id: int, db: DbSession, actor: HumanActorDep) -> Accou
 )
 def disconnect(account_id: int, db: DbSession, actor: HumanActorDep) -> None:
     InstagramOAuthService(db).disconnect(account_id, actor)
+
+
+@router.get(
+    "/capabilities",
+    response_model=list[CapabilityRead],
+    summary="What the Content Publishing API supports (unsupported items are never faked)",
+    responses=error_responses(401),
+)
+def capabilities(_: HumanActorDep) -> list[CapabilityRead]:
+    return [
+        CapabilityRead(key=c.key, label=c.label, supported=c.supported, note=c.note)
+        for c in CAPABILITIES
+    ]
+
+
+@router.get(
+    "/accounts/{account_id}/publishing-limit",
+    response_model=PublishingLimitRead,
+    summary="Live content publishing quota from Meta (read-only)",
+    description="Calls `content_publishing_limit`. Meta's pages disagree on the quota "
+    "(50 vs 100 posts / 24 h), so the live value is shown.",
+    responses=error_responses(401, 404) | {502: {"description": "Meta error"}},
+)
+def publishing_limit(account_id: int, db: DbSession, _: HumanActorDep) -> PublishingLimitRead:
+    account = db.get(InstagramAccount, account_id)
+    if account is None or account.deleted_at is not None:
+        raise NotFoundError("Instagram account not found")
+    limit = PublishService(db).publishing_limit(account)
+    return PublishingLimitRead(
+        instagram_account_id=account.id,
+        username=account.username,
+        quota_usage=limit.quota_usage,
+        quota_total=limit.quota_total,
+        remaining=limit.remaining,
+        quota_duration_seconds=limit.quota_duration_seconds,
+        from_meta=limit.from_meta,
+    )
 
 
 # ---------------------------------------------------------------- Meta → server callbacks

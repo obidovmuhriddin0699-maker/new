@@ -20,8 +20,10 @@ test("review, approve — never publishes", async ({ page }) => {
   await expect(page.getByTestId("confirm-panel")).toContainText("1-versiyani");
   await page.getByTestId("confirm-action").click();
   await expect(page.getByTestId("status-badge").first()).toHaveAttribute("data-status", "APPROVED");
-  await expect(page.getByText("Nashr qilinmadi")).toBeVisible();
-  await expect(page.getByTestId("publish-disabled")).toBeDisabled();
+  await expect(page.getByText("Tasdiqlash nashr qilmaydi")).toBeVisible();
+  // Approving never publishes: publishing is a separate, explicitly confirmed action.
+  await expect(page.getByTestId("status-badge").first()).toHaveAttribute("data-status", "APPROVED");
+  await expect(page.getByTestId("publish-start")).toBeVisible();
   await expect(page.getByTestId("approvals")).toContainText("v1 · Tasdiqlangan");
   await expectNoHorizontalScroll(page);
 });

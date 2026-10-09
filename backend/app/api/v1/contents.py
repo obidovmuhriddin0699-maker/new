@@ -1,6 +1,6 @@
 """Content endpoints. Routers only translate HTTP <-> service calls.
 
-There is intentionally no publish endpoint in PHASE 2.
+Publishing and media endpoints live in ``publishing.py``.
 """
 
 from typing import Annotated, Literal
@@ -9,7 +9,7 @@ from fastapi import APIRouter, Query, status
 
 from app.api.deps import DbSession, HumanActorDep
 from app.models import Content
-from app.models.enums import ContentStatus, ContentType
+from app.models.enums import ContentStatus, ContentType, ScheduleStatus
 from app.schemas.content import (
     ApprovalRead,
     ApprovalResponse,
@@ -22,6 +22,7 @@ from app.schemas.content import (
     ContentUpdate,
     ContentVersionRead,
     DecisionRequest,
+    PublishStateRead,
 )
 from app.schemas.errors import error_responses
 from app.schemas.panel import ScheduleRead, ScheduleRequest
@@ -42,6 +43,12 @@ def _read(service: ContentService, content: Content) -> ContentRead:
         if sch.content_version == content.version
     ]
     data.scheduled_at = pending[0].scheduled_at if pending else None
+    attempts = [
+        sch
+        for sch in service.schedules.list_for_content(content.id)
+        if sch.content_version == content.version and sch.status != ScheduleStatus.CANCELLED
+    ]
+    data.publish_state = PublishStateRead.model_validate(attempts[-1]) if attempts else None
     return data
 
 
@@ -225,7 +232,7 @@ def history(content_id: int, db: DbSession, _: HumanActorDep) -> ContentHistoryR
     summary="Schedule the approved version (human only)",
     description=(
         "Requires a valid human approval of the current version. Idempotent per version. "
-        "**Does not publish**: automatic publishing arrives in PHASE 8."
+        "The publish worker (Celery beat) publishes it at `scheduled_at`."
     ),
     responses=error_responses(401, 403, 404, 409, 422),
 )
@@ -267,7 +274,7 @@ def delete_content(content_id: int, db: DbSession, actor: HumanActorDep) -> None
     summary="Publish readiness checklist (preflight)",
     description="Read-only. Shows every condition that must hold before publishing "
     "(status, valid human approval of this version, quality, format, media, Instagram account, "
-    "publisher). The PHASE 8 publisher uses the same checks.",
+    "publisher). The publisher runs exactly these checks before contacting Meta.",
     responses=error_responses(401, 404),
 )
 def readiness(content_id: int, db: DbSession, _: HumanActorDep) -> ReadinessRead:

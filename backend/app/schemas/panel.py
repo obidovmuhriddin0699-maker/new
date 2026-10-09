@@ -174,7 +174,10 @@ class ScheduleRead(BaseModel):
     scheduled_at: datetime
     status: str
     created: bool = True
-    note: str = "Scheduling does not publish yet: automatic publishing is implemented in PHASE 8."
+    note: str = (
+        "The publish worker publishes this version at scheduled_at (nothing is sent to "
+        "Instagram while META_DRY_RUN=true)."
+    )
 
 
 class RegenerateRequest(BaseModel):

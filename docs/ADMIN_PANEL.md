@@ -61,8 +61,10 @@ Actions shown per status (the backend enforces the same rules):
 * Every decision sends `expected_version` — approving content that changed after
   it was opened is refused with a clear message.
 * The approve confirmation states the exact version and that **it does not publish**.
-* "Approve & publish" is shown disabled ("PHASE 8"): there is no publish endpoint.
-* Scheduling works (human-only, approved version only) but nothing is published until PHASE 8.
+* Approving never publishes. Publishing is a separate card (**Instagram’ga nashr**):
+  preview (no Meta call) → explicit confirmation → result, status and permalink (PHASE 8).
+* Scheduling (human-only, approved version only) is published by the worker at the set time.
+* **Media** card: upload JPEG / MP4 / MOV or attach an HTTPS URL; each change is a new version.
 
 The content page also shows **Nashrga tayyorlik** (preflight checklist) and
 **O‘zgarishlar** (line diff vs. the last approved version) — PHASE 6.

@@ -36,6 +36,23 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
   return data as T;
 }
 
+/** Raw file upload through the same-origin proxy (bytes are validated by the backend). */
+export async function uploadFile<T>(path: string, file: Blob): Promise<T> {
+  const res = await fetch(`/api/backend/${path.replace(/^\//, "")}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/octet-stream" },
+    body: file,
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const err = data?.error ?? {};
+    throw new ApiError(res.status, err.code ?? `http_${res.status}`, err.message ?? res.statusText, err.details);
+  }
+  return data as T;
+}
+
 export function errorText(err: unknown): string {
   if (err instanceof ApiError) return ERROR_MESSAGES[err.code] ?? err.message;
   if (err instanceof Error) return err.message;
@@ -59,4 +76,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   csrf_rejected: "So‘rov rad etildi (xavfsizlik tekshiruvi).",
   content_incomplete: "Ko‘rib chiqishga yuborishdan oldin caption yoki ssenariy yozing.",
   already_published: "Bu versiya allaqachon nashr qilingan.",
+  publish_in_progress: "Nashr jarayoni allaqachon ketmoqda. Natijani kuting — qayta bosmang.",
+  media_rejected: "Fayl qabul qilinmadi: faqat JPEG rasm yoki MP4/MOV video.",
+  body_too_large: "Fayl juda katta.",
 };

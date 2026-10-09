@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button, Card, EmptyState, ErrorBox, KeyValue, Loading, Notice, PageHeader } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
-import type { InstagramAccountStatus, InstagramStatus } from "@/lib/types";
+import type { Capability, InstagramAccountStatus, InstagramStatus, PublishingLimit } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 
 const ACCOUNT_TYPE: Record<string, string> = { business: "Business", creator: "Creator" };
@@ -37,7 +37,21 @@ function AccountCard({ account, onChanged }: { account: InstagramAccountStatus; 
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [limit, setLimit] = useState<PublishingLimit | null>(null);
+  const [limitBusy, setLimitBusy] = useState(false);
   const left = daysLeft(account.token_expires_at);
+
+  async function checkLimit() {
+    setLimitBusy(true);
+    setError(null);
+    try {
+      setLimit(await api<PublishingLimit>(`instagram/accounts/${account.id}/publishing-limit`));
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLimitBusy(false);
+    }
+  }
 
   async function run(kind: "refresh" | "disconnect") {
     setBusy(kind);
@@ -95,11 +109,20 @@ function AccountCard({ account, onChanged }: { account: InstagramAccountStatus; 
             ["Ruxsatlar", <Scopes key="sc" granted={account.scopes} missing={account.missing_scopes} />],
           ]}
         />
+        {limit && (
+          <p className="text-sm" data-testid="publishing-limit">
+            Nashr limiti (Meta, 24 soat): <b>{limit.quota_usage}</b> / {limit.quota_total} ishlatilgan · {limit.remaining} ta qoldi
+            {!limit.from_meta && <span className="text-muted"> (Meta jami limitni qaytarmadi — sozlamadagi qiymat)</span>}
+          </p>
+        )}
         <ErrorBox error={error} />
         {message && <Notice tone="success">{message}</Notice>}
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => void run("refresh")} loading={busy === "refresh"} disabled={busy !== null}>
             Tokenni yangilash
+          </Button>
+          <Button onClick={() => void checkLimit()} loading={limitBusy} disabled={busy !== null} data-testid="check-limit">
+            Nashr limitini tekshirish
           </Button>
           {confirming ? (
             <>
@@ -188,12 +211,32 @@ export default function InstagramPage() {
           ) : (
             data.accounts.map((a) => <AccountCard key={a.id} account={a} onChanged={reload} />)
           )}
+          <CapabilitiesCard />
           <Notice>
             Instagram login yoki paroli hech qachon so‘ralmaydi va saqlanmaydi. Ulanish faqat Meta’ning rasmiy OAuth
-            oynasi orqali bo‘ladi. Nashr qilish keyingi bosqichda (PHASE 8) va faqat siz tasdiqlagan kontent uchun.
+            oynasi orqali bo‘ladi. Nashr faqat siz tasdiqlagan kontent uchun va faqat sizning buyrug‘ingiz yoki rejangiz bo‘yicha.
           </Notice>
         </div>
       )}
     </>
+  );
+}
+
+function CapabilitiesCard() {
+  const { data } = useApi<Capability[]>("instagram/capabilities");
+  if (!data) return null;
+  return (
+    <Card title="Meta API imkoniyatlari">
+      <ul className="space-y-1.5 text-sm" data-testid="capabilities">
+        {data.map((c) => (
+          <li key={c.key} className="flex gap-2">
+            <span aria-hidden className={c.supported ? "text-emerald-600" : "text-muted"}>{c.supported ? "✓" : "✗"}</span>
+            <span>
+              {c.label} — <span className="text-muted">{c.note}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }

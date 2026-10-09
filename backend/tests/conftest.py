@@ -25,6 +25,7 @@ os.environ.update(
         "META_DRY_RUN": "true",
         "CELERY_TASK_ALWAYS_EAGER": "true",
         "LOG_JSON": "false",
+        "MEDIA_ROOT": str(_TMP / "media"),
     }
 )
 
@@ -233,3 +234,102 @@ def meta_settings(monkeypatch):
     monkeypatch.setattr(s, "meta_graph_base_url", META["graph"])
     monkeypatch.setattr(s, "meta_graph_api_version", "v26.0")
     return s
+
+
+# ---------------------------------------------------------------- PHASE 8 helpers
+IG_PUBLISH_ID = "17841400000000077"
+PUBLISH_TOKEN = "IGAA-publish-token-SECRET"  # noqa: S105 - fake test token
+
+
+@pytest.fixture
+def publish_settings(monkeypatch):
+    s = get_settings()
+    monkeypatch.setattr(s, "meta_dry_run", False)
+    monkeypatch.setattr(s, "meta_graph_base_url", "https://graph.instagram.com")
+    monkeypatch.setattr(s, "meta_graph_api_version", "v26.0")
+    monkeypatch.setattr(s, "meta_container_poll_interval_seconds", 0)
+    monkeypatch.setattr(s, "meta_container_max_wait_seconds", 5)
+    monkeypatch.setattr(s, "media_public_base_url", "https://media.example")
+    monkeypatch.setattr(s, "publish_jobs_mode", "sync")
+    return s
+
+
+@pytest.fixture
+def ig_account(db: Session, user: User):
+    """A connected Business account with a live, encrypted token (publish scope granted)."""
+    from datetime import timedelta
+
+    from app.core.actors import SystemActor
+    from app.models import InstagramAccount
+    from app.models.base import utcnow
+    from app.models.enums import InstagramAccountType
+    from app.services.instagram import InstagramAccountService
+
+    account = InstagramAccount(
+        user_id=user.id,
+        ig_user_id=IG_PUBLISH_ID,
+        username="muxriddin.design",
+        account_type=InstagramAccountType.BUSINESS,
+        connected_at=utcnow(),
+    )
+    db.add(account)
+    db.commit()
+    InstagramAccountService(db).store_token(
+        account.id,
+        SystemActor("test"),
+        access_token=PUBLISH_TOKEN,
+        expires_at=utcnow() + timedelta(days=50),
+        scopes=["instagram_business_basic", "instagram_business_content_publish"],
+    )
+    return account
+
+
+def make_publishable(db: Session, actor, *, content_type=None, media=None, **overrides):
+    """Approved content with media at public HTTPS URLs (ready to publish)."""
+    from app.models.enums import AssetKind
+    from app.services import ApprovalService, ContentService
+    from app.services.content import AssetInput
+
+    ct = content_type or ContentType.POST
+    ratio = {"POST": "4:5", "CAROUSEL": "4:5", "REELS": "9:16", "STORY": "9:16"}[ct.value]
+    fields = {"aspect_ratio": ratio, "cta": "Saqlab qo‘ying", "hook": "Kichik xona katta ko‘rinadi"}
+    if ct == ContentType.REELS:
+        fields["structure"] = {
+            "scenes": [
+                {"visual": "Xona", "on_screen_text": "Oldin", "duration_seconds": 5},
+                {"visual": "Xona", "narration": "Keyin", "duration_seconds": 7},
+            ]
+        }
+    if ct == ContentType.STORY:
+        fields["structure"] = {"frames": [{"visual": "Xona", "text": "Yangi loyiha"}]}
+    if ct == ContentType.CAROUSEL:
+        fields["structure"] = {
+            "slides": [
+                {"heading": "1-qadam", "body": "Yorug‘lik"},
+                {"heading": "2-qadam", "body": "Rang"},
+            ]
+        }
+    fields.update(overrides)
+    content = make_content(db, actor, content_type=ct, **fields)
+    if media is None:
+        media = {
+            "POST": [("IMAGE", "https://cdn.example/a.jpg")],
+            "CAROUSEL": [
+                ("IMAGE", "https://cdn.example/1.jpg"),
+                ("IMAGE", "https://cdn.example/2.jpg"),
+            ],
+            "REELS": [("VIDEO", "https://cdn.example/r.mp4")],
+            "STORY": [("IMAGE", "https://cdn.example/s.jpg")],
+        }[ct.value]
+    service = ContentService(db)
+    for i, (kind, url) in enumerate(media):
+        content = service.get(content.id)
+        service.add_asset(
+            content.id,
+            actor,
+            expected_version=content.version,
+            asset=AssetInput(kind=AssetKind(kind), position=i, public_url=url),
+        )
+    content = service.submit_for_review(content.id, actor)
+    ApprovalService(db).approve(content.id, actor, expected_version=content.version)
+    return service.get(content.id)

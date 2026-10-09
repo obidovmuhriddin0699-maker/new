@@ -52,6 +52,8 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("seed", help="load safe development data (idempotent)")
     s.add_argument("--admin-email", help="defaults to SEED_ADMIN_EMAIL or admin@example.com")
     sub.add_parser("refresh-instagram-tokens", help="refresh tokens close to expiry")
+    sub.add_parser("publish-due", help="publish due schedules once (what Celery beat does)")
+    sub.add_parser("reconcile-publishing", help="settle schedules stuck in PROCESSING")
     args = parser.parse_args(argv)
     if args.command == "create-admin":
         return create_admin(args.email, args.password, args.full_name)
@@ -62,6 +64,18 @@ def main(argv: list[str] | None = None) -> int:
 
         with get_sessionmaker()() as db:
             print(InstagramOAuthService(db).refresh_due())
+        return 0
+    if args.command in ("publish-due", "reconcile-publishing"):
+        from app.services.publish import PublishService
+
+        with get_sessionmaker()() as db:
+            service = PublishService(db)
+            result = (
+                service.process_due()
+                if args.command == "publish-due"
+                else service.reconcile_stale()
+            )
+            print(result)
         return 0
     return 1
 

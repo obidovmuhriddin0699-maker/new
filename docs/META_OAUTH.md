@@ -132,6 +132,6 @@ messages with stable codes. Meta's raw message is kept, truncated, only in `deta
 
 ## 8. Not supported / known limits
 
-* Creator accounts cannot publish Stories via the API. The panel shows a warning on connect.
+* Meta's pages only clearly document Story publishing for Business accounts. Creator accounts get a warning (on connect and before publishing a Story) but are not blocked: Meta's own answer is shown.
 * Personal (non-professional) Instagram accounts cannot use this API. Convert the account to Business/Creator in the Instagram app.
 * Facebook Login mode (`META_LOGIN_MODE=facebook`, Page-linked accounts) is not implemented. Instagram Login is the default and only implemented mode.

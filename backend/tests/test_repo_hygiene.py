@@ -24,3 +24,14 @@ def test_env_example_has_no_real_secrets():
     for line in text.splitlines():
         if line.startswith(("JWT_SECRET_KEY=", "TOKEN_ENCRYPTION_KEYS=")):
             assert line.split("=", 1)[1].strip() in ("", "change-me")
+
+
+def test_source_folders_are_never_ignored():
+    # A bare "media/" pattern once hid frontend/src/app/(panel)/media from git.
+    for path in (
+        "frontend/src/app/(panel)/media/page.tsx",
+        "frontend/src/app/media/[name]/route.ts",
+        "backend/app/services/media_storage.py",
+    ):
+        assert not _ignored(path), path
+    assert _ignored("backend/data/media/upload.jpg")

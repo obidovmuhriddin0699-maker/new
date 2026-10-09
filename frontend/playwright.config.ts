@@ -45,7 +45,10 @@ export default defineConfig({
         DATABASE_URL: `sqlite:///./data/${process.env.E2E_DB}`,
         AI_PROVIDER: "mock",
         AI_JOBS_MODE: "sync",
-        META_DRY_RUN: "true",
+        // Real publishing code path, but against the local fake Meta (never instagram.com).
+        META_DRY_RUN: "false",
+        MEDIA_PUBLIC_BASE_URL: "https://media.e2e.example",
+        MEDIA_ROOT: `./data/e2e-media-${process.env.E2E_DB}`,
         META_APP_ID: "e2e-app-id",
         META_APP_SECRET: "e2e-app-secret",
         META_REDIRECT_URI: `http://localhost:${FRONTEND_PORT}/instagram/callback`,

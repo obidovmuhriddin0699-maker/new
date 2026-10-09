@@ -12,6 +12,10 @@ x-backend-env: &backend-env
   REDIS_URL: redis://redis:6379/0
   OLLAMA_BASE_URL: ${DOCKER_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
   CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+  # The worker is always running here, so publishing (Reels processing can take minutes)
+  # is queued instead of blocking the API request.
+  PUBLISH_JOBS_MODE: ${PUBLISH_JOBS_MODE:-celery}
+  MEDIA_ROOT: /var/lib/muxriddin/media
 
 services:
   postgres:
@@ -55,6 +59,7 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./backend:/app
+      - media_data:/var/lib/muxriddin/media
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -128,3 +133,4 @@ services:
 
 volumes:
   postgres_data:
+  media_data:

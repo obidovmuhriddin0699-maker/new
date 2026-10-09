@@ -19,7 +19,7 @@ test("readiness checklist is honest about blockers", async ({ page }) => {
   await page.goto(`/content/${c.id}`);
   await expect(page.getByTestId("readiness-approval")).toHaveAttribute("data-ok", "true");
   await expect(page.getByTestId("readiness-media")).toHaveAttribute("data-ok", "false");
-  await expect(page.getByTestId("readiness-publisher")).toContainText("PHASE 8");
+  await expect(page.getByTestId("readiness-publisher")).toHaveAttribute("data-ok", "true");
   await expect(page.getByTestId("readiness")).toContainText("Hali nashrga tayyor emas");
   await expectNoHorizontalScroll(page);
 });

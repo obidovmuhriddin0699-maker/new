@@ -21,7 +21,9 @@ htmlcov/
 *.db
 *.sqlite3
 backend/data/
-media/
+# Root-level media folder only (uploads live in backend/data/media or a Docker volume).
+# A bare "media/" would also hide frontend/src/app/(panel)/media and app/media.
+/media/
 
 # Node / Next.js
 node_modules/
