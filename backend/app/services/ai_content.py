@@ -41,15 +41,21 @@ from app.agents.structured import GenerationMeta, run_sync
 from app.agents.visual import build_visual_prompt
 from app.core.actors import Actor, AgentActor, SystemActor
 from app.core.config import get_settings
-from app.core.errors import AppError, NotFoundError, TooManyRequestsError
+from app.core.errors import (
+    AppError,
+    NotFoundError,
+    TooManyRequestsError,
+    VersionMismatchError,
+)
 from app.core.transaction import atomic
 from app.models import AIJob, BrandProfile, Content, ContentPerformance
-from app.models.enums import AIJobStatus, AuditAction, ContentLanguage, ContentType
+from app.models.enums import AIJobStatus, AuditAction, ContentLanguage, ContentStatus, ContentType
 from app.providers.ai.base import AIProvider, AIProviderError
 from app.providers.ai.factory import create_ai_provider
 from app.providers.media import DEFAULT_ASPECT_RATIO
 from app.repositories import BrandProfileRepository, ContentRepository
 from app.services.ai_job import AIJobService
+from app.services.approval import ApprovalService
 from app.services.audit import AuditLogService
 from app.services.content import ContentService
 from app.services.guards import require_active_human, require_human_writer
@@ -69,8 +75,9 @@ class JobType:
     REELS = "reels"
     STORY = "story"
     HASHTAGS = "hashtags"
+    REGENERATE = "regenerate"
 
-    ALL = (STRATEGY, IDEAS, CONTENT_PLAN, POST, CAROUSEL, REELS, STORY, HASHTAGS)
+    ALL = (STRATEGY, IDEAS, CONTENT_PLAN, POST, CAROUSEL, REELS, STORY, HASHTAGS, REGENERATE)
     CONTENT = {
         POST: ContentType.POST,
         CAROUSEL: ContentType.CAROUSEL,
@@ -88,7 +95,17 @@ AGENT_FOR_JOB = {
     JobType.REELS: ContentCreator.name,
     JobType.STORY: ContentCreator.name,
     JobType.HASHTAGS: ContentCreator.name,
+    JobType.REGENERATE: ContentCreator.name,
 }
+JOB_FOR_CONTENT_TYPE = {v: k for k, v in JobType.CONTENT.items()}
+REGENERATABLE = frozenset(
+    {
+        ContentStatus.DRAFT,
+        ContentStatus.EDIT_REQUESTED,
+        ContentStatus.FAILED,
+        ContentStatus.READY_FOR_REVIEW,
+    }
+)
 
 
 def agent_actor(name: str) -> AgentActor:
@@ -126,6 +143,24 @@ class AIContentService:
         if job_type not in JobType.ALL:
             raise AppError(f"Unknown AI job type: {job_type}", code="invalid_job_type")
         user = require_human_writer(self.session, actor)
+        content: Content | None = None
+        if job_type == JobType.REGENERATE:
+            content = self.contents.get(int(params["content_id"]))
+            if content.version != params.get("expected_version"):
+                raise VersionMismatchError(
+                    "Content changed since you viewed it; reload first",
+                    details={"current_version": content.version},
+                )
+            if content.status not in REGENERATABLE:
+                raise AppError(
+                    f"Content in status {content.status.value} cannot be regenerated",
+                    code="invalid_state_transition",
+                )
+            params = {
+                **params,
+                "brand_profile_id": content.brand_profile_id,
+                "language": content.language.value,
+            }
         brand = self.resolve_brand(params.get("brand_profile_id"))
         language = params.get("language", "uz")
         if brand.languages and language not in brand.languages:
@@ -140,6 +175,14 @@ class AIContentService:
             )
         settings = get_settings()
         params = {**params, "brand_profile_id": brand.id}
+        if content is not None and content.status == ContentStatus.READY_FOR_REVIEW:
+            # The human's regenerate click is recorded as an edit request on this version.
+            ApprovalService(self.session, self.audit).request_edit(
+                content.id,
+                actor,
+                expected_version=content.version,
+                comment=params.get("instructions") or "Regenerate requested",
+            )
         with atomic(self.session):
             job = self.jobs.create(
                 PIPELINE_ACTOR,
@@ -181,6 +224,8 @@ class AIContentService:
             return self.outcome(job)
         self.jobs.start(job.id, PIPELINE_ACTOR)
         params = dict(job.input or {})
+        if job.job_type == JobType.REGENERATE:
+            return self._execute_regenerate(job, params)
         try:
             brand = self.resolve_brand(params.get("brand_profile_id"))
             output, meta = self._generate(job.job_type, brand, params)
@@ -223,6 +268,86 @@ class AIContentService:
                 error="Could not save generated content",
                 category="internal",
             )
+        return self.outcome(self.jobs.get(job.id))
+
+    def _execute_regenerate(self, job: AIJob, params: dict[str, Any]) -> JobOutcome:
+        """Agent rewrites existing content: GENERATING -> new version -> READY_FOR_REVIEW."""
+        agent = agent_actor(ContentCreator.name)
+        try:
+            content = self.contents.get(int(params["content_id"]))
+            brand = self.resolve_brand(content.brand_profile_id)
+            self.contents.start_generation(content.id, agent)
+        except AppError as exc:
+            self.jobs.fail(job.id, PIPELINE_ACTOR, error=exc.message, category=exc.code)
+            return self.outcome(self.jobs.get(job.id))
+
+        structure = content.structure or {}
+        topic = content.topic or content.hook or "interior design"
+        hint = (params.get("instructions") or "").strip()
+        if content.caption:
+            hint = f"{hint}\nImprove on the previous caption, do not copy it: {content.caption}"
+        gen = {
+            "topic": topic,
+            "language": content.language.value,
+            "instructions": hint.strip()[:1000] or None,
+            "slides": len(structure.get("slides") or []) or 5,
+            "target_seconds": int(structure.get("approx_duration_seconds") or 30),
+        }
+        kind = JOB_FOR_CONTENT_TYPE[content.content_type]
+
+        def fail(message: str, category: str) -> JobOutcome:
+            self.contents.fail_generation(content.id, agent, error=message)
+            self.jobs.fail(job.id, PIPELINE_ACTOR, error=message, category=category)
+            return self.outcome(self.jobs.get(job.id))
+
+        try:
+            output, meta = self._generate(kind, brand, gen)
+        except AIProviderError as exc:
+            return fail(exc.message, exc.category)
+        except Exception:  # noqa: BLE001
+            logger.exception("ai_regenerate_crashed", extra={"ai_job_id": job.id})
+            return fail("Internal error during generation", "internal")
+
+        try:
+            with atomic(self.session):
+                fields = self._content_fields(content.content_type, output, brand, topic)
+                evaluation = EvaluationInput(
+                    content_type=content.content_type,
+                    language=content.language.value,
+                    hook=fields.get("hook"),
+                    caption=fields.get("caption"),
+                    cta=fields.get("cta"),
+                    script=fields.get("script"),
+                    hashtags=fields.get("hashtags", []),
+                    structure=fields.get("structure", {}),
+                )
+                recent = [t for t in self._recent_texts() if t != content.caption]
+                quality = QualityEvaluator(brand).evaluate(evaluation, recent_texts=recent)
+                ai_meta = {
+                    **meta.as_dict(),
+                    "ai_job_id": job.id,
+                    "requested_by_user_id": job.created_by_user_id,
+                    "regenerated_from_version": content.version,
+                    "quality": {"passed": quality.passed, "score": quality.score},
+                }
+                self.contents.complete_generation(
+                    content.id, agent, fields=fields, ai_metadata=ai_meta
+                )
+                self.jobs.succeed(
+                    job.id,
+                    PIPELINE_ACTOR,
+                    output={
+                        "result": output.model_dump(mode="json"),
+                        "quality": quality.model_dump(mode="json"),
+                        "generation": meta.as_dict(),
+                    },
+                    content_id=content.id,
+                )
+        except AppError as exc:
+            return fail(exc.message, exc.code)
+        except Exception:  # noqa: BLE001
+            logger.exception("ai_regenerate_persist_failed", extra={"ai_job_id": job.id})
+            return fail("Could not save regenerated content", "internal")
         return self.outcome(self.jobs.get(job.id))
 
     def outcome(self, job: AIJob) -> JobOutcome:
@@ -373,7 +498,14 @@ class AIContentService:
             plan = cast(ContentPlan, output)
             if p.get("save_as_drafts"):
                 for item in plan.items:
-                    draft = self._create_draft(brand, lang, item.format, ai_meta, topic=item.title)
+                    draft = self._create_draft(
+                        brand,
+                        lang,
+                        item.format,
+                        ai_meta,
+                        topic=item.title,
+                        planned_date=item.suggested_date,
+                    )
                     item.status = "DRAFT_CREATED"
                     item.content_id = draft.id
             return plan.model_dump(mode="json"), None, None

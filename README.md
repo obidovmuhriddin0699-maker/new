@@ -4,13 +4,14 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 3 — AI content creation pipeline.**
+> **Joriy holat: PHASE 4 — Admin panel.**
 > Real Instagram OAuth va real publishing hali **yo‘q** (PHASE 7–8).
 > Meta credentials kerak emas va so‘ralmaydi.
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
 - AI pipeline (agentlar, schemalar, sifat, joblar, xatolar): [`docs/AI_PIPELINE.md`](docs/AI_PIPELINE.md)
+- Admin panel (sahifalar, xavfsizlik, approval UI): [`docs/ADMIN_PANEL.md`](docs/ADMIN_PANEL.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -65,6 +66,22 @@ PHASE 3 da qo'shilganlar:
 - `AIJob` ishlash rejimlari: `sync` (default) yoki `celery` (HTTP 202 javob, keyin holatni so'rash kerak).
 - Rasm va video provider'lari `not_configured` holatida. Ular soxta media yaratmaydi.
 - `/api/v1/ai/*` endpoint'lari (to'liq ro'yxat [`docs/AI_PIPELINE.md`](docs/AI_PIPELINE.md) da).
+
+PHASE 4 da qo'shilganlar (admin panel):
+
+- Sahifalar:
+  - Umumiy ko'rinish (Overview);
+  - Kontent navbati va approval UI;
+  - AI Studio;
+  - Kalendar: kun, hafta va oy ko'rinishi;
+  - Media kutubxona, Instagram, Analitika, AI sozlamalari, Brend sozlamalari, Telegram, Tizim loglari, Sozlamalar.
+- Approval UI tugmalari: **Tahrirlash, Qayta yaratish, Rad etish, Tasdiqlash**.
+  - "Tasdiqlash va nashr qilish" tugmasi PHASE 8 gacha o'chirilgan.
+  - Tasdiq kontentning aniq versiyasiga bog'lanadi.
+- Xavfsiz sessiya:
+  - JWT faqat httpOnly cookie'da saqlanadi, brauzer JavaScript'i uni o'qiy olmaydi.
+  - Next.js proxy (BFF) so'rovlarni backend'ga yuboradi va CSRF himoyasini bajaradi.
+- Mobil qurilmadan foydalanish mumkin. Telefondan faqat frontend portini ochish kifoya.
 
 ## 2. Requirements (Windows 11)
 
@@ -165,7 +182,8 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 | `META_LOGIN_MODE` | `instagram` (default) yoki `facebook` |
 | `META_GRAPH_API_VERSION` | Graph API versiyasi (rasmiy changelog bilan tekshiring) |
 | `META_DRY_RUN` | `true` bo‘lsa real akkauntga hech narsa yuborilmaydi |
-| `NEXT_PUBLIC_API_URL` | frontend → backend manzili (**brauzerga ochiq**, secret qo‘ymang) |
+| `BACKEND_URL` | Next.js server tomoni backend'ga shu manzil orqali ulanadi (brauzerga yuborilmaydi) |
+| `SESSION_COOKIE_SECURE` | `auto` (HTTPS bo'lsa Secure), `true` yoki `false` |
 
 Production'da `APP_ENV=production` bo‘lsa, backend quyidagi holatlarda **ishga tushmaydi**:
 dev JWT kaliti ishlatilgan bo‘lsa, Fernet kaliti yo‘q bo‘lsa, `DATABASE_URL` PostgreSQL bo‘lmasa,
@@ -188,8 +206,21 @@ python -m uvicorn app.main:app --reload --port 8000
 
 ```powershell
 cd frontend
+Copy-Item .env.example .env.local      # bir marta (BACKEND_URL=http://localhost:8000)
 npm run dev
 ```
+
+**Telefondan kirish (bir Wi-Fi tarmog'ida).** Telefon faqat frontend'ga ulanadi, backend kompyuterda localhost'da qoladi:
+
+```powershell
+cd frontend
+npm run dev -- -H 0.0.0.0
+ipconfig                                # "IPv4 Address" ni toping, masalan 192.168.1.20
+# Administrator PowerShell'da (bir marta) 3000-portni faqat Private tarmoq uchun oching:
+New-NetFirewallRule -DisplayName "Muxriddin panel" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow -Profile Private
+```
+
+Telefon brauzerida `http://192.168.1.20:3000` manzilini oching. HTTP orqali ishlaganda cookie `Secure` belgisiz bo'ladi (`SESSION_COOKIE_SECURE=auto`). Internetga chiqarishdan oldin HTTPS majburiy (PHASE 12).
 
 **Terminal 3 — Celery worker (ixtiyoriy, Redis kerak)**
 
@@ -213,7 +244,7 @@ Default admin email: `admin@example.com` (`SEED_ADMIN_EMAIL` yoki `--admin-email
 
 Manzillar:
 
-- Admin panel: http://localhost:3000. Bosh sahifada backend `/health` holati ko‘rinadi.
+- Admin panel: http://localhost:3000. `seed` yoki `create-admin` bilan yaratilgan email va parol orqali kiring.
 - API docs (Swagger): http://localhost:8000/docs
 - Health: http://localhost:8000/health
 
@@ -351,7 +382,7 @@ npm run typecheck
 npm run build
 ```
 
-**E2E (Playwright)**: backend va frontendni o‘zi ishga tushiradi va panel `/health` ni ko‘ra olishini tekshiradi:
+**E2E (Playwright)** alohida stack ishga tushiradi: backend 8100-portda (yangi SQLite baza, mock AI, migration + seed), frontend 3100-portda. Sizning dev bazangiz va real AI/Meta ishlatilmaydi. Testlar desktop va mobil (Pixel 7) rejimlarida bajariladi.
 
 ```powershell
 npx playwright install chromium        # bir marta
@@ -398,7 +429,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 - Instagram login/paroli **hech qachon** so‘ralmaydi va saqlanmaydi. Ulanish faqat OAuth orqali (PHASE 7).
 - OAuth tokenlar faqat Fernet bilan shifrlangan holda saqlanadi (`oauth_tokens.token_ciphertext`). Kalit faqat `.env` dan olinadi.
 - `.env` va `.env.*` `.gitignore` da (`.env.example` bundan mustasno). Buni test ham tekshiradi.
-- Frontendga faqat `NEXT_PUBLIC_API_URL` beriladi. Secret'lar brauzerga chiqmaydi.
+- Brauzer backend'ga to'g'ridan-to'g'ri murojaat qilmaydi. Sessiya tokeni httpOnly + SameSite=Strict cookie'da saqlanadi va Next.js proxy uni server tomonida qo'shadi. Boshqa saytdan kelgan so'rovlar (CSRF) rad etiladi. Frontendga hech qanday secret berilmaydi.
 - CORS faqat `CORS_ORIGINS` ro‘yxatidagi manzillarga ochiq. Production'da `*` taqiqlangan.
 - 500 xatolarda ichki tafsilotlar foydalanuvchiga ko‘rsatilmaydi, ular faqat logga yoziladi.
 - AI agentlar uchun `PUBLISH_TO_INSTAGRAM` / `APPROVE_CONTENT` ruxsatlarini berib bo‘lmaydi (`ForbiddenAgentPermissionError`).
@@ -439,7 +470,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | 1 — Project foundation | ✅ |
 | 2 — Database (repositories, seed, state machine) | ✅ |
 | 3 — AI Content Creator | ✅ |
-| 4 — Admin Panel | ⏳ |
+| 4 — Admin Panel | ✅ |
 | 5 — Telegram Bot | ⏳ |
 | 6 — Approval System | ⏳ |
 | 7 — Meta OAuth | ⏳ |

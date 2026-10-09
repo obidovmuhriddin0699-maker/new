@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Date,
     Float,
     ForeignKey,
     Index,
@@ -75,6 +76,8 @@ class Content(TimestampMixin, SoftDeleteMixin, Base):
     ig_media_id: Mapped[str | None] = mapped_column(String(64), unique=True)
     ig_permalink: Mapped[str | None] = mapped_column(String(500))
     published_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    # Planning aid for the calendar (not part of the published content, not versioned).
+    planned_date: Mapped[date | None] = mapped_column(Date, index=True)
     last_error: Mapped[str | None] = mapped_column(Text)
 
     assets: Mapped[list["ContentAsset"]] = relationship(

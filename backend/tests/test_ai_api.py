@@ -218,7 +218,7 @@ def test_celery_mode_returns_202(api, monkeypatch):
 def test_openapi_ai_endpoints(api):
     spec = api.get("/openapi.json").json()
     ai_paths = {p: v for p, v in spec["paths"].items() if p.startswith(AI)}
-    assert len(ai_paths) == 13
+    assert len(ai_paths) == 14  # + /regenerate (PHASE 4)
     for path, ops in ai_paths.items():
         for method, op in ops.items():
             assert op.get("security"), f"{method} {path}"

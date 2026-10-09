@@ -125,7 +125,7 @@ Windows 11 dev: Docker Desktop (WSL2) yoki to‘g‘ridan-to‘g‘ri Python ven
 - Instagram login/parol **hech qachon** so‘ralmaydi va saqlanmaydi. Faqat OAuth.
 - Scraping, private API, browser automation — **taqiqlangan**.
 - OAuth tokenlar DB'da faqat **shifrlangan** (`OAuthToken.ciphertext`), log'ga chiqmaydi.
-- `.env` `.gitignore` da; frontend'ga faqat `NEXT_PUBLIC_*` ommaviy qiymatlar.
+- `.env` `.gitignore` da. Frontend'ga hech qanday secret berilmaydi. Brauzer faqat Next.js BFF proxy bilan ishlaydi: JWT httpOnly cookie'da saqlanadi, PHASE 4 dan boshlab (`docs/ADMIN_PANEL.md`).
 - CORS: prod'da faqat `FRONTEND_ORIGIN`.
 - OAuth `state` parametri (CSRF) — imzolangan, bir martalik, 10 daqiqa TTL.
 - Rate limiting: auth va publish endpointlarda qattiq.

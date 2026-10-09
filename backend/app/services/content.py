@@ -62,6 +62,7 @@ from app.services.invalidation import cancel_pending_schedules, invalidate_activ
 EDITABLE_FIELDS: frozenset[str] = frozenset(VERSIONED_FIELDS) | {
     "brand_profile_id",
     "instagram_account_id",
+    "planned_date",
 }
 
 

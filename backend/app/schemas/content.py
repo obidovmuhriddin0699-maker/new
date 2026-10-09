@@ -1,6 +1,7 @@
 """Content API schemas. Sensitive/internal fields are never exposed."""
 
-from datetime import datetime
+import json
+from datetime import date, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -19,6 +20,7 @@ from app.models.enums import (
 MAX_CAPTION_LENGTH = 2200
 MAX_HASHTAGS = 30
 ASPECT_RATIO_PATTERN = r"^\d{1,2}:\d{1,2}$"
+MAX_STRUCTURE_BYTES = 20_000
 
 
 def _normalize_hashtags(value: list[str] | None) -> list[str] | None:
@@ -49,6 +51,17 @@ class _ContentFields(BaseModel):
     aspect_ratio: str | None = Field(default=None, pattern=ASPECT_RATIO_PATTERN)
     brand_profile_id: int | None = None
     instagram_account_id: int | None = None
+    planned_date: date | None = Field(default=None, description="Calendar planning date")
+    structure: dict[str, Any] | None = Field(
+        default=None, description="Carousel slides / reels scenes / story frames"
+    )
+
+    @field_validator("structure")
+    @classmethod
+    def _check_structure(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
+        if value is not None and len(json.dumps(value, ensure_ascii=False)) > MAX_STRUCTURE_BYTES:
+            raise ValueError(f"structure must be at most {MAX_STRUCTURE_BYTES} bytes as JSON")
+        return value
 
     @field_validator("hashtags")
     @classmethod
@@ -94,6 +107,8 @@ class ContentUpdate(_ContentFields):
                 data.pop(required)
         if "hashtags" in data and data["hashtags"] is None:
             data["hashtags"] = []
+        if "structure" in data and data["structure"] is None:
+            data["structure"] = {}
         return data
 
 
@@ -154,6 +169,11 @@ class ContentRead(BaseModel):
     brand_profile_id: int | None
     instagram_account_id: int | None
     created_by: ActorType
+    structure: dict[str, Any] = {}
+    planned_date: date | None = None
+    scheduled_at: datetime | None = Field(
+        default=None, description="Pending schedule of the current version, if any"
+    )
     published_at: datetime | None
     ig_permalink: str | None
     last_error: str | None

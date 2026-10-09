@@ -212,7 +212,8 @@ def test_responses_do_not_expose_sensitive_fields(client, auth_headers):
 def test_openapi_documents_security_and_errors(client):
     spec = client.get("/openapi.json").json()
     paths = {p: v for p, v in spec["paths"].items() if p.startswith(BASE)}
-    assert len(paths) == 7  # collection, item, 4 decision/review actions, history
+    # collection, item, 4 decision/review actions, history, schedule (PHASE 4)
+    assert len(paths) == 8
     for path, ops in spec["paths"].items():
         if not path.startswith(BASE):
             continue
@@ -221,7 +222,8 @@ def test_openapi_documents_security_and_errors(client):
             assert "401" in op["responses"], f"{method} {path} lacks 401"
             assert op.get("summary"), f"{method} {path} lacks summary"
             ok = next(c for c in op["responses"] if c.startswith("2"))
-            assert "schema" in op["responses"][ok]["content"]["application/json"]
+            if ok != "204":  # 204 No Content has no body by definition
+                assert "schema" in op["responses"][ok]["content"]["application/json"]
     approve = spec["paths"][f"{BASE}/{{content_id}}/approve"]["post"]
     assert {"401", "403", "404", "409", "422"} <= set(approve["responses"])
     assert "ErrorResponse" in spec["components"]["schemas"]

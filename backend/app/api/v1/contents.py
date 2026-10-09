@@ -24,7 +24,8 @@ from app.schemas.content import (
     DecisionRequest,
 )
 from app.schemas.errors import error_responses
-from app.services import ApprovalService, ContentService
+from app.schemas.panel import ScheduleRead, ScheduleRequest
+from app.services import ApprovalService, ContentService, ScheduleService
 
 router = APIRouter(prefix="/contents", tags=["contents"])
 
@@ -33,6 +34,12 @@ def _read(service: ContentService, content: Content) -> ContentRead:
     data = ContentRead.model_validate(content)
     data.assets = [AssetRead.model_validate(a) for a in service.list_assets(content.id)]
     data.publish_authorized = service.is_publish_authorized(content)
+    pending = [
+        sch
+        for sch in service.schedules.list_pending_for_content(content.id)
+        if sch.content_version == content.version
+    ]
+    data.scheduled_at = pending[0].scheduled_at if pending else None
     return data
 
 
@@ -207,3 +214,45 @@ def history(content_id: int, db: DbSession, _: HumanActorDep) -> ContentHistoryR
         approvals=[ApprovalRead.model_validate(a) for a in h.approvals],
         events=[AuditEventRead.model_validate(e) for e in h.events],
     )
+
+
+@router.post(
+    "/{content_id}/schedule",
+    response_model=ScheduleRead,
+    summary="Schedule the approved version (human only)",
+    description=(
+        "Requires a valid human approval of the current version. Idempotent per version. "
+        "**Does not publish**: automatic publishing arrives in PHASE 8."
+    ),
+    responses=error_responses(401, 403, 404, 409, 422),
+)
+def schedule(
+    content_id: int, body: ScheduleRequest, db: DbSession, actor: HumanActorDep
+) -> ScheduleRead:
+    result = ScheduleService(db).schedule(content_id, actor, scheduled_at=body.scheduled_at)
+    data = ScheduleRead.model_validate(result.schedule)
+    data.created = result.created
+    return data
+
+
+@router.delete(
+    "/{content_id}/schedule",
+    response_model=ContentRead,
+    summary="Cancel the schedule (back to APPROVED)",
+    responses=error_responses(401, 403, 404, 409),
+)
+def unschedule(content_id: int, db: DbSession, actor: HumanActorDep) -> ContentRead:
+    ScheduleService(db).unschedule(content_id, actor)
+    service = ContentService(db)
+    return _read(service, service.get(content_id))
+
+
+@router.delete(
+    "/{content_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete content (soft delete)",
+    description="Invalidates approvals and cancels schedules. Not allowed while publishing.",
+    responses=error_responses(401, 403, 404, 409),
+)
+def delete_content(content_id: int, db: DbSession, actor: HumanActorDep) -> None:
+    ContentService(db).soft_delete(content_id, actor)

@@ -37,6 +37,7 @@ from app.schemas.ai import (
     StrategyRequest,
 )
 from app.schemas.errors import error_responses
+from app.schemas.panel import RegenerateRequest
 from app.services.ai_content import AGENT_FOR_JOB, AIContentService, JobOutcome, JobType
 from app.services.media import MediaGenerationService
 
@@ -181,6 +182,15 @@ _route(
     StoryRequest,
     "Generate a Story concept",
     "Frames with visuals, text and interactive element ideas. Saved as DRAFT.",
+)
+_route(
+    "/regenerate",
+    JobType.REGENERATE,
+    RegenerateRequest,
+    "Regenerate an existing content item",
+    "Human-requested rewrite. READY_FOR_REVIEW content first gets an edit request recorded "
+    "for the reviewer. The agent writes a new version that returns to READY_FOR_REVIEW; "
+    "previous approvals never carry over.",
 )
 _route(
     "/hashtags",

@@ -90,8 +90,10 @@ services:
       context: .
       dockerfile: docker/frontend.Dockerfile
     environment:
-      # Browser-side URL: the browser runs on the host, so use localhost.
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      # Server-side only: the Next.js proxy talks to the backend over the compose network.
+      # The browser never calls the backend directly and never sees the JWT.
+      BACKEND_URL: http://backend:8000
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-auto}
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
