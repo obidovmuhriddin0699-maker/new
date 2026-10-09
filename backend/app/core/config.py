@@ -77,6 +77,17 @@ class Settings(BaseSettings):
     image_provider: Literal["none", "mock"] = "none"
     video_provider: Literal["none", "mock"] = "none"
 
+    # --- Telegram bot (PHASE 5) ---
+    telegram_enabled: bool = False
+    telegram_bot_token: SecretStr = SecretStr("")
+    telegram_bot_username: str = ""  # without @, used for deep links in the panel
+    # Telegram user IDs allowed to talk to the bot (in addition to account linking).
+    telegram_allowed_user_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
+    telegram_action_ttl_hours: int = 72
+    telegram_link_code_ttl_minutes: int = 10
+    telegram_notify_interval_seconds: int = 15
+    panel_public_url: str = "http://localhost:3000"
+
     # --- Meta / Instagram (PHASE 7+). Only non-secret config here in PHASE 1.
     meta_login_mode: Literal["instagram", "facebook"] = "instagram"
     meta_graph_api_version: str = "v26.0"
@@ -92,6 +103,15 @@ class Settings(BaseSettings):
 
                 return json.loads(value)
             return [o.strip() for o in value.split(",") if o.strip()]
+        return value
+
+    @field_validator("telegram_allowed_user_ids", mode="before")
+    @classmethod
+    def _split_ids(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [int(v) for v in value.replace(";", ",").split(",") if v.strip()]
+        if isinstance(value, int):
+            return [value]
         return value
 
     @model_validator(mode="after")
@@ -111,6 +131,12 @@ class Settings(BaseSettings):
                 problems.append("DEBUG must be false in production")
             if self.ai_provider == "mock":
                 problems.append("AI_PROVIDER=mock is not allowed in production")
+            if self.telegram_enabled and (
+                not self.telegram_bot_token.get_secret_value() or not self.telegram_allowed_user_ids
+            ):
+                problems.append(
+                    "TELEGRAM_ENABLED requires TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USER_IDS"
+                )
             if "mock" in (self.image_provider, self.video_provider):
                 problems.append("mock media providers are not allowed in production")
             if problems:

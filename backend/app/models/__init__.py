@@ -12,7 +12,13 @@ from app.models.content import (
     ContentVersion,
 )
 from app.models.instagram import InstagramAccount, OAuthToken
-from app.models.system import AIJob, AuditLog, SystemSetting
+from app.models.system import (
+    AIJob,
+    AuditLog,
+    SystemSetting,
+    TelegramActionToken,
+    TelegramLinkCode,
+)
 from app.models.user import User
 
 __all__ = [
@@ -30,5 +36,7 @@ __all__ = [
     "InstagramAccount",
     "OAuthToken",
     "SystemSetting",
+    "TelegramActionToken",
+    "TelegramLinkCode",
     "User",
 ]

@@ -17,6 +17,7 @@ dependencies = [
     "httpx>=0.28",
     "redis>=5.2",
     "celery>=5.4",
+    "aiogram>=3.15",
 ]
 
 [project.optional-dependencies]

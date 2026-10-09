@@ -188,3 +188,24 @@ def mock_factory(*responses, responder=None):
 
     factory.created = created  # type: ignore[attr-defined]
     return factory
+
+
+# ---------------------------------------------------------------- PHASE 5 helpers
+TG_OWNER = 111111
+TG_OTHER = 222222
+TG_STRANGER = 999999
+
+
+@pytest.fixture
+def tg_settings(monkeypatch):
+    s = get_settings()
+    monkeypatch.setattr(s, "telegram_allowed_user_ids", [TG_OWNER, TG_OTHER])
+    monkeypatch.setattr(s, "panel_public_url", "https://panel.example")
+    return s
+
+
+@pytest.fixture
+def linked_owner(db: Session, user: User, tg_settings) -> User:
+    user.telegram_user_id = TG_OWNER
+    db.commit()
+    return user

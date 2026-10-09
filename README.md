@@ -4,7 +4,7 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 4 — Admin panel.**
+> **Joriy holat: PHASE 5 — Telegram bot.**
 > Real Instagram OAuth va real publishing hali **yo‘q** (PHASE 7–8).
 > Meta credentials kerak emas va so‘ralmaydi.
 
@@ -12,6 +12,7 @@ tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘lad
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
 - AI pipeline (agentlar, schemalar, sifat, joblar, xatolar): [`docs/AI_PIPELINE.md`](docs/AI_PIPELINE.md)
 - Admin panel (sahifalar, xavfsizlik, approval UI): [`docs/ADMIN_PANEL.md`](docs/ADMIN_PANEL.md)
+- Telegram bot (buyruqlar, xavfsizlik, sozlash): [`docs/TELEGRAM_BOT.md`](docs/TELEGRAM_BOT.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -82,6 +83,17 @@ PHASE 4 da qo'shilganlar (admin panel):
   - JWT faqat httpOnly cookie'da saqlanadi, brauzer JavaScript'i uni o'qiy olmaydi.
   - Next.js proxy (BFF) so'rovlarni backend'ga yuboradi va CSRF himoyasini bajaradi.
 - Mobil qurilmadan foydalanish mumkin. Telefondan faqat frontend portini ochish kifoya.
+
+PHASE 5 da qo'shilganlar (Telegram bot):
+
+- Buyruqlar: `/start`, `/content`, `/plan`, `/reels`, `/story`, `/status`, `/approve`, `/reject`, `/analytics`, `/settings`.
+- Kontent preview'si inline tugmalar bilan keladi: **TASDIQLASH / TAHRIR / RAD ETISH**.
+  - Tasdiqlash va rad etish ikki bosqichli.
+  - Tugmalar bir martalik, kontentning aniq versiyasiga va aniq Telegram foydalanuvchisiga bog'langan.
+- Botdan foydalanish uchun ikki shart bor:
+  - Telegram ID `TELEGRAM_ALLOWED_USER_IDS` ro'yxatida bo'lishi;
+  - hisob panel orqali bir martalik kod bilan bog'langan bo'lishi.
+- Yangi kontent ko'rib chiqishga tushganda tasdiqlovchilarga avtomatik xabar yuboriladi.
 
 ## 2. Requirements (Windows 11)
 
@@ -330,7 +342,31 @@ backend ishlaydi va `/health` da `redis.ok=false` ko‘rinadi.
 
 ## 8. Telegram setup
 
-PHASE 5 da qo‘shiladi.
+1. Telegram'da **@BotFather** → `/newbot` buyrug'ini yuboring va berilgan tokenni nusxalang.
+2. O'z Telegram ID raqamingizni bilish uchun **@userinfobot** → `/start`.
+3. `.env` ga yozing (token — maxfiy, git'ga tushmaydi):
+
+```
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=123456:ABC...
+TELEGRAM_BOT_USERNAME=sizning_botingiz
+TELEGRAM_ALLOWED_USER_IDS=123456789
+PANEL_PUBLIC_URL=http://localhost:3000
+```
+
+4. Botni ishga tushiring (alohida terminalda):
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+python -m app.integrations.telegram
+```
+
+Docker orqali: `docker compose --profile telegram up -d`.
+
+5. Panel → **Telegram** → "Bog'lash kodini olish" tugmasini bosing va botga `/start XXXX-XXXX` yuboring.
+
+Batafsil: [`docs/TELEGRAM_BOT.md`](docs/TELEGRAM_BOT.md).
 
 ## 9–13. Meta Developer setup, Instagram Business connection, OAuth, permissions, App Review
 
@@ -458,6 +494,10 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | AI so'rovi `503 ai_model_not_found` | `ollama pull qwen2.5:3b` (yoki `AI_MODEL` dagi model) |
 | AI so'rovi `504 ai_timeout` | `AI_TIMEOUT_SECONDS` ni oshiring yoki `AI_JOBS_MODE=celery` |
 | AI so'rovi `502 ai_invalid_output` | Model JSON'ni noto'g'ri qaytardi. Qayta urinib ko'ring, `AI_STRUCTURED_MAX_ATTEMPTS=3` qiling yoki kattaroq model ishlating |
+| Bot javob bermaydi | Bot jarayoni ishlayaptimi (`python -m app.integrations.telegram`)? `TELEGRAM_ENABLED=true` va token to'g'rimi? |
+| Bot "ruxsat berilmagan" deydi | Telegram ID'ingizni `TELEGRAM_ALLOWED_USER_IDS` ga qo'shing va botni qayta ishga tushiring |
+| Bot "hisob bog'lanmagan" deydi | Panel → Telegram → kod oling, botga `/start KOD` yuboring (kod 10 daqiqa amal qiladi) |
+| "Bu tugma allaqachon ishlatilgan / muddati tugagan" | `/content` buyrug'i bilan yangi tugmalar oling |
 | `429 too_many_requests` | Oldingi AI job'lar tugashini kuting (`GET /api/v1/ai/jobs`) |
 | `400 language_not_supported` | Bu til brend profilida yoqilmagan (`languages`) |
 | Migration `91ed60cfe649 requires 'approvals' to be empty` | Eski versiyasiz approval qatorlari bor; ularni xavfsiz ko'chirib bo'lmaydi |
@@ -471,7 +511,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | 2 — Database (repositories, seed, state machine) | ✅ |
 | 3 — AI Content Creator | ✅ |
 | 4 — Admin Panel | ✅ |
-| 5 — Telegram Bot | ⏳ |
+| 5 — Telegram Bot | ✅ |
 | 6 — Approval System | ⏳ |
 | 7 — Meta OAuth | ⏳ |
 | 8 — Instagram Publishing | ⏳ |

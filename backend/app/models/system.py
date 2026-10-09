@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UTCDateTime, str_enum, utcnow
@@ -66,3 +66,37 @@ class SystemSetting(TimestampMixin, Base):
     key: Mapped[str] = mapped_column(String(100), primary_key=True)
     value: Mapped[dict] = mapped_column(JSON, default=dict)
     description: Mapped[str | None] = mapped_column(Text)
+
+
+class TelegramLinkCode(TimestampMixin, Base):
+    """One-time code that links a Telegram account to a panel user (only the hash is stored)."""
+
+    __tablename__ = "telegram_link_codes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    used_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    used_by_telegram_id: Mapped[int | None] = mapped_column(BigInteger)
+
+
+class TelegramActionToken(TimestampMixin, Base):
+    """One-time token behind an inline button.
+
+    ``callback_data`` carries only a random token; the action, content id,
+    content version and the Telegram user it was issued to live here, so a
+    button cannot be forged, replayed, or used by another account.
+    """
+
+    __tablename__ = "telegram_action_tokens"
+    __table_args__ = (Index("ix_telegram_action_tokens_content", "content_id", "content_version"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    telegram_user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    action: Mapped[str] = mapped_column(String(30))
+    content_id: Mapped[int] = mapped_column(ForeignKey("contents.id", ondelete="CASCADE"))
+    content_version: Mapped[int] = mapped_column(Integer)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    used_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
