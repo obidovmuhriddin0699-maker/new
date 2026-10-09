@@ -1,7 +1,7 @@
 """Instagram account records and encrypted OAuth token storage.
 
-PHASE 2 foundation only: there is no Meta HTTP call here. PHASE 7 will feed
-tokens obtained from the official OAuth flow into ``store_token``. Tokens are
+No Meta HTTP call here: ``InstagramOAuthService`` (PHASE 7) feeds tokens
+obtained from the official OAuth flow into ``store_token``. Tokens are
 encrypted before they touch the database and never appear in audit logs.
 Agents can never read, store or revoke tokens.
 """

@@ -42,6 +42,10 @@ def configure_logging(level: str = "INFO", json_output: bool = True) -> None:
     root = logging.getLogger()
     root.handlers[:] = [handler]
     root.setLevel(level.upper())
+    # HTTP client libraries log full request URLs at INFO. Meta's API takes tokens and
+    # the app secret as query parameters, so these loggers must never log at INFO.
+    for noisy in ("httpx", "httpcore", "aiogram", "urllib3"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     # uvicorn access logs are replaced by our request middleware
     logging.getLogger("uvicorn.access").handlers.clear()
     logging.getLogger("uvicorn.access").propagate = False

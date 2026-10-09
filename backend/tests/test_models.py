@@ -17,6 +17,8 @@ ENTITIES = [
     "AIJob",
     "AuditLog",
     "SystemSetting",
+    "OAuthState",
+    "DataDeletionRequest",
 ]
 
 
@@ -24,7 +26,8 @@ def test_all_entities_importable():
     for name in ENTITIES:
         assert hasattr(models, name), name
     # 13 core entities + content_versions + 2 Telegram tables (PHASE 5)
-    assert len(Base.metadata.tables) == 16
+    # + oauth_states and data_deletion_requests (PHASE 7)
+    assert len(Base.metadata.tables) == 18
 
 
 def test_no_instagram_password_column():

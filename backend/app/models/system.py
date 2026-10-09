@@ -100,3 +100,28 @@ class TelegramActionToken(TimestampMixin, Base):
     content_version: Mapped[int] = mapped_column(Integer)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
     used_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+
+
+class OAuthState(TimestampMixin, Base):
+    """One-time OAuth ``state`` (CSRF protection), bound to the user who started the flow."""
+
+    __tablename__ = "oauth_states"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    state_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    provider: Mapped[str] = mapped_column(String(30), default="instagram")
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    used_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+
+
+class DataDeletionRequest(TimestampMixin, Base):
+    """Meta data-deletion callback record (status page uses the confirmation code)."""
+
+    __tablename__ = "data_deletion_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    confirmation_code: Mapped[str] = mapped_column(String(64), unique=True)
+    platform_user_id: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="completed")
+    details: Mapped[dict] = mapped_column(JSON, default=dict)

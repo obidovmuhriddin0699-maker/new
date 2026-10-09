@@ -158,8 +158,8 @@ Publish uchun **uch qatlamli himoya**:
 ## 5. Meta API integration plan
 
 > PHASE 0 vaqtida `developers.facebook.com` ushbu muhitdan bloklangan, shuning uchun
-> quyidagi ma'lumotlar qidiruv natijalari asosida. **PHASE 7 boshida rasmiy
-> hujjatlardan qayta tekshiriladi.** Kodda versiya va scope nomlari hard-code
+> quyidagi ma'lumotlar qidiruv natijalari asosida. PHASE 7 da qayta tekshirildi;
+> amaldagi oqim, endpoint'lar va manbalar: [`META_OAUTH.md`](META_OAUTH.md). Kodda versiya va scope nomlari hard-code
 > qilinmaydi — `META_GRAPH_API_VERSION`, `META_SCOPES` env orqali.
 
 ### 5.1 Qaysi API?

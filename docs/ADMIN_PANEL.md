@@ -35,7 +35,8 @@ Browser ──(same origin, httpOnly cookie)──► Next.js  /api/auth/login|l
 | `/ai` | AI Studio: post, carousel, reels, story, ideas, content plan, strategy, hashtags (polls jobs in Celery mode) |
 | `/calendar` | Day / week / month views; item panel with Preview, Edit, Regenerate, Approve, Schedule, Delete |
 | `/media` | Asset library (metadata; `not_configured` notice) |
-| `/instagram` | Connection status — connect button arrives in PHASE 7 |
+| `/instagram` | Official Meta OAuth connect, token expiry/scopes, refresh, disconnect ([META_OAUTH.md](META_OAUTH.md)) |
+| `/instagram/callback` | OAuth return page: hands `code`+`state` to the backend once, then strips them from the URL |
 | `/analytics` | Real metrics only — PHASE 9 |
 | `/telegram` | Planned bot commands — PHASE 5 |
 | `/ai-settings` | Provider/model status, job mode, media providers, agent permissions (read-only; settings live in `.env`) |

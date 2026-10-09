@@ -506,7 +506,7 @@ class TelegramService:
         s = DashboardService(self.session).summary()
         if not s.analytics_available:
             return (
-                "<b>Analitika</b>\nMa’lumot yo‘q: Instagram hali ulanmagan (PHASE 7) va "
+                "<b>Analitika</b>\nMa’lumot yo‘q: "
                 "insights sinxronizatsiyasi PHASE 9 da. Ko‘rsatkichlar taxmin qilinmaydi."
             )
         lines = ["<b>Analitika</b>"]

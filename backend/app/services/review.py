@@ -162,7 +162,7 @@ class ReviewService:
             account_ok,
             "Instagram akkaunt ulangan va token amalda"
             if account_ok
-            else "Instagram akkaunt ulanmagan (PHASE 7)",
+            else "Instagram akkaunt ulanmagan yoki tokenni yangilash kerak (Instagram sahifasi)",
         )
 
         add("publisher", False, "Nashr servisi hali yo‘q (PHASE 8)")

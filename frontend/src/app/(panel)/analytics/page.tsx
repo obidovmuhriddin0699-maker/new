@@ -13,7 +13,7 @@ export default function AnalyticsPage() {
       <ErrorBox error={error} />
       {data && !data.analytics_available && (
         <Notice>
-          Hozircha analitika ma’lumoti yo‘q. Instagram ulanmagan (PHASE 7) va insights sinxronizatsiyasi PHASE 9 da qo‘shiladi.
+          Hozircha analitika ma’lumoti yo‘q. Insights sinxronizatsiyasi PHASE 9 da qo‘shiladi.
           Tizim ko‘rsatkichlarni taxmin qilmaydi yoki uydirmaydi.
         </Notice>
       )}

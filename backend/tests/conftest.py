@@ -209,3 +209,27 @@ def linked_owner(db: Session, user: User, tg_settings) -> User:
     user.telegram_user_id = TG_OWNER
     db.commit()
     return user
+
+
+# ---------------------------------------------------------------- PHASE 7 helpers
+META = {
+    "authorize": "https://www.instagram.com/oauth/authorize",
+    "token": "https://api.instagram.com/oauth/access_token",
+    "graph": "https://graph.instagram.com",
+}
+FAKE_APP_SECRET = "test-app-secret-value"
+
+
+@pytest.fixture
+def meta_settings(monkeypatch):
+    from pydantic import SecretStr
+
+    s = get_settings()
+    monkeypatch.setattr(s, "meta_app_id", "123456")
+    monkeypatch.setattr(s, "meta_app_secret", SecretStr(FAKE_APP_SECRET))
+    monkeypatch.setattr(s, "meta_redirect_uri", "https://panel.example/instagram/callback")
+    monkeypatch.setattr(s, "meta_oauth_authorize_url", META["authorize"])
+    monkeypatch.setattr(s, "meta_oauth_token_url", META["token"])
+    monkeypatch.setattr(s, "meta_graph_base_url", META["graph"])
+    monkeypatch.setattr(s, "meta_graph_api_version", "v26.0")
+    return s

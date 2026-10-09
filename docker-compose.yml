@@ -76,7 +76,9 @@ services:
       - path: .env
         required: false
     environment: *backend-env
-    command: celery -A app.workers.celery_app worker -l info --concurrency=2
+    # -B runs the embedded beat scheduler (Instagram token refresh every 6h).
+    # Keep exactly one worker with -B; the schedule file stays out of the bind mount.
+    command: celery -A app.workers.celery_app worker -B --schedule /tmp/celerybeat-schedule -l info --concurrency=2
     volumes:
       - ./backend:/app
     extra_hosts:

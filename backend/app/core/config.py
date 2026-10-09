@@ -97,10 +97,32 @@ class Settings(BaseSettings):
     telegram_notify_interval_seconds: int = 15
     panel_public_url: str = "http://localhost:3000"
 
-    # --- Meta / Instagram (PHASE 7+). Only non-secret config here in PHASE 1.
+    # --- Meta / Instagram (Instagram API with Instagram Login). See docs/META_OAUTH.md.
     meta_login_mode: Literal["instagram", "facebook"] = "instagram"
     meta_graph_api_version: str = "v26.0"
     meta_dry_run: bool = True
+    # Instagram API with Instagram Login (Business Login for Instagram). Endpoints are
+    # configurable so they can follow Meta changes without code edits.
+    meta_app_id: str = ""
+    meta_app_secret: SecretStr = SecretStr("")
+    meta_redirect_uri: str = ""  # e.g. https://panel.example.com/instagram/callback
+    meta_scopes: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: [
+            "instagram_business_basic",
+            "instagram_business_content_publish",
+            "instagram_business_manage_insights",
+        ]
+    )
+    meta_required_scopes: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["instagram_business_basic", "instagram_business_content_publish"]
+    )
+    meta_oauth_authorize_url: str = "https://www.instagram.com/oauth/authorize"
+    meta_oauth_token_url: str = "https://api.instagram.com/oauth/access_token"  # noqa: S105
+    meta_graph_base_url: str = "https://graph.instagram.com"
+    meta_http_timeout_seconds: float = 20.0
+    meta_oauth_state_ttl_minutes: int = 10
+    # Refresh long-lived tokens (60 days) when fewer than this many days remain.
+    meta_token_refresh_window_days: int = 15
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -113,6 +135,19 @@ class Settings(BaseSettings):
                 return json.loads(value)
             return [o.strip() for o in value.split(",") if o.strip()]
         return value
+
+    @field_validator("meta_scopes", "meta_required_scopes", mode="before")
+    @classmethod
+    def _split_scopes(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [v.strip() for v in value.replace(" ", ",").split(",") if v.strip()]
+        return value
+
+    @property
+    def meta_configured(self) -> bool:
+        return bool(
+            self.meta_app_id and self.meta_app_secret.get_secret_value() and self.meta_redirect_uri
+        )
 
     @field_validator("telegram_allowed_user_ids", mode="before")
     @classmethod
@@ -146,6 +181,10 @@ class Settings(BaseSettings):
                 problems.append(
                     "TELEGRAM_ENABLED requires TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USER_IDS"
                 )
+            if self.meta_app_id and not self.meta_app_secret.get_secret_value():
+                problems.append("META_APP_SECRET must be set when META_APP_ID is set")
+            if self.meta_redirect_uri and not self.meta_redirect_uri.startswith("https://"):
+                problems.append("META_REDIRECT_URI must use https in production")
             if "mock" in (self.image_provider, self.video_provider):
                 problems.append("mock media providers are not allowed in production")
             if problems:

@@ -15,6 +15,8 @@ from app.models.instagram import InstagramAccount, OAuthToken
 from app.models.system import (
     AIJob,
     AuditLog,
+    DataDeletionRequest,
+    OAuthState,
     SystemSetting,
     TelegramActionToken,
     TelegramLinkCode,
@@ -33,7 +35,9 @@ __all__ = [
     "ContentPerformance",
     "ContentSchedule",
     "ContentVersion",
+    "DataDeletionRequest",
     "InstagramAccount",
+    "OAuthState",
     "OAuthToken",
     "SystemSetting",
     "TelegramActionToken",

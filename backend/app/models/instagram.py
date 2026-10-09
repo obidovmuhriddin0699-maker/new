@@ -17,7 +17,11 @@ class InstagramAccount(TimestampMixin, SoftDeleteMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    # Instagram professional account id (``user_id`` from /me) — used for publishing.
     ig_user_id: Mapped[str] = mapped_column(String(64), unique=True)
+    # App-scoped id (``id`` from /me / token exchange); Meta callbacks may reference it.
+    ig_app_scoped_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    profile_picture_url: Mapped[str | None] = mapped_column(String(1000))
     username: Mapped[str | None] = mapped_column(String(100))
     account_type: Mapped[InstagramAccountType] = mapped_column(
         str_enum(InstagramAccountType, 20),

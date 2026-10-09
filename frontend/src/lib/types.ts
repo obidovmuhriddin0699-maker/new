@@ -247,3 +247,29 @@ export type ApprovalLogItem = Approval & {
   decided_by_email: string | null;
   active: boolean;
 };
+
+export type InstagramAccountStatus = {
+  id: number;
+  ig_user_id: string;
+  username: string | null;
+  account_type: string;
+  profile_picture_url: string | null;
+  connected_at: string | null;
+  token_expires_at: string | null;
+  token_last_refreshed_at: string | null;
+  scopes: string[];
+  missing_scopes: string[];
+  needs_reconnect: boolean;
+  warnings: string[];
+};
+export type InstagramStatus = {
+  configured: boolean;
+  login_mode: string;
+  graph_api_version: string;
+  requested_scopes: string[];
+  required_scopes: string[];
+  redirect_uri: string | null;
+  dry_run: boolean;
+  accounts: InstagramAccountStatus[];
+};
+export type InstagramConnectResult = { account: InstagramAccountStatus; warnings: string[] };

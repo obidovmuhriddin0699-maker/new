@@ -4,15 +4,16 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 6 — Approval system.**
-> Real Instagram OAuth va real publishing hali **yo‘q** (PHASE 7–8).
-> Meta credentials kerak emas va so‘ralmaydi.
+> **Joriy holat: PHASE 7 — Meta OAuth (Instagram Login).**
+> Instagram akkauntni rasmiy Meta OAuth orqali ulash, tokenni shifrlab saqlash va avtomatik yangilash tayyor.
+> Real publishing hali **yo‘q** (PHASE 8). `META_DRY_RUN=true` default.
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
 - AI pipeline (agentlar, schemalar, sifat, joblar, xatolar): [`docs/AI_PIPELINE.md`](docs/AI_PIPELINE.md)
 - Admin panel (sahifalar, xavfsizlik, approval UI): [`docs/ADMIN_PANEL.md`](docs/ADMIN_PANEL.md)
 - Telegram bot (buyruqlar, xavfsizlik, sozlash): [`docs/TELEGRAM_BOT.md`](docs/TELEGRAM_BOT.md)
+- Meta OAuth (oqim, xavfsizlik, token hayoti, callback'lar): [`docs/META_OAUTH.md`](docs/META_OAUTH.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -104,6 +105,16 @@ PHASE 6 da qo'shilganlar (approval tizimi):
 - **Ixtiyoriy siyosatlar:** "to'rt ko'z" qoidasi va tasdiq muddati.
 - **"Tasdiqlar" sahifasi:** kutayotganlar navbati (eng uzoq kutayotgani birinchi) va qarorlar tarixi (kanal va qaror bo'yicha filtr bilan).
 - **Telegram eslatmalari:** uzoq kutib qolgan kontent haqida.
+
+PHASE 7 da qo'shilganlar (Meta OAuth, Instagram Login):
+
+- **Rasmiy OAuth oqimi:** panel → Instagram'ning rasmiy ruxsat oynasi → `/instagram/callback`. Login/parol so'ralmaydi.
+- **Token:** qisqa muddatli token uzoq muddatliga (60 kun) almashtiriladi va **faqat shifrlangan** holda saqlanadi.
+- **Avtomatik yangilash:** Celery beat har 6 soatda tekshiradi. Qo'lda yangilash uchun tugma va CLI bor.
+- **Xavfsizlik:** bir martalik `state` (foydalanuvchiga bog'langan, 10 daqiqa amal qiladi). Majburiy ruxsatlar tekshiriladi. Ulanish, yangilash, uzish va xatolar audit'ga yoziladi.
+- **Meta callback'lari:** deauthorize va data deletion (`signed_request` HMAC bilan tekshiriladi) hamda deletion status sahifasi.
+- **Xatolar:** Meta xato kodlari tasniflanadi (token muddati, ruxsat, limit, tarmoq) va o'zbekcha tushunarli xabar sifatida ko'rsatiladi.
+- **Instagram sahifasi:** holat, ruxsatlar, token muddati, ogohlantirishlar, "qayta ulash kerak" belgisi.
 
 ## 2. Requirements (Windows 11)
 
@@ -201,7 +212,12 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 | `AI_JOBS_MODE` | `sync` (so'rov ichida) yoki `celery` (fonda, worker kerak) |
 | `AI_MAX_ACTIVE_JOBS_PER_USER` | Bir vaqtda ishlayotgan AI job'lar soni chegarasi |
 | `IMAGE_PROVIDER`, `VIDEO_PROVIDER` | `none` (default, `not_configured`) yoki `mock` (faqat placeholder) |
-| `META_LOGIN_MODE` | `instagram` (default) yoki `facebook` |
+| `META_APP_ID`, `META_APP_SECRET` | Meta App Dashboard'dagi **Instagram app ID / secret** (§9). Secret faqat serverda |
+| `META_REDIRECT_URI` | OAuth qaytish manzili: `https://<panel>/instagram/callback` (dashboard'dagi bilan aynan bir xil) |
+| `META_SCOPES`, `META_REQUIRED_SCOPES` | So‘raladigan va majburiy ruxsatlar (§12) |
+| `META_TOKEN_REFRESH_WINDOW_DAYS` | Token tugashiga shuncha kun qolganda avtomatik yangilanadi (default 15) |
+| `PANEL_PUBLIC_URL` | Panelning tashqi manzili (bot havolalari va Meta data-deletion status URL) |
+| `META_LOGIN_MODE` | `instagram` (default, amalga oshirilgan) yoki `facebook` (hali yo‘q) |
 | `META_GRAPH_API_VERSION` | Graph API versiyasi (rasmiy changelog bilan tekshiring) |
 | `META_DRY_RUN` | `true` bo‘lsa real akkauntga hech narsa yuborilmaydi |
 | `BACKEND_URL` | Next.js server tomoni backend'ga shu manzil orqali ulanadi (brauzerga yuborilmaydi) |
@@ -212,7 +228,8 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 
 Production'da `APP_ENV=production` bo‘lsa, backend quyidagi holatlarda **ishga tushmaydi**:
 dev JWT kaliti ishlatilgan bo‘lsa, Fernet kaliti yo‘q bo‘lsa, `DATABASE_URL` PostgreSQL bo‘lmasa,
-CORS'da `*` bo‘lsa yoki `DEBUG=true` bo‘lsa.
+CORS'da `*` bo‘lsa, `DEBUG=true` bo‘lsa, `META_APP_ID` bor-u `META_APP_SECRET` yo‘q bo‘lsa yoki
+`META_REDIRECT_URI` https bo‘lmasa.
 
 ## 5. Local development
 
@@ -256,6 +273,14 @@ celery -A app.workers.celery_app worker -l info --pool=solo
 ```
 
 > Windows'da Celery uchun `--pool=solo` majburiy.
+
+Instagram tokenlarini avtomatik yangilash uchun **Celery beat** ham kerak (alohida terminalda):
+
+```powershell
+celery -A app.workers.celery_app beat -l info --schedule $env:TEMP\celerybeat-schedule
+```
+
+Docker Compose'da beat `worker` konteyneri ichida (`-B`) ishlaydi.
 
 Development ma'lumotlarini yuklash (admin, "Muxriddin Design" brendi, namuna draft):
 
@@ -381,14 +406,120 @@ Docker orqali: `docker compose --profile telegram up -d`.
 
 Batafsil: [`docs/TELEGRAM_BOT.md`](docs/TELEGRAM_BOT.md).
 
-## 9–13. Meta Developer setup, Instagram Business connection, OAuth, permissions, App Review
+## 9. Meta Developer setup
 
-PHASE 7–8 da rasmiy Meta hujjatlari asosida yoziladi. Hozirgi reja
-[`docs/ARCHITECTURE.md` §5](docs/ARCHITECTURE.md) da. Default autentifikatsiya strategiyasi:
-**Instagram API with Instagram Login**.
+Default va yagona amalga oshirilgan usul: **Instagram API with Instagram Login**
+(Facebook Page shart emas). Batafsil oqim va manbalar: [`docs/META_OAUTH.md`](docs/META_OAUTH.md).
 
-PHASE 1 da Meta App ID, App Secret yoki access token **kerak emas** va ularni
-repository'ga yozmang.
+> Meta Dashboard'dagi menyu nomlari vaqti-vaqti bilan o‘zgaradi. Quyidagi qadamlar
+> 2026-yil oktyabr holatiga ko‘ra. Farq bo‘lsa, rasmiy hujjat ustun:
+> https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/get-started
+
+1. https://developers.facebook.com → **My Apps** → **Create App**. Use case: **Manage messaging & content on Instagram** (yoki "Other" → **Business** turi).
+2. App ichida **Instagram** mahsuloti → **API setup with Instagram login**.
+3. **Business login settings** bo‘limida:
+   * **OAuth redirect URIs**: `https://<panel-manzili>/instagram/callback`
+   * **Deauthorize callback URL**: `https://<panel-manzili>/api/meta/deauthorize`
+   * **Data deletion request URL**: `https://<panel-manzili>/api/meta/data-deletion`
+4. Shu sahifadagi **Instagram app ID** va **Instagram app secret** ni oling.
+   Facebook App ID **emas**, Instagram app ID kerak.
+5. **App roles → Roles** (yoki Instagram testers) bo‘limida o‘z Instagram akkauntingizni qo‘shing va Instagram ilovasida taklifni qabul qiling
+   (Settings → Website permissions / Apps and websites → Tester invites).
+
+`.env` (backend), PowerShell'da:
+
+```powershell
+# Fernet kalit — tokenlar faqat shifrlangan saqlanadi (bir marta yarating, yo'qotmang!)
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+```dotenv
+TOKEN_ENCRYPTION_KEYS=<yuqoridagi kalit>
+META_APP_ID=<Instagram app ID>
+META_APP_SECRET=<Instagram app secret>
+META_REDIRECT_URI=https://<panel-manzili>/instagram/callback
+PANEL_PUBLIC_URL=https://<panel-manzili>
+```
+
+`.env` git'ga tushmaydi. App secret brauzerga hech qachon yuborilmaydi.
+
+## 10. Instagram Business connection
+
+1. Instagram ilovasida akkauntni **professional** qiling: Settings → Account type and tools →
+   **Switch to professional account** → **Business** (tavsiya) yoki **Creator**.
+   Shaxsiy akkaunt bu API bilan ishlamaydi.
+2. Panel → **Instagram** → **Instagram’ni ulash**. Siz Instagram'ning **rasmiy** oynasiga o‘tasiz
+   (login/parol faqat o‘sha yerda, bizning tizimga kiritilmaydi va saqlanmaydi).
+3. Ruxsatlarni tasdiqlang. Panel `/instagram/callback` sahifasiga qaytadi va natijani ko‘rsatadi.
+4. Instagram sahifasida: username, akkaunt turi, berilgan ruxsatlar, token muddati (60 kun).
+   Token tugashiga 15 kun qolganda Celery beat uni avtomatik yangilaydi (har 6 soatda tekshiradi).
+   Qo‘lda yangilash: **Tokenni yangilash** yoki:
+
+```powershell
+cd backend; .\.venv\Scripts\Activate.ps1
+python -m app.cli refresh-instagram-tokens
+```
+
+**Uzish** tokenlarni bekor qiladi va akkauntni o‘chiradi (soft delete). Instagram tomonida
+ham ruxsatni olib tashlash: Instagram → Settings → Website permissions → Apps and websites.
+
+Creator akkauntlar uchun ogohlantirish chiqadi: Stories'ni API orqali nashr qilish faqat Business akkauntlarda ishlaydi.
+
+## 11. OAuth configuration (local dev va production)
+
+Meta redirect URI uchun **https** talab qiladi. Lokal kompyuterda tunnel ishlating
+(masalan, Cloudflare Tunnel, bepul, hisob shart emas):
+
+```powershell
+winget install --id Cloudflare.cloudflared
+cloudflared tunnel --url http://localhost:3000
+# chiqqan manzil: https://<random>.trycloudflare.com
+```
+
+1. Shu manzilni `META_REDIRECT_URI=https://<random>.trycloudflare.com/instagram/callback`
+   va `PANEL_PUBLIC_URL=https://<random>.trycloudflare.com` ga yozing, dashboard'dagi
+   **OAuth redirect URIs** ga ham qo‘shing (aynan bir xil bo‘lishi shart).
+2. Backend'ni qayta ishga tushiring.
+3. Panelni **tunnel manzili orqali** oching (sessiya cookie'si shu domen uchun yaratiladi).
+   `trycloudflare.com` manzili har ishga tushganda o‘zgaradi. Doimiy manzil uchun nomlangan tunnel yoki o‘z domeningizni ishlating.
+
+Xavfsizlik:
+* `state` bir martalik, foydalanuvchiga bog‘langan va 10 daqiqada eskiradi (faqat SHA-256 saqlanadi).
+* Code faqat backend'da tokenga almashtiriladi. Token brauzerga, logga yoki audit'ga tushmaydi.
+* Callback sahifasi code'ni manzil satridan darhol o‘chiradi. `Referrer-Policy: no-referrer`.
+* `TOKEN_ENCRYPTION_KEYS` bo‘lmasa, ulanish **boshlanmaydi** (aks holda code behuda sarflanardi).
+
+## 12. Permissions
+
+| Ruxsat (scope) | Nima uchun | Endpoint(lar) | Development / Standard Access | App Review / Advanced Access | Production |
+|---|---|---|---|---|---|
+| `instagram_business_basic` | Profil: ID, username, akkaunt turi. **Majburiy** | `GET /me` | Ruxsat berilgan rolli (o‘z) akkauntlar bilan ishlaydi | Boshqa odamlarning akkauntlari uchun kerak | Majburiy |
+| `instagram_business_content_publish` | Post/Reels/Carousel nashr qilish (PHASE 8). **Majburiy** | `POST /{ig-user-id}/media`, `POST /{ig-user-id}/media_publish` | Rolli akkauntlar bilan | Boshqa akkauntlar uchun kerak | Majburiy |
+| `instagram_business_manage_insights` | Statistika (PHASE 9) | `GET /{ig-media-id}/insights`, `GET /{ig-user-id}/insights` | Rolli akkauntlar bilan | Boshqa akkauntlar uchun kerak | Default so‘raladi, ixtiyoriy |
+| `instagram_business_manage_comments` | Izohlar | `/{ig-media-id}/comments` | — | — | **So‘ralmaydi** (funksiya yo‘q) |
+| `instagram_business_manage_messages` | Direct xabarlar | Messaging API | — | — | **So‘ralmaydi** (funksiya yo‘q) |
+
+* Eski `business_basic`, `business_content_publish` kabi nomlar 2025-yil yanvarda bekor qilingan. Faqat `instagram_business_*` ishlating.
+* Majburiy ruxsat berilmasa, ulanish rad etiladi (`instagram_permission_missing`) va hech narsa saqlanmaydi.
+  Ixtiyoriy ruxsat berilmasa, ulanish bo‘ladi, lekin ogohlantirish chiqadi.
+* Ro‘yxatni `.env` dagi `META_SCOPES` / `META_REQUIRED_SCOPES` orqali o‘zgartirish mumkin.
+
+## 13. App Review requirements
+
+**O‘z akkauntingiz uchun** (MUXRIDDIN DESIGN akkaunti app'da rolga ega bo‘lsa) **Standard Access**
+yetarli. Meta hujjatlariga ko‘ra bu holatda App Review shart emas. Buni o‘z dashboard'ingizda tekshiring.
+
+**Boshqa (sizga tegishli bo‘lmagan) akkauntlarni** ulash uchun **Advanced Access** kerak:
+
+1. **Business verification** (Meta Business Portfolio orqali kompaniya hujjatlari).
+2. **App Review**: har bir ruxsat uchun foydalanish tavsifi va **screencast**: ulanish → kontent tasdiqlash → nashr.
+3. Ochiq **Privacy Policy URL** va **Terms of Service URL** (App settings → Basic).
+4. **Deauthorize** va **Data deletion** callback URL'lari (§9). Ular tayyor va `signed_request`
+   imzosini app secret bilan tekshiradi. Deletion so‘rovi `{url, confirmation_code}` qaytaradi,
+   holatni `https://<panel>/api/meta/data-deletion-status?code=…` da ko‘rish mumkin.
+5. App'ni **Live** rejimga o‘tkazish.
+
+Real publishing (PHASE 8) default `META_DRY_RUN=true` bilan o‘chiq bo‘ladi.
 
 ## 14. Testing
 
@@ -431,7 +562,7 @@ npm run typecheck
 npm run build
 ```
 
-**E2E (Playwright)** alohida stack ishga tushiradi: backend 8100-portda (yangi SQLite baza, mock AI, migration + seed), frontend 3100-portda. Sizning dev bazangiz va real AI/Meta ishlatilmaydi. Testlar desktop va mobil (Pixel 7) rejimlarida bajariladi.
+**E2E (Playwright)** alohida stack ishga tushiradi: backend 8100-portda (yangi SQLite baza, mock AI, migration + seed), frontend 3100-portda, soxta Meta server (`backend/tests/fake_meta.py`) 8200-portda. Sizning dev bazangiz va real AI/Meta ishlatilmaydi. Testlar desktop va mobil (Pixel 7) rejimlarida bajariladi.
 
 ```powershell
 npx playwright install chromium        # bir marta
@@ -475,7 +606,8 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 
 ## 16. Security
 
-- Instagram login/paroli **hech qachon** so‘ralmaydi va saqlanmaydi. Ulanish faqat OAuth orqali (PHASE 7).
+- Instagram login/paroli **hech qachon** so‘ralmaydi va saqlanmaydi. Ulanish faqat rasmiy Meta OAuth orqali. `state` bir martalik va foydalanuvchiga bog‘langan. Meta callback'lari (`signed_request`) HMAC bilan tekshiriladi.
+- httpx/httpcore loglari WARNING darajasida cheklangan, chunki ular to‘liq URL'ni (ichida `access_token`) yozadi.
 - OAuth tokenlar faqat Fernet bilan shifrlangan holda saqlanadi (`oauth_tokens.token_ciphertext`). Kalit faqat `.env` dan olinadi.
 - `.env` va `.env.*` `.gitignore` da (`.env.example` bundan mustasno). Buni test ham tekshiradi.
 - Brauzer backend'ga to'g'ridan-to'g'ri murojaat qilmaydi. Sessiya tokeni httpOnly + SameSite=Strict cookie'da saqlanadi va Next.js proxy uni server tomonida qo'shadi. Boshqa saytdan kelgan so'rovlar (CSRF) rad etiladi. Frontendga hech qanday secret berilmaydi.
@@ -515,6 +647,14 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | `409 approval_required` (reasons: `approval_expired`) | Tasdiq muddati o'tgan, kontentni qayta tasdiqlang |
 | `429 too_many_requests` | Oldingi AI job'lar tugashini kuting (`GET /api/v1/ai/jobs`) |
 | `400 language_not_supported` | Bu til brend profilida yoqilmagan (`languages`) |
+| `503 meta_not_configured` | `.env` da `META_APP_ID`, `META_APP_SECRET`, `META_REDIRECT_URI` ni to‘ldiring (§9) |
+| `503 token_encryption_not_configured` | `TOKEN_ENCRYPTION_KEYS` ni yarating (§9) va backend'ni qayta ishga tushiring |
+| Instagram oynasida "Invalid redirect_uri" | `META_REDIRECT_URI` dashboard'dagi **OAuth redirect URIs** bilan harfma-harf bir xil emas (https, oxiridagi `/`) |
+| "Ulanish so‘rovi yaroqsiz yoki muddati o‘tgan" | `state` 10 daqiqada eskiradi va bir martalik. "Instagram’ni ulash" ni qayta bosing |
+| `instagram_permission_missing` | Ruxsatlar oynasida majburiy ruxsatni o‘chirib qo‘ygansiz. Qayta ulang va hammasini belgilang |
+| `instagram_refresh_too_early` | Meta 24 soatdan yangi tokenni yangilamaydi. Keyinroq urinib ko‘ring |
+| "Qayta ulash kerak" | Token muddati o‘tgan yoki bekor qilingan. "Instagram’ni ulash" ni qayta bosing |
+| Callback'dan keyin login sahifasi chiqadi | Panelni redirect URI'dagi domen orqali oching (tunnel manzili), login qiling, oqim davom etadi |
 | Migration `91ed60cfe649 requires 'approvals' to be empty` | Eski versiyasiz approval qatorlari bor; ularni xavfsiz ko'chirib bo'lmaydi |
 
 ## Development phases
@@ -528,7 +668,7 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | 4 — Admin Panel | ✅ |
 | 5 — Telegram Bot | ✅ |
 | 6 — Approval System | ✅ |
-| 7 — Meta OAuth | ⏳ |
+| 7 — Meta OAuth | ✅ |
 | 8 — Instagram Publishing | ⏳ |
 | 9 — Analytics | ⏳ |
 | 10 — Security hardening | ⏳ |

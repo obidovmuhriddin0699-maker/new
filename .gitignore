@@ -36,3 +36,6 @@ frontend/playwright-report/
 Thumbs.db
 .idea/
 .vscode/
+
+# Celery beat schedule (local runs)
+celerybeat-schedule*

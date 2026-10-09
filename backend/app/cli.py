@@ -51,11 +51,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--full-name")
     s = sub.add_parser("seed", help="load safe development data (idempotent)")
     s.add_argument("--admin-email", help="defaults to SEED_ADMIN_EMAIL or admin@example.com")
+    sub.add_parser("refresh-instagram-tokens", help="refresh tokens close to expiry")
     args = parser.parse_args(argv)
     if args.command == "create-admin":
         return create_admin(args.email, args.password, args.full_name)
     if args.command == "seed":
         return seed(args.admin_email)
+    if args.command == "refresh-instagram-tokens":
+        from app.services.instagram_oauth import InstagramOAuthService
+
+        with get_sessionmaker()() as db:
+            print(InstagramOAuthService(db).refresh_due())
+        return 0
     return 1
 
 
