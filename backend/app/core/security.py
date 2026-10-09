@@ -1,5 +1,6 @@
 """Password hashing (Argon2) and JWT access tokens."""
 
+import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -34,6 +35,10 @@ def create_access_token(subject: str, extra: dict[str, Any] | None = None) -> st
         "type": "access",
         # Only humans log in; agents never receive user tokens.
         "actor": "human",
+        # Unique id so a single session can be revoked on logout.
+        "jti": secrets.token_urlsafe(18),
+        # Millisecond issue time ("iat" has second precision) for session cut-offs.
+        "iat_ms": int(now.timestamp() * 1000),
     }
     if extra:
         payload.update(extra)

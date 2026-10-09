@@ -55,6 +55,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("publish-due", help="publish due schedules once (what Celery beat does)")
     sub.add_parser("reconcile-publishing", help="settle schedules stuck in PROCESSING")
     sub.add_parser("sync-insights", help="pull Instagram insights now (read-only)")
+    sub.add_parser(
+        "rotate-token-keys",
+        help="re-encrypt stored OAuth tokens with the first TOKEN_ENCRYPTION_KEYS key",
+    )
     sub.add_parser("weekly-report", help="create the analyst report for last week")
     args = parser.parse_args(argv)
     if args.command == "create-admin":
@@ -88,6 +92,9 @@ def main(argv: list[str] | None = None) -> int:
             for r in AnalyticsSyncService(db).sync_all():
                 print(asdict(r))
         return 0
+    if args.command == "rotate-token-keys":
+        print(f"re-encrypted {rotate_token_keys()} token(s)")
+        return 0
     if args.command == "weekly-report":
         from app.services.analytics_report import ANALYST_ACTOR, AnalyticsReportService
 
@@ -117,3 +124,19 @@ def seed(admin_email: str | None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def rotate_token_keys() -> int:
+    """Key rotation: put the NEW key first in TOKEN_ENCRYPTION_KEYS (keep the old one after
+    it), run this, then remove the old key. Tokens are never printed."""
+    from app.core.crypto import TokenCipher
+    from app.models import OAuthToken
+
+    cipher = TokenCipher.from_settings()
+    count = 0
+    with get_sessionmaker()() as db:
+        for token in db.query(OAuthToken).all():
+            token.token_ciphertext = cipher.rotate(token.token_ciphertext)
+            count += 1
+        db.commit()
+    return count

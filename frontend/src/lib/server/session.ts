@@ -33,3 +33,14 @@ export function isSameOrigin(request: Request): boolean {
 export function jsonError(status: number, code: string, message: string): Response {
   return Response.json({ error: { code, message } }, { status });
 }
+
+/**
+ * Client address for the backend's rate limiter. Forwarded only when a reverse proxy in
+ * front of Next.js sets X-Forwarded-For (TRUST_PROXY_HEADERS=true); otherwise a browser
+ * could spoof it, so nothing is forwarded and the backend sees this server's address.
+ */
+export function forwardedFor(request: Request): Record<string, string> {
+  if (process.env.TRUST_PROXY_HEADERS !== "true") return {};
+  const xff = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip");
+  return xff ? { "X-Forwarded-For": xff.slice(0, 200) } : {};
+}

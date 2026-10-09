@@ -13,8 +13,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
-from app.api.deps import DbSession, HumanActorDep
+from app.api.deps import DbSession, HumanActorDep, limit_per_user
 from app.core.config import get_settings
+from app.core.ratelimit import ANALYTICS_SYNC, REPORT
 from app.models import (
     AnalyticsSnapshot,
     AuditLog,
@@ -233,6 +234,7 @@ def history(
     "/sync",
     summary="Pull insights from Meta now (read-only towards Instagram)",
     responses=error_responses(401, 403),
+    dependencies=[limit_per_user(ANALYTICS_SYNC)],
 )
 def sync_now(db: DbSession, actor: HumanActorDep) -> list[dict[str, Any]]:
     require_human_writer(db, actor)
@@ -267,6 +269,7 @@ def report(report_id: int, db: DbSession, _: HumanActorDep) -> ReportRead:
     description="Facts are computed from stored insights. With AI_JOBS_MODE=celery the "
     "report is queued (202) because a local model can take a while.",
     responses=error_responses(401, 403, 422) | {202: {"description": "Queued (celery mode)"}},
+    dependencies=[limit_per_user(REPORT)],
 )
 def create_report(
     body: ReportRequest, db: DbSession, actor: HumanActorDep

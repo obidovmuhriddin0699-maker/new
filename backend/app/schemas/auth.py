@@ -22,3 +22,10 @@ class UserRead(BaseModel):
     full_name: str | None
     role: UserRole
     is_active: bool
+
+
+class PasswordChangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_password: str = Field(min_length=1, max_length=256)
+    new_password: str = Field(min_length=12, max_length=256)

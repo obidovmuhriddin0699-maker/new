@@ -37,9 +37,24 @@ test("logout clears the session", async ({ page, context }) => {
   await loginUI(page);
   await page.goto("/settings");
   await expect(page.getByTestId("me-email")).toHaveText(ADMIN.email);
+  const before = (await context.cookies()).find((c) => c.name === "mx_session");
+  expect(before).toBeDefined();
   await page.getByTestId("logout").click();
   await expect(page).toHaveURL(/\/login/);
   expect((await context.cookies()).find((c) => c.name === "mx_session")).toBeUndefined();
+
+  // A copied cookie no longer works: the token was revoked on the server, not just deleted.
+  await context.addCookies([before!]);
+  const replay = await page.request.get("/api/backend/auth/me");
+  expect(replay.status()).toBe(401);
+});
+
+test("security headers are sent by the panel", async ({ page }) => {
+  const res = await page.goto("/login");
+  const h = res!.headers();
+  expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(h["x-frame-options"]).toBe("DENY");
+  expect(h["strict-transport-security"]).toContain("max-age=");
 });
 
 test("proxy blocks cross-site writes, token-leaking routes and bad paths", async ({ page }) => {

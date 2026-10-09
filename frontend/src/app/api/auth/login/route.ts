@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { SESSION_COOKIE, backendUrl, cookieSecure, isSameOrigin, jsonError } from "@/lib/server/session";
+import { SESSION_COOKIE, backendUrl, cookieSecure, forwardedFor, isSameOrigin, jsonError } from "@/lib/server/session";
 
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return jsonError(403, "csrf_rejected", "Cross-site request rejected");
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   try {
     upstream = await fetch(`${backendUrl()}/api/v1/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...forwardedFor(request) },
       body: JSON.stringify(body),
       cache: "no-store",
     });
@@ -22,7 +22,10 @@ export async function POST(request: Request) {
     return jsonError(503, "backend_unreachable", "Backend bilan aloqa yo‘q");
   }
   const data = await upstream.json().catch(() => ({}));
-  if (!upstream.ok) return NextResponse.json(data, { status: upstream.status });
+  if (!upstream.ok) {
+    const retry = upstream.headers.get("retry-after");
+    return NextResponse.json(data, { status: upstream.status, headers: retry ? { "Retry-After": retry } : undefined });
+  }
 
   const response = NextResponse.json({ ok: true, expires_in: data.expires_in });
   response.cookies.set(SESSION_COOKIE, data.access_token, {

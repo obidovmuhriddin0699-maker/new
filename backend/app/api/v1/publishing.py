@@ -12,9 +12,10 @@ from fastapi import APIRouter, Query, Request, status
 from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 
-from app.api.deps import DbSession, HumanActorDep
+from app.api.deps import DbSession, HumanActorDep, limit_per_user
 from app.api.v1.contents import _read
 from app.core.config import get_settings
+from app.core.ratelimit import PUBLISH, UPLOAD
 from app.schemas.content import ContentRead, PublishStateRead
 from app.schemas.errors import error_responses
 from app.schemas.publish import (
@@ -96,6 +97,7 @@ def publish_preview(content_id: int, db: DbSession, _: HumanActorDep) -> Publish
         "sent to Meta and the response is the preview (`status=dry_run`)."
     ),
     responses=error_responses(401, 403, 404, 409, 422),
+    dependencies=[limit_per_user(PUBLISH)],
 )
 def publish(
     content_id: int, body: PublishRequest, db: DbSession, actor: HumanActorDep
@@ -123,6 +125,7 @@ def publish(
     description="The URL must be publicly reachable over HTTPS (Meta downloads it at publish "
     "time). Adding media creates a new content version, so it must be approved again.",
     responses=error_responses(401, 403, 404, 409, 422),
+    dependencies=[limit_per_user(UPLOAD)],
 )
 def attach_asset_url(
     content_id: int, body: AssetUrlRequest, db: DbSession, actor: HumanActorDep
@@ -155,6 +158,7 @@ def attach_asset_url(
     "and served at `{MEDIA_PUBLIC_BASE_URL}/media/<name>` for Meta to download. Creates a new "
     "content version (re-approval needed).",
     responses=error_responses(401, 403, 404, 409, 422),
+    dependencies=[limit_per_user(UPLOAD)],
 )
 async def upload_asset(
     content_id: int,

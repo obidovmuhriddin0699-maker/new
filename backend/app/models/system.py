@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, ForeignKey, Index, Integer, String, Text, event
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UTCDateTime, str_enum, utcnow
@@ -125,3 +125,36 @@ class DataDeletionRequest(TimestampMixin, Base):
     platform_user_id: Mapped[str] = mapped_column(String(64), index=True)
     status: Mapped[str] = mapped_column(String(20), default="completed")
     details: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+# ------------------------------------------------------------------ audit log is append-only
+# Enforced by the database itself, so neither a bug nor a direct SQL session through the
+# application's DB user can rewrite history. (A DB superuser can still drop the trigger;
+# that is outside the application's trust boundary.)
+AUDIT_APPEND_ONLY_SQL = {
+    "postgresql": [
+        """
+        CREATE OR REPLACE FUNCTION audit_logs_append_only() RETURNS trigger AS $$
+        BEGIN
+            RAISE EXCEPTION 'audit_logs is append-only';
+        END;
+        $$ LANGUAGE plpgsql
+        """,
+        "CREATE TRIGGER audit_logs_no_update BEFORE UPDATE OR DELETE ON audit_logs "
+        "FOR EACH ROW EXECUTE FUNCTION audit_logs_append_only()",
+    ],
+    "sqlite": [
+        "CREATE TRIGGER audit_logs_no_update BEFORE UPDATE ON audit_logs "
+        "BEGIN SELECT RAISE(ABORT, 'audit_logs is append-only'); END",
+        "CREATE TRIGGER audit_logs_no_delete BEFORE DELETE ON audit_logs "
+        "BEGIN SELECT RAISE(ABORT, 'audit_logs is append-only'); END",
+    ],
+}
+
+
+def _install_audit_triggers(target, connection, **_kw) -> None:  # type: ignore[no-untyped-def]
+    for statement in AUDIT_APPEND_ONLY_SQL.get(connection.dialect.name, []):
+        connection.exec_driver_sql(statement)
+
+
+event.listen(AuditLog.__table__, "after_create", _install_audit_triggers)

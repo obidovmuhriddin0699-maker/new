@@ -4,10 +4,10 @@ Instagram Professional (Business) akkauntini AI agent yordamida boshqaruvchi tiz
 AI kontentni rejalashtiradi va yaratadi. **Instagram'ga nashr qilish faqat sizning
 tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘ladi.
 
-> **Joriy holat: PHASE 9 — Analytics va AI Analyst.**
-> Nashr (PHASE 8) va Meta insights statistikasi (faqat API qaytargan qiymatlar), haftalik AI Analyst hisoboti va
-> keyingi kontent strategiyasi uchun tavsiyalar tayyor. Default `META_DRY_RUN=true`: Instagram’ga hech narsa
-> nashr qilinmaydi (statistikani o‘qish bunga ta’sir qilmaydi).
+> **Joriy holat: PHASE 10 — Security hardening.**
+> Nashr, statistika va AI Analyst ustiga xavfsizlik qatlami qo'shildi: rate limiting, login himoyasi,
+> sessiyani serverda bekor qilish, CSP/HSTS va audit logni ma'lumotlar bazasi darajasida himoyalash.
+> Default `META_DRY_RUN=true`: Instagram’ga hech narsa nashr qilinmaydi.
 
 - Arxitektura: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Kontent hayot sikli, versiyalash va approval xavfsizligi: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md)
@@ -17,6 +17,7 @@ tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘lad
 - Meta OAuth (oqim, xavfsizlik, token hayoti, callback'lar): [`docs/META_OAUTH.md`](docs/META_OAUTH.md)
 - Nashr qilish (oqim, takroriy post'dan himoya, xatolar, media): [`docs/PUBLISHING.md`](docs/PUBLISHING.md)
 - Analitika va AI Analyst (metrikalar, sinxronlash, haftalik hisobot): [`docs/ANALYTICS.md`](docs/ANALYTICS.md)
+- Xavfsizlik (tahdidlar modeli, limitlar, sessiyalar, qabul qilingan risklar): [`docs/SECURITY.md`](docs/SECURITY.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
 
 ---
@@ -139,6 +140,15 @@ PHASE 9 da qo'shilganlar (Analytics va AI Analyst):
 - **Keyingi strategiya:** hisobot tavsiyalari va eng yaxshi kontent AI Strategist'ga beriladi.
 - **Panel:** analitika sahifasi (1/7/28 kun, kontent jadvali, kunlik qiymatlar, hisobotlar). Hisobot Telegram'ga yuboriladi, `/analytics` buyrug'i ham bor.
 
+PHASE 10 da qo'shilganlar (Security hardening):
+
+- **Rate limiting:** login, AI, nashr, yuklash, statistika, OAuth, Meta callback'lari, Telegram kodlari va umumiy API uchun limitlar qo'yildi. Ular Redis'da saqlanadi; Redis ishlamasa, xotiraga o'tadi va hech qachon himoyasiz qolmaydi. Limitdan oshganda `429` va `Retry-After` qaytadi.
+- **Login himoyasi:** bitta e-mail+IP uchun 15 daqiqada 10 ta noto'g'ri urinishdan keyin login bloklanadi. Har bir kirish, xato va blok audit'ga yoziladi (parolsiz).
+- **Sessiyalar:** "Chiqish" tokenni serverda ham bekor qiladi (nusxalangan cookie ishlamaydi). "Barcha qurilmalardan chiqish" va parolni o'zgartirish (kamida 12 belgi) qo'shildi.
+- **Audit log:** ma'lumotlar bazasi trigger'i UPDATE/DELETE'ni taqiqlaydi (PostgreSQL va SQLite).
+- **Header'lar va so'rovlar:** CSP, HSTS, Permissions-Policy qo'yildi; so'rov hajmi chegaralandi; `X-Request-ID` tozalanadi; production'da `ALLOWED_HOSTS` tekshiriladi; `X-Forwarded-For` faqat ishonchli proxy'dan qabul qilinadi.
+- **Dependency audit:** Python'da zaif paket yo'q; frontend production paketlarida ham 0 zaiflik (Next'ning PostCSS'i tuzatilgan versiyaga pin qilindi). Repository'da secret qidiruvchi test qo'shildi. Token shifrlash kalitini almashtirish uchun `rotate-token-keys` buyrug'i qo'shildi.
+
 ## 2. Requirements (Windows 11)
 
 | Dastur | Versiya | Majburiymi |
@@ -248,6 +258,10 @@ To‘liq ro‘yxat va izohlar: [`.env.example`](.env.example). Muhimlari:
 | `MEDIA_ROOT`, `MEDIA_MAX_IMAGE_MB`, `MEDIA_MAX_VIDEO_MB` | Yuklangan media joyi va chegaralari |
 | `META_CONTAINER_POLL_INTERVAL_SECONDS`, `META_CONTAINER_MAX_WAIT_SECONDS` | Video qayta ishlanishini kutish |
 | `PUBLISH_MAX_ATTEMPTS`, `PUBLISH_RECONCILE_AFTER_MINUTES` | Avtomatik qayta urinish va "osilib qolgan" nashrlarni tekshirish |
+| `RATE_LIMIT_ENABLED`, `RATE_LIMIT_BACKEND` | Rate limiting (production'da yoqilgan va Redis bilan bo'lishi shart) |
+| `TRUSTED_PROXIES`, `ALLOWED_HOSTS` | `X-Forwarded-For` qabul qilinadigan proxy'lar; production'da ruxsat etilgan Host nomlari |
+| `MAX_JSON_BODY_KB` | JSON so'rov hajmi chegarasi (default 1024) |
+| `TRUST_PROXY_HEADERS` (frontend) | `true` faqat panel reverse proxy ortida bo'lsa: mijoz IP'si backend'ga uzatiladi |
 | `ANALYTICS_MEDIA_DAYS` | Shuncha kun ichida nashr qilingan kontent statistikasi yangilanadi (default 30) |
 | `ANALYTICS_REPORT_USE_AI`, `ANALYTICS_REPORT_LANGUAGE` | Haftalik hisobot matnini AI yozsinmi (`true`), qaysi tilda (`uz`/`ru`/`en`) |
 | `BACKEND_URL` | Next.js server tomoni backend'ga shu manzil orqali ulanadi (brauzerga yuborilmaydi) |
@@ -669,18 +683,17 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 
 ## 16. Security
 
-- Instagram login/paroli **hech qachon** so‘ralmaydi va saqlanmaydi. Ulanish faqat rasmiy Meta OAuth orqali. `state` bir martalik va foydalanuvchiga bog‘langan. Meta callback'lari (`signed_request`) HMAC bilan tekshiriladi.
-- httpx/httpcore loglari WARNING darajasida cheklangan, chunki ular to‘liq URL'ni (ichida `access_token`) yozadi. Bundan tashqari, `access_token`/`client_secret` qiymatlari har qanday log darajasida va har qanday jarayonda (API, Celery worker, CLI) `***` bilan almashtiriladi.
-- OAuth tokenlar faqat Fernet bilan shifrlangan holda saqlanadi (`oauth_tokens.token_ciphertext`). Kalit faqat `.env` dan olinadi.
-- `.env` va `.env.*` `.gitignore` da (`.env.example` bundan mustasno). Buni test ham tekshiradi.
-- Brauzer backend'ga to'g'ridan-to'g'ri murojaat qilmaydi. Sessiya tokeni httpOnly + SameSite=Strict cookie'da saqlanadi va Next.js proxy uni server tomonida qo'shadi. Boshqa saytdan kelgan so'rovlar (CSRF) rad etiladi. Frontendga hech qanday secret berilmaydi.
-- CORS faqat `CORS_ORIGINS` ro‘yxatidagi manzillarga ochiq. Production'da `*` taqiqlangan.
-- 500 xatolarda ichki tafsilotlar foydalanuvchiga ko‘rsatilmaydi, ular faqat logga yoziladi.
-- AI agentlar uchun `PUBLISH_TO_INSTAGRAM` / `APPROVE_CONTENT` ruxsatlarini berib bo‘lmaydi (`ForbiddenAgentPermissionError`).
-- Approve va publish endpoint'lari faqat inson sessiyasi (JWT `actor=human`) uchun ochiq va OWNER/ADMIN rolini talab qiladi. Approve publish qilmaydi. Publish faqat backend `publish_service` orqali bo'ladi va tasdiqni qayta tekshiradi. Takroriy post'dan himoya: [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
-- Yuklangan media fayl mazmuni bo'yicha tekshiriladi (faqat JPEG/MP4/MOV) va tasodifiy 192-bitli nom bilan saqlanadi. `/media/<nom>` sessiyasiz ochiq, chunki Meta serverlari uni yuklab oladi.
-- Approval kontentning aniq versiyasi va hash'iga bog'langan. Approve'dan keyin kontent o'zgarsa, approval kuchini yo'qotadi. Batafsil: [`docs/CONTENT_LIFECYCLE.md`](docs/CONTENT_LIFECYCLE.md).
-- Audit log faqat qo'shiladi, o'zgartirilmaydi. Unda parol, token va kalitlar saqlanmaydi.
+To‘liq tahdidlar modeli, limitlar jadvali va qabul qilingan risklar: [`docs/SECURITY.md`](docs/SECURITY.md).
+
+- **Instagram:** login/paroli **hech qachon** so‘ralmaydi va saqlanmaydi. Ulanish faqat rasmiy Meta OAuth orqali. `state` bir martalik va foydalanuvchiga bog‘langan. Meta callback'lari (`signed_request`) HMAC bilan tekshiriladi.
+- **AI va nashr:** AI nashr qila olmaydi, tasdiqlay olmaydi va rejalashtira olmaydi. Approve va publish faqat inson (OWNER/ADMIN) sessiyasi bilan ishlaydi. Publish tasdiqni versiya hash'i bo'yicha qayta tekshiradi. Takroriy post'dan himoya: [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
+- **Rate limiting:** login uchun IP bo‘yicha 5 daqiqada 30 ta urinish. 10 ta noto‘g‘ri paroldan keyin o‘sha e-mail+IP 15 daqiqaga bloklanadi. AI, nashr, yuklash, statistika va OAuth uchun foydalanuvchiga soatlik limit bor; butun API uchun IP bo'yicha daqiqasiga 600 so'rov. Production'da Redis'siz ishga tushmaydi.
+- **Sessiya:** httpOnly + SameSite=Strict cookie, 30 daqiqa. "Chiqish" tokenni serverda bekor qiladi; "Barcha qurilmalardan chiqish" va parol almashtirish oldingi barcha sessiyalarni o'chiradi. Parollar Argon2 bilan saqlanadi, kamida 12 belgi.
+- **Tokenlar va sirlar:** OAuth tokenlar faqat Fernet bilan shifrlangan holda saqlanadi. Kalitni almashtirish: `python -m app.cli rotate-token-keys`. `access_token` va `client_secret` har qanday logda `***` bilan almashtiriladi. Frontendga hech qanday secret berilmaydi. `.env` git'ga tushmaydi; repository'da secret qidiruvchi test bor.
+- **Brauzer himoyasi:** CSRF uchun same-origin tekshiruvi. CSP, `X-Frame-Options: DENY`, HSTS (HTTPS'da), Permissions-Policy. CORS faqat `CORS_ORIGINS` uchun ochiq.
+- **Kiruvchi ma'lumot:** yuklangan media fayl mazmuni bo'yicha tekshiriladi (faqat JPEG/MP4/MOV) va tasodifiy 192-bitli nom bilan saqlanadi. JSON so'rov 1 MB'dan katta bo'lsa rad etiladi. 500 xatolarda ichki tafsilot ko'rsatilmaydi.
+- **Audit log:** faqat qo'shiladi. UPDATE va DELETE'ni ma'lumotlar bazasi trigger'i taqiqlaydi. Unda parol, token va kalitlar saqlanmaydi.
+- **Reverse proxy ortida** (nginx va h.k.): frontend'da `TRUST_PROXY_HEADERS=true`, backend'da `TRUSTED_PROXIES` ga frontend manzilini, `ALLOWED_HOSTS` ga domeningizni yozing (§15, PHASE 12).
 
 ## 17. Troubleshooting
 
@@ -719,6 +732,10 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | `instagram_refresh_too_early` | Meta 24 soatdan yangi tokenni yangilamaydi. Keyinroq urinib ko‘ring |
 | "Qayta ulash kerak" | Token muddati o‘tgan yoki bekor qilingan. "Instagram’ni ulash" ni qayta bosing |
 | Callback'dan keyin login sahifasi chiqadi | Panelni redirect URI'dagi domen orqali oching (tunnel manzili), login qiling, oqim davom etadi |
+| `429 rate_limited` | Limitga yetdingiz. `Retry-After` soniya kuting. Login bloklangan bo'lsa — 15 daqiqa |
+| Barcha so'rovlar bir xil IP bilan cheklanmoqda | Reverse proxy ortida: frontend `TRUST_PROXY_HEADERS=true`, backend `TRUSTED_PROXIES` ni sozlang |
+| `401 session_revoked` | Sessiya bekor qilingan (chiqish, parol o'zgarishi yoki "barcha qurilmalardan chiqish"). Qayta kiring |
+| Production: `Rate limiting must be enabled with Redis` | `REDIS_URL` ni sozlang, `RATE_LIMIT_BACKEND=auto` |
 | Analitikada hamma joyda "—" | Statistika hali sinxronlanmagan: "Statistikani yangilash" tugmasini bosing. Ba’zi ko‘rsatkichlarni Meta umuman qaytarmaydi (masalan, Story uchun like) — bu xato emas |
 | Sinxronlash "ruxsat berilmagan" | `instagram_business_manage_insights` ruxsati yo‘q: akkauntni qayta ulang va ruxsatni belgilang |
 | Hisobot "qoidalar asosida", AI emas | Ollama ishlamayapti yoki AI faktlarda yo‘q son yozgan. Sabab hisobotda ko‘rsatiladi; faktlar baribir to‘g‘ri |
@@ -747,6 +764,6 @@ To‘xtatish: `docker compose down` (ma'lumotlar bilan birga o‘chirish: `docke
 | 7 — Meta OAuth | ✅ |
 | 8 — Instagram Publishing | ✅ |
 | 9 — Analytics | ✅ |
-| 10 — Security hardening | ⏳ |
+| 10 — Security hardening | ✅ |
 | 11 — Docker (production images) | ⏳ |
 | 12 — Production deployment | ⏳ |

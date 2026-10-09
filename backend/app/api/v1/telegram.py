@@ -5,8 +5,9 @@ from datetime import datetime
 from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
 
-from app.api.deps import DbSession, HumanActorDep
+from app.api.deps import DbSession, HumanActorDep, limit_per_user
 from app.core.config import get_settings
+from app.core.ratelimit import TELEGRAM_CODE
 from app.schemas.errors import error_responses
 from app.services.guards import require_active_human
 from app.services.telegram import TelegramService
@@ -71,6 +72,7 @@ def telegram_status(db: DbSession, actor: HumanActorDep) -> TelegramStatus:
     description="The code is shown once, stored only as a hash and expires quickly. "
     "Your Telegram ID must also be listed in TELEGRAM_ALLOWED_USER_IDS.",
     responses=error_responses(401, 403),
+    dependencies=[limit_per_user(TELEGRAM_CODE)],
 )
 def create_link_code(db: DbSession, actor: HumanActorDep) -> LinkCode:
     code, expires = TelegramService(db).create_link_code(actor)

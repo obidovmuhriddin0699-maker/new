@@ -138,6 +138,18 @@ class Settings(BaseSettings):
     # Used only when Meta's content_publishing_limit response has no quota_total.
     meta_publish_limit_fallback: int = 50
 
+    # --- Security (PHASE 10). See docs/SECURITY.md.
+    rate_limit_enabled: bool = True
+    # auto/redis: Redis shared counters (memory fallback while Redis is down); memory: tests.
+    rate_limit_backend: Literal["auto", "redis", "memory"] = "auto"
+    # Peers allowed to set X-Forwarded-For (the Next.js server, a reverse proxy). CIDRs ok.
+    trusted_proxies: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["127.0.0.1", "::1"]
+    )
+    # Host headers accepted in production (empty = no check). e.g. panel.example.com,backend
+    allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    max_json_body_kb: int = 1024
+
     # --- Analytics (PHASE 9). See docs/ANALYTICS.md.
     # Insights are synced for media published within this many days (bounded API usage).
     analytics_media_days: int = 30
@@ -162,6 +174,13 @@ class Settings(BaseSettings):
 
                 return json.loads(value)
             return [o.strip() for o in value.split(",") if o.strip()]
+        return value
+
+    @field_validator("trusted_proxies", "allowed_hosts", mode="before")
+    @classmethod
+    def _split_list(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [v.strip() for v in value.split(",") if v.strip()]
         return value
 
     @field_validator("meta_scopes", "meta_required_scopes", mode="before")
@@ -221,6 +240,11 @@ class Settings(BaseSettings):
                 problems.append(
                     "MEDIA_PUBLIC_BASE_URL (or PANEL_PUBLIC_URL) must use https when "
                     "META_DRY_RUN=false: Meta downloads media from it"
+                )
+            if not self.rate_limit_enabled or self.rate_limit_backend == "memory":
+                problems.append(
+                    "Rate limiting must be enabled with Redis in production "
+                    "(RATE_LIMIT_ENABLED=true, RATE_LIMIT_BACKEND=auto|redis)"
                 )
             if "mock" in (self.image_provider, self.video_provider):
                 problems.append("mock media providers are not allowed in production")

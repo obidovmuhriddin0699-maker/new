@@ -6,9 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Form, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.api.deps import DbSession, HumanActorDep
+from app.api.deps import DbSession, HumanActorDep, limit_per_ip, limit_per_user
 from app.core.config import get_settings
 from app.core.errors import NotFoundError
+from app.core.ratelimit import META_CALLBACK, OAUTH_START
 from app.integrations.meta.capabilities import CAPABILITIES
 from app.models import InstagramAccount
 from app.schemas.errors import error_responses
@@ -110,6 +111,7 @@ def instagram_status(db: DbSession, _: HumanActorDep) -> InstagramStatus:
     description="Returns the Instagram authorization URL with a one-time `state` bound "
     "to the current user (expires in META_OAUTH_STATE_TTL_MINUTES).",
     responses=error_responses(401, 403) | {503: {"description": "Meta app not configured"}},
+    dependencies=[limit_per_user(OAUTH_START)],
 )
 def oauth_start(db: DbSession, actor: HumanActorDep) -> StartResponse:
     return StartResponse(authorize_url=InstagramOAuthService(db).start(actor))
@@ -121,6 +123,7 @@ def oauth_start(db: DbSession, actor: HumanActorDep) -> StartResponse:
     summary="Finish the OAuth flow (called by the panel's callback page)",
     responses=error_responses(400, 401, 403, 422)
     | {502: {"description": "Meta API error (user-friendly message in error)"}},
+    dependencies=[limit_per_user(OAUTH_START)],
 )
 def oauth_callback(body: CallbackRequest, db: DbSession, actor: HumanActorDep) -> ConnectResponse:
     service = InstagramOAuthService(db)
@@ -140,6 +143,7 @@ def oauth_callback(body: CallbackRequest, db: DbSession, actor: HumanActorDep) -
     response_model=AccountRead,
     summary="Refresh the long-lived token now",
     responses=error_responses(400, 401, 403, 404) | {502: {"description": "Meta error"}},
+    dependencies=[limit_per_user(OAUTH_START)],
 )
 def refresh_token(account_id: int, db: DbSession, actor: HumanActorDep) -> AccountRead:
     service = InstagramOAuthService(db)
@@ -204,6 +208,7 @@ class DeletionResponse(BaseModel):
     "/meta/deauthorize",
     summary="Meta deauthorize callback (signed_request)",
     responses=error_responses(400),
+    dependencies=[limit_per_ip(META_CALLBACK)],
 )
 def meta_deauthorize(
     db: DbSession, signed_request: Annotated[str, Form(max_length=4000)]
@@ -217,6 +222,7 @@ def meta_deauthorize(
     response_model=DeletionResponse,
     summary="Meta data deletion request callback (signed_request)",
     responses=error_responses(400),
+    dependencies=[limit_per_ip(META_CALLBACK)],
 )
 def meta_data_deletion(
     db: DbSession, signed_request: Annotated[str, Form(max_length=4000)]

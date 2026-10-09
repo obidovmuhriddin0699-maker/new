@@ -10,9 +10,10 @@ from fastapi import APIRouter, Depends, Response, status
 from app.agents.permissions import PIPELINE_AGENT_TOOLS
 from app.agents.quality import EvaluationInput
 from app.agents.schemas import QualityReport
-from app.api.deps import DbSession, HumanActorDep
+from app.api.deps import DbSession, HumanActorDep, limit_per_user
 from app.core.config import get_settings
 from app.core.errors import AppError, NotFoundError
+from app.core.ratelimit import AI_GENERATE
 from app.models.enums import AIJobStatus
 from app.providers.ai.base import AIProvider
 from app.providers.ai.factory import create_ai_provider
@@ -130,6 +131,7 @@ def _route(path: str, job_type: str, model: type, summary: str, description: str
         summary=summary,
         description=description,
         responses=GEN_ERRORS,
+        dependencies=[limit_per_user(AI_GENERATE)],
     )
 
 
@@ -208,6 +210,7 @@ _route(
     description="Deterministic checks (completeness, structure, CTA, limits, repetition, "
     "unsupported claims, brand rules, language). Does not change content status.",
     responses=error_responses(401, 403, 404, 422),
+    dependencies=[limit_per_user(AI_GENERATE)],
 )
 def evaluate_content(body: EvaluateRequest, db: DbSession, actor: HumanActorDep) -> QualityReport:
     service = AIContentService(db)
@@ -239,6 +242,7 @@ def evaluate_content(body: EvaluateRequest, db: DbSession, actor: HumanActorDep)
     description="Returns `not_configured` when no image provider is set up (PHASE 3 default). "
     "No asset is created unless a real provider returns real media.",
     responses=error_responses(401, 403, 404, 422),
+    dependencies=[limit_per_user(AI_GENERATE)],
 )
 def generate_image(body: ImageRequest, db: DbSession, actor: HumanActorDep) -> MediaResult:
     result, prompt, ratio = MediaGenerationService(db).generate_image_for_content(

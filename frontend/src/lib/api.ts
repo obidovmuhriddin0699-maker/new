@@ -79,4 +79,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   publish_in_progress: "Nashr jarayoni allaqachon ketmoqda. Natijani kuting — qayta bosmang.",
   media_rejected: "Fayl qabul qilinmadi: faqat JPEG rasm yoki MP4/MOV video.",
   body_too_large: "Fayl juda katta.",
+  rate_limited: "Juda ko‘p so‘rov. Biroz kuting va qayta urinib ko‘ring.",
+  weak_password: "Parol talablarga javob bermaydi (kamida 12 belgi, e-mail nomisiz).",
+  invalid_current_password: "Joriy parol noto‘g‘ri.",
 };

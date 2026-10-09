@@ -26,6 +26,7 @@ os.environ.update(
         "CELERY_TASK_ALWAYS_EAGER": "true",
         "LOG_JSON": "false",
         "MEDIA_ROOT": str(_TMP / "media"),
+        "RATE_LIMIT_BACKEND": "memory",
     }
 )
 
@@ -43,7 +44,10 @@ TEST_PASSWORD = "correct-horse-battery-staple"
 
 @pytest.fixture(autouse=True)
 def _fresh_db() -> Iterator[None]:
+    from app.core.ratelimit import reset_limiter
+
     get_settings.cache_clear()
+    reset_limiter()
     reset_engine()
     engine = get_engine()
     Base.metadata.drop_all(engine)

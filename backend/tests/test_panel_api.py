@@ -136,7 +136,8 @@ def test_delete_content(api, db, human):
 def test_audit_log_admin_only(api, make_client, db, human, viewer):
     make_approved(db, human)
     data = api.get("/api/v1/audit-logs", params={"limit": 3}).json()
-    assert data["total"] == 4 and len(data["items"]) == 3  # created, version, submit, approve
+    # login (PHASE 10 audits it) + created, version, submit, approve
+    assert data["total"] == 5 and len(data["items"]) == 3
     assert data["items"][0]["id"] > data["items"][-1]["id"]  # newest first
     filtered = api.get("/api/v1/audit-logs", params={"action": "CONTENT_APPROVED"}).json()
     assert {i["action"] for i in filtered["items"]} == {"CONTENT_APPROVED"}

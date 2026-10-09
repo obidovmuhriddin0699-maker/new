@@ -1,12 +1,13 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { SESSION_COOKIE, backendUrl, isSameOrigin, jsonError } from "@/lib/server/session";
+import { SESSION_COOKIE, backendUrl, forwardedFor, isSameOrigin, jsonError } from "@/lib/server/session";
 
 // Backend-for-frontend proxy: /api/backend/<path> -> BACKEND_URL/api/v1/<path>
 // The JWT stays in an httpOnly cookie and is attached here, server-side.
 const SEGMENT = /^[A-Za-z0-9_.-]+$/;
-const BLOCKED = new Set(["auth/login"]); // must go through /api/auth/login (keeps token server-side)
+// auth/login|logout* must go through /api/auth/* (keeps the token server-side, clears the cookie).
+const BLOCKED = new Set(["auth/login", "auth/logout", "auth/logout-all"]);
 const MAX_BODY = 1_000_000;
 // Raw media uploads (JPEG / MP4 / MOV); the backend validates bytes and size again.
 const UPLOAD_PATH = /^contents\/\d+\/assets\/upload$/;
@@ -29,7 +30,7 @@ async function proxy(request: Request, ctx: Ctx): Promise<Response> {
   }
 
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = { Accept: "application/json", ...forwardedFor(request) };
   if (token) headers.Authorization = `Bearer ${token}`;
   const requestId = request.headers.get("x-request-id");
   if (requestId) headers["X-Request-ID"] = requestId.slice(0, 64);
@@ -61,7 +62,7 @@ async function proxy(request: Request, ctx: Ctx): Promise<Response> {
   }
 
   const outHeaders = new Headers();
-  for (const h of ["content-type", "x-request-id"]) {
+  for (const h of ["content-type", "x-request-id", "retry-after"]) {
     const v = upstream.headers.get(h);
     if (v) outHeaders.set(h, v);
   }

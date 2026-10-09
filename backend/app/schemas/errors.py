@@ -21,6 +21,8 @@ def error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
         403: "Authenticated but not allowed (role, or non-human actor)",
         404: "Resource not found",
         409: "Conflict: invalid state transition, version mismatch or missing approval",
+        413: "Request body too large",
         422: "Request validation failed",
+        429: "Too many requests (rate limited); see the Retry-After header",
     }
     return {c: {"model": ErrorResponse, "description": descriptions[c]} for c in codes}

@@ -46,8 +46,19 @@ def test_production_accepts_proper_config(monkeypatch):
     monkeypatch.setenv("JWT_SECRET_KEY", "x" * 48)
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/x")
     monkeypatch.setenv("CORS_ORIGINS", "https://panel.example.com")
+    monkeypatch.setenv("RATE_LIMIT_BACKEND", "auto")  # tests default to memory
     s = Settings(_env_file=None)
     assert s.app_env == "production"
+
+
+def test_production_requires_shared_rate_limiting(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET_KEY", "x" * 48)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/x")
+    monkeypatch.setenv("CORS_ORIGINS", "https://panel.example.com")
+    monkeypatch.setenv("RATE_LIMIT_BACKEND", "memory")
+    with pytest.raises(ValueError, match="Rate limiting"):
+        Settings(_env_file=None)
 
 
 def test_secrets_are_masked_in_repr():

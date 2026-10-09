@@ -48,6 +48,11 @@ export default defineConfig({
         // Real publishing code path, but against the local fake Meta (never instagram.com).
         META_DRY_RUN: "false",
         MEDIA_PUBLIC_BASE_URL: "https://media.e2e.example",
+        // ~100 logins from one IP would (correctly) trip the login limiter; limits are
+        // covered by backend/tests/test_security_hardening.py. Memory backend: nothing
+        // leaks into a developer's Redis.
+        RATE_LIMIT_ENABLED: "false",
+        RATE_LIMIT_BACKEND: "memory",
         MEDIA_ROOT: `./data/e2e-media-${process.env.E2E_DB}`,
         META_APP_ID: "e2e-app-id",
         META_APP_SECRET: "e2e-app-secret",

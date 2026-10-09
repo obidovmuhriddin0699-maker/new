@@ -186,6 +186,13 @@ class TelegramService:
             raise TelegramAccessError(
                 "Sizga bu botdan foydalanishga ruxsat berilmagan.", "not_allowed"
             )
+        from app.core.ratelimit import TELEGRAM_LINK_ATTEMPT, get_limiter
+
+        limiter, key = get_limiter(), f"tg:{telegram_id}"
+        allowed, _ = limiter.peek(TELEGRAM_LINK_ATTEMPT, key)
+        if not allowed:
+            self.record_denied(telegram_id, "too many wrong link codes")
+            raise TelegramAccessError(TELEGRAM_LINK_ATTEMPT.message, "rate_limited")
         normalized = code.strip().upper()
         if len(normalized) == 8 and "-" not in normalized:
             normalized = f"{normalized[:4]}-{normalized[4:]}"
@@ -194,6 +201,7 @@ class TelegramService:
                 select(TelegramLinkCode).where(TelegramLinkCode.code_hash == _hash(normalized))
             )
             if row is None or row.used_at is not None or row.expires_at <= utcnow():
+                limiter.hit(TELEGRAM_LINK_ATTEMPT, key)
                 raise TelegramAccessError(
                     "Kod noto‘g‘ri yoki muddati o‘tgan. Panelda yangi kod oling.", "invalid_code"
                 )

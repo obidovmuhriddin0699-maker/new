@@ -21,7 +21,7 @@ from app.models.system import (
     TelegramActionToken,
     TelegramLinkCode,
 )
-from app.models.user import User
+from app.models.user import RevokedToken, User
 
 __all__ = [
     "AIJob",
@@ -40,6 +40,7 @@ __all__ = [
     "InstagramAccount",
     "OAuthState",
     "OAuthToken",
+    "RevokedToken",
     "SystemSetting",
     "TelegramActionToken",
     "TelegramLinkCode",
