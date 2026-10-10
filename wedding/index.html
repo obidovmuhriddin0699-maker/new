@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Muxriddin & Umida — to‘yga taklifnoma</title>
+  <!-- Link previews (Telegram, WhatsApp…) read these tags without running JS, so they
+       are kept static here. Update them together with config.js. -->
+  <meta name="description" content="Muxriddin va Umidaning nikoh to‘yiga lutfan taklif etamiz. Versal to‘yxonasi, Farg‘ona shahri.">
+  <meta name="theme-color" content="#FBF7F1">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Muxriddin & Umida — to‘yga taklifnoma">
+  <meta property="og:description" content="Hayotimizning eng go‘zal kunida sizni yonimizda ko‘rishdan mamnun bo‘lamiz.">
+  <meta property="og:image" content="assets/icons/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+
+  <link rel="preload" href="assets/fonts/InstrumentSerif-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/Manrope-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/clouds/clouds-near.webp" as="image">
+
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/opening.css">
+  <link rel="stylesheet" href="css/sections.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/motion.css">
+
+  <script>
+    // Flag JS early so content that animates in starts hidden only when JS can reveal it.
+    document.documentElement.classList.add("js");
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#taklif">Asosiy matnga o‘tish</a>
+
+  <header class="topbar" data-topbar>
+    <a class="topbar__mark" href="#opening" data-bind="monogram" aria-label="Boshiga qaytish">M&amp;U</a>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu" data-menu-open>
+      <span class="topbar__menu-label">Menyu</span>
+      <span class="topbar__menu-icon" aria-hidden="true"><i></i><i></i></span>
+    </button>
+  </header>
+
+  <nav class="menu" id="menu" aria-label="Bo‘limlar" data-menu hidden>
+    <div class="menu__inner">
+      <button class="menu__close" type="button" data-menu-close aria-label="Menyuni yopish">
+        <span aria-hidden="true">×</span>
+      </button>
+      <ol class="menu__list">
+        <li><a href="#taklif">Taklifnoma</a></li>
+        <li><a href="#hikoya">Bizning hikoyamiz</a></li>
+        <li><a href="#tafsilotlar">To‘y tafsilotlari</a></li>
+        <li><a href="#sanoq">Kunlar sanog‘i</a></li>
+        <li><a href="#galereya">Galereya</a></li>
+        <li><a href="#manzil">Manzil</a></li>
+        <li><a href="#javob">Javob qaytarish</a></li>
+      </ol>
+      <p class="menu__foot" data-bind="namesInline"></p>
+    </div>
+  </nav>
+
+  <main id="main">
+    <!-- A · Opening -->
+    <section class="opening" id="opening" aria-labelledby="opening-title" data-opening>
+      <div class="sky" aria-hidden="true">
+        <div class="sky__light"></div>
+        <div class="sky__glow"></div>
+        <div class="cloud-layer cloud-layer--far" data-depth="0.15"><div class="cloud-track"></div></div>
+        <div class="cloud-layer cloud-layer--mid" data-depth="0.35"><div class="cloud-track"></div></div>
+      </div>
+
+      <!-- Opening text is pre-filled with the default config values to avoid a layout
+           shift on load; render.js overwrites it from config.js. -->
+      <div class="opening__stage" data-opening-stage>
+        <figure class="opening__photo" data-opening-photo></figure>
+
+        <div class="opening__content">
+          <p class="eyebrow opening__eyebrow" data-bind="openingEyebrow" data-intro="1">To‘yga taklifnoma</p>
+          <h1 class="opening__title" id="opening-title">
+            <span class="opening__line" data-intro="2"><span data-bind="groomUpper">MUXRIDDIN</span></span>
+            <span class="opening__amp" data-intro="3" aria-label="va">&amp;</span>
+            <span class="opening__line" data-intro="4"><span data-bind="brideUpper">UMIDA</span></span>
+          </h1>
+          <p class="opening__date" data-bind="dateDots" data-intro="5">06 · 10 · 2026</p>
+          <p class="opening__subtitle" data-bind="openingSubtitle" data-intro="6">Hayotimizning eng go‘zal kunida sizni yonimizda ko‘rishdan mamnun bo‘lamiz.</p>
+          <div class="opening__actions" data-intro="7">
+            <button class="btn btn--primary opening__button" type="button" data-open-invitation>
+              <span data-bind="openingButton">Taklifnomani ochish</span>
+            </button>
+            <a class="scroll-cue" href="#taklif" data-scroll-cue>
+              <span>Pastga</span><i aria-hidden="true"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="sky sky--front" aria-hidden="true">
+        <div class="cloud-layer cloud-layer--near" data-depth="0.6"><div class="cloud-track"></div></div>
+      </div>
+      <div class="opening__veil" aria-hidden="true"></div>
+    </section>
+
+    <!-- B · Invitation -->
+    <section class="section invitation" id="taklif" aria-labelledby="invitation-title" tabindex="-1">
+      <div class="container container--narrow">
+        <p class="eyebrow reveal" data-bind="invitationEyebrow"></p>
+        <h2 class="invitation__greeting reveal" id="invitation-title" data-bind="invitationGreeting"></h2>
+        <p class="invitation__lead reveal" data-bind="invitationLead"></p>
+        <div class="ornament reveal" aria-hidden="true"><span></span></div>
+        <div class="invitation__body" data-slot="invitationBody"></div>
+        <p class="invitation__signature reveal" data-bind="invitationSignature"></p>
+      </div>
+    </section>
+
+    <!-- C · Our story -->
+    <section class="section story" id="hikoya" aria-labelledby="story-title">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow reveal">Bizning hikoyamiz</p>
+          <h2 class="section-title reveal" id="story-title">Ikki yo‘l, <em>bitta</em> manzil</h2>
+        </header>
+        <div class="timeline">
+          <div class="timeline__rail" aria-hidden="true"><span data-story-progress></span></div>
+          <ol class="timeline__list" data-slot="story"></ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- D · Wedding details -->
+    <section class="section details" id="tafsilotlar" aria-labelledby="details-title">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow reveal">To‘y tafsilotlari</p>
+          <h2 class="section-title reveal" id="details-title" data-bind="namesInlineHtml"></h2>
+        </header>
+        <div class="details__grid">
+          <div class="details__date reveal" aria-hidden="true">
+            <span class="details__day" data-bind="day"></span>
+            <span class="details__month" data-bind="monthName"></span>
+            <span class="details__year" data-bind="year"></span>
+          </div>
+          <dl class="details__list">
+            <div class="details__item reveal"><dt>Sana</dt><dd data-bind="dateLong"></dd></div>
+            <div class="details__item reveal"><dt>Hafta kuni</dt><dd data-bind="weekday"></dd></div>
+            <div class="details__item reveal"><dt>Boshlanishi</dt><dd data-bind="time"></dd></div>
+            <div class="details__item reveal"><dt>To‘yxona</dt><dd><span data-bind="venueName"></span><span class="details__city" data-bind="venueCity"></span></dd></div>
+          </dl>
+        </div>
+        <div class="details__actions reveal">
+          <button class="btn btn--ghost" type="button" data-add-calendar>Kalendarga qo‘shish</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- E · Countdown -->
+    <section class="section countdown" id="sanoq" aria-labelledby="countdown-title">
+      <div class="countdown__sky" aria-hidden="true">
+        <div class="cloud-layer cloud-layer--band"><div class="cloud-track"></div></div>
+      </div>
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow reveal">Kunlar sanog‘i</p>
+          <h2 class="section-title reveal" id="countdown-title" data-countdown-title>Baxtli kungacha</h2>
+        </header>
+        <div class="countdown__timer reveal" data-countdown aria-hidden="false">
+          <div class="countdown__cell"><span class="countdown__value" data-unit="days">00</span><span class="countdown__label" data-label="days">kun</span></div>
+          <div class="countdown__cell"><span class="countdown__value" data-unit="hours">00</span><span class="countdown__label" data-label="hours">soat</span></div>
+          <div class="countdown__cell"><span class="countdown__value" data-unit="minutes">00</span><span class="countdown__label" data-label="minutes">daqiqa</span></div>
+          <div class="countdown__cell"><span class="countdown__value" data-unit="seconds">00</span><span class="countdown__label" data-label="seconds">soniya</span></div>
+        </div>
+        <p class="countdown__message reveal" data-countdown-message hidden></p>
+        <p class="visually-hidden" aria-live="polite" data-countdown-live></p>
+        <p class="countdown__note reveal" data-bind="countdownNote"></p>
+      </div>
+    </section>
+
+    <!-- F · Gallery -->
+    <section class="section gallery" id="galereya" aria-labelledby="gallery-title">
+      <div class="container container--wide">
+        <header class="section-head">
+          <p class="eyebrow reveal">Galereya</p>
+          <h2 class="section-title reveal" id="gallery-title">Lahzalar <em>xotirasi</em></h2>
+        </header>
+        <ul class="gallery__grid" data-slot="gallery"></ul>
+      </div>
+    </section>
+
+    <!-- G · Location -->
+    <section class="section location" id="manzil" aria-labelledby="location-title">
+      <div class="container">
+        <div class="location__grid">
+          <figure class="location__photo reveal reveal--image" data-slot="locationPhoto"></figure>
+          <div class="location__card">
+            <p class="eyebrow reveal">Manzil</p>
+            <h2 class="location__venue reveal" id="location-title" data-bind="venueName"></h2>
+            <p class="location__city reveal" data-bind="venueCity"></p>
+            <p class="location__address reveal" data-bind="venueAddress"></p>
+            <p class="location__time reveal" data-bind="dateTimeShort"></p>
+            <a class="btn btn--primary reveal" data-map-link target="_blank" rel="noopener">
+              Xaritada ochish <span class="visually-hidden">(yangi oynada)</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- H · RSVP -->
+    <section class="section rsvp" id="javob" aria-labelledby="rsvp-title">
+      <div class="container container--narrow">
+        <header class="section-head">
+          <p class="eyebrow reveal">Javob qaytarish</p>
+          <h2 class="section-title reveal" id="rsvp-title">Siz bilan <em>bo‘lamizmi?</em></h2>
+          <p class="section-lead reveal" data-bind="rsvpLead"></p>
+        </header>
+
+        <div class="rsvp__card reveal">
+          <form class="rsvp__form" data-rsvp-form novalidate>
+            <div class="field">
+              <label class="field__label" for="rsvp-name">Ism va familiyangiz</label>
+              <input class="field__input" id="rsvp-name" name="name" type="text" autocomplete="name"
+                     maxlength="80" required aria-describedby="rsvp-name-error">
+              <p class="field__error" id="rsvp-name-error" data-error-for="name"></p>
+            </div>
+
+            <fieldset class="field field--choice" aria-describedby="rsvp-attendance-error">
+              <legend class="field__label">Ishtirok etasizmi?</legend>
+              <div class="choice">
+                <label class="choice__option">
+                  <input type="radio" name="attendance" value="yes" required>
+                  <span>Ha, albatta boraman</span>
+                </label>
+                <label class="choice__option">
+                  <input type="radio" name="attendance" value="no">
+                  <span>Afsuski, bora olmayman</span>
+                </label>
+              </div>
+              <p class="field__error" id="rsvp-attendance-error" data-error-for="attendance"></p>
+            </fieldset>
+
+            <div class="field" data-guests-field hidden>
+              <label class="field__label" for="rsvp-guests">Necha kishi bo‘lasiz? <span class="field__hint">(o‘zingiz bilan)</span></label>
+              <select class="field__input field__select" id="rsvp-guests" name="guests" aria-describedby="rsvp-guests-error"></select>
+              <p class="field__error" id="rsvp-guests-error" data-error-for="guests"></p>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="rsvp-message">Tilaklaringiz <span class="field__hint">(ixtiyoriy)</span></label>
+              <textarea class="field__input field__textarea" id="rsvp-message" name="message" rows="4"
+                        maxlength="500" aria-describedby="rsvp-message-count"></textarea>
+              <p class="field__count" id="rsvp-message-count" data-message-count>0 / 500</p>
+            </div>
+
+            <!-- Honeypot: invisible to people, tempting to bots. -->
+            <div class="field--trap" aria-hidden="true">
+              <label for="rsvp-website">Veb-sayt</label>
+              <input id="rsvp-website" name="website" type="text" tabindex="-1" autocomplete="off">
+            </div>
+
+            <button class="btn btn--primary btn--block rsvp__submit" type="submit" data-rsvp-submit>
+              <span class="btn__spinner" aria-hidden="true"></span>
+              <span data-rsvp-submit-label>Javobni yuborish</span>
+            </button>
+            <div class="rsvp__status" role="status" aria-live="polite" data-rsvp-status></div>
+          </form>
+
+          <div class="rsvp__done" data-rsvp-done hidden tabindex="-1">
+            <div class="ornament" aria-hidden="true"><span></span></div>
+            <h3 class="rsvp__done-title" data-rsvp-done-title></h3>
+            <p class="rsvp__done-text" data-rsvp-done-text></p>
+            <button class="btn btn--ghost" type="button" data-rsvp-again>Javobni o‘zgartirish</button>
+          </div>
+
+          <div class="rsvp__closed" data-rsvp-closed hidden>
+            <div class="ornament" aria-hidden="true"><span></span></div>
+            <p data-rsvp-closed-text></p>
+          </div>
+        </div>
+        <p class="rsvp__contact reveal" data-bind="rsvpContact"></p>
+      </div>
+    </section>
+
+    <!-- I · Final scene -->
+    <section class="finale" id="yakun" aria-labelledby="finale-title">
+      <div class="sky finale__sky" aria-hidden="true">
+        <div class="sky__light"></div>
+        <div class="cloud-layer cloud-layer--far"><div class="cloud-track"></div></div>
+      </div>
+      <figure class="finale__photo" data-slot="finalePhoto" data-parallax="0.12"></figure>
+      <div class="finale__content">
+        <p class="eyebrow reveal">Sizni kutamiz</p>
+        <h2 class="finale__names reveal" id="finale-title" data-bind="namesInlineHtml"></h2>
+        <p class="finale__message reveal" data-bind="finalMessage"></p>
+        <p class="finale__date reveal" data-bind="dateDots"></p>
+      </div>
+      <div class="sky sky--front finale__front" aria-hidden="true">
+        <div class="cloud-layer cloud-layer--near"><div class="cloud-track"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><span data-bind="namesInline"></span> · <span data-bind="dateDots"></span></p>
+    <p class="footer__credit" data-bind="musicCredit"></p>
+  </footer>
+
+  <!-- Persistent music control (shown after the invitation is opened) -->
+  <button class="music" type="button" data-music-toggle aria-pressed="false" hidden>
+    <span class="music__bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <span class="music__label" data-music-label>Musiqa</span>
+  </button>
+
+  <!-- Gallery lightbox -->
+  <div class="lightbox" data-lightbox role="dialog" aria-modal="true" aria-label="Surat ko‘rish oynasi" hidden>
+    <div class="lightbox__backdrop" data-lightbox-close></div>
+    <figure class="lightbox__stage" data-lightbox-stage>
+      <img class="lightbox__img" data-lightbox-img alt="">
+      <figcaption class="lightbox__caption">
+        <span data-lightbox-caption></span>
+        <span class="lightbox__count" data-lightbox-count></span>
+      </figcaption>
+    </figure>
+    <button class="lightbox__btn lightbox__btn--close" type="button" data-lightbox-close aria-label="Yopish">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button class="lightbox__btn lightbox__btn--prev" type="button" data-lightbox-prev aria-label="Oldingi surat">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="lightbox__btn lightbox__btn--next" type="button" data-lightbox-next aria-label="Keyingi surat">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <!-- Camera passes through the clouds when the invitation is opened -->
+  <div class="cloud-pass" aria-hidden="true">
+    <div class="cloud-pass__fog"></div>
+    <div class="cloud-pass__bank cloud-pass__bank--back"></div>
+    <div class="cloud-pass__bank cloud-pass__bank--front"></div>
+  </div>
+
+  <div class="preview-badge" data-preview-badge hidden></div>
+
+  <noscript>
+    <p class="noscript">Taklifnomani to‘liq ko‘rish uchun brauzeringizda JavaScript’ni yoqing.
+      Muxriddin &amp; Umida · Versal to‘yxonasi, Farg‘ona shahri.</p>
+  </noscript>
+
+  <script src="config.js" defer></script>
+  <script src="js/core.js" defer></script>
+  <script src="js/render.js" defer></script>
+  <script src="js/motion.js" defer></script>
+  <script src="js/audio.js" defer></script>
+  <script src="js/opening.js" defer></script>
+  <script src="js/nav.js" defer></script>
+  <script src="js/countdown.js" defer></script>
+  <script src="js/gallery.js" defer></script>
+  <script src="js/rsvp.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>

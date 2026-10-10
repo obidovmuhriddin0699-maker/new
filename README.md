@@ -23,6 +23,7 @@ tasdig‘ingizdan keyin** amalga oshadi va faqat rasmiy Meta API orqali bo‘lad
 - **Serverga o'rnatish** (VPS, domen, HTTPS, zaxira, monitoring, yangilash): [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - **Railway'ga joylash** (GitHub'dan, domen va HTTPS avtomatik): [`docs/RAILWAY.md`](docs/RAILWAY.md)
 - API hujjatlari (backend ishlayotganda): http://localhost:8000/docs
+- **To‘y taklifnomasi sayti** (alohida statik sayt, “Love in the Clouds”): [`wedding/`](wedding/README.md)
 
 ---
 

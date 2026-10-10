@@ -1,0 +1,391 @@
+/* ==========================================================================
+   A · Opening — full-screen sky, drifting cloud layers, arched photograph,
+   names and the "Taklifnomani ochish" gate. Also hosts the shared cloud
+   layer system used by the countdown and the final scene.
+   ========================================================================== */
+
+/* ---------- Shared cloud layers ----------
+   .cloud-layer   = positioned wrapper; JS writes parallax into --py / --px
+   .cloud-track   = two image tiles wide, drifting left by exactly one tile
+                    (the images tile seamlessly, so the loop never jumps). */
+.sky {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cloud-layer {
+  --tile: max(100vw, 1100px);
+  --ratio: 0.2734; /* image height / width */
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: calc(var(--tile) * var(--ratio));
+  translate: var(--px, 0px) var(--py, 0px);
+}
+/* Clouds outside the viewport stop drifting (set by motion.js). */
+.is-offscreen .cloud-track { animation-play-state: paused; }
+.cloud-track {
+  width: calc(var(--tile) * 2);
+  height: 100%;
+  background-repeat: repeat-x;
+  background-size: var(--tile) 100%;
+  background-position: 0 0;
+  animation: cloud-drift var(--drift, 120s) linear infinite;
+  will-change: transform;
+}
+@keyframes cloud-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.cloud-layer--far {
+  --ratio: 0.2539; /* 2048×520 */
+  --drift: 260s;
+  top: 6%;
+  opacity: 0.8;
+}
+.cloud-layer--far .cloud-track { background-image: url("../assets/clouds/clouds-far.webp"); }
+
+.cloud-layer--mid {
+  --ratio: 0.3125; /* 2048×640 */
+  --drift: 170s;
+  bottom: 18%;
+  opacity: 0.85;
+}
+.cloud-layer--mid .cloud-track {
+  background-image: url("../assets/clouds/clouds-mid.webp");
+  animation-direction: reverse;
+}
+
+.cloud-layer--near {
+  --ratio: 0.2734; /* 2048×560 */
+  --drift: 110s;
+  bottom: -2%;
+}
+.cloud-layer--near .cloud-track { background-image: url("../assets/clouds/clouds-near.webp"); }
+
+/* ---------- Opening ---------- */
+.opening {
+  position: relative;
+  min-height: var(--screen);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(120% 70% at 50% 108%, #FFFDF9 0%, rgb(255 253 249 / 0) 60%),
+    linear-gradient(180deg, #E4D6C5 0%, #EEE3D5 34%, #F6EFE5 68%, var(--ivory) 100%);
+}
+
+.sky__light {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 45% at 50% 30%, rgb(255 250 240 / 0.95), rgb(255 250 240 / 0) 70%);
+  animation: breathe 9s var(--ease-in-out) infinite alternate;
+}
+.sky__glow {
+  position: absolute;
+  left: 50%; top: 22%;
+  width: min(70vw, 46rem);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 243 222 / 0.9), rgb(246 226 196 / 0.35) 55%, transparent);
+  filter: blur(8px);
+  animation: breathe 12s var(--ease-in-out) infinite alternate-reverse;
+}
+@keyframes breathe {
+  from { opacity: 0.65; }
+  to   { opacity: 1; }
+}
+
+.sky--front { z-index: 1; }
+
+.opening__stage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 72rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 4.5rem) var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 3.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /* Slow camera push on arrival; JS adds a gentle scroll drift via translate. */
+  animation: camera-in 14s var(--ease) both;
+  translate: 0 var(--py, 0px);
+}
+@keyframes camera-in {
+  from { transform: scale(1.06); }
+  to   { transform: scale(1); }
+}
+
+.opening__photo {
+  position: relative;
+  width: auto;
+  height: clamp(9.5rem, 30svh, 22rem);
+  aspect-ratio: 4 / 5;
+  border-radius: var(--arch);
+  overflow: hidden;
+  background: var(--champagne);
+  box-shadow: 0 30px 60px -35px rgb(70 52 36 / 0.45);
+}
+.opening__photo::after {
+  /* Thin brushed-gold inner line. */
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgb(255 250 240 / 0.55);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.opening__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: photo-drift 22s var(--ease-in-out) infinite alternate;
+}
+@keyframes photo-drift {
+  from { transform: scale(1.12) translateY(1.5%); }
+  to   { transform: scale(1.02) translateY(-1%); }
+}
+
+.opening__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: clamp(1.25rem, 3.4svh, 2.25rem);
+}
+
+.opening__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0.9rem;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 14vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+.opening__line {
+  display: block;
+  overflow: hidden;
+  padding: 0.04em 0 0.06em;
+  margin-right: -0.06em; /* optical centring for tracked capitals */
+}
+.opening__line > span { display: block; }
+.opening__amp {
+  display: block;
+  margin: 0.08em 0 0.02em;
+  font-style: italic;
+  font-size: 0.62em;
+  letter-spacing: 0;
+  color: var(--gold);
+}
+
+.opening__date {
+  margin-top: 1.1rem;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  margin-right: -0.42em;
+  color: var(--taupe);
+}
+
+.opening__subtitle {
+  max-width: 26rem;
+  margin-top: 1rem;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.15rem, 1rem + 0.9vw, 1.5rem);
+  line-height: 1.35;
+  color: var(--taupe);
+  text-wrap: balance;
+}
+
+.opening__actions {
+  position: relative;
+  margin-top: clamp(1.4rem, 3.6svh, 2.4rem);
+  min-height: 3.25rem;
+  display: grid;
+  place-items: center;
+}
+.opening__actions > * { grid-area: 1 / 1; }
+
+.opening__button {
+  padding-inline: 2.4rem;
+  box-shadow: 0 18px 40px -22px rgb(47 40 34 / 0.55);
+}
+.opening__button::after {
+  /* Gentle shimmer that passes across the button every few seconds. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 248 235 / 0.28) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: shimmer 5.5s var(--ease-in-out) 3s infinite;
+}
+@keyframes shimmer {
+  0%, 60% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+.scroll-cue {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.3em;
+  margin-right: -0.3em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--taupe);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 1s var(--ease) 0.6s, visibility 0s linear 1.6s;
+}
+.scroll-cue i {
+  width: 1px;
+  height: 2.6rem;
+  background: linear-gradient(var(--gold), transparent);
+  transform-origin: top;
+  animation: cue 2.4s var(--ease-in-out) infinite;
+}
+@keyframes cue {
+  0% { transform: scaleY(0); opacity: 1; }
+  60% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+
+.opening__veil {
+  /* Initial light transition: the screen fades in from warm white. */
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: #FFFCF7;
+  pointer-events: none;
+  animation: veil-out 2.2s var(--ease) 0.15s both;
+}
+@keyframes veil-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ---------- Opening states ---------- */
+.is-opened .opening__button {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease), visibility 0s linear 0.6s;
+}
+.is-opened .scroll-cue {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 1s var(--ease) 0.6s, visibility 0s;
+}
+
+/* The camera "flies through" the clouds when the invitation is opened. */
+.is-opening .opening .cloud-layer--near { animation: through-near 1.8s var(--ease-in-out) both; }
+.is-opening .opening .cloud-layer--mid { animation: through-mid 1.8s var(--ease-in-out) both; }
+.is-opening .opening__photo { animation: through-photo 1.8s var(--ease-in-out) both; }
+@keyframes through-near {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  45% { transform: translate3d(0, -30%, 0) scale(1.35); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+}
+@keyframes through-mid {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  45% { transform: translate3d(0, -12%, 0) scale(1.15); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes through-photo {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.04); filter: brightness(1.08); }
+  100% { transform: scale(1); filter: none; }
+}
+
+/* ---------- Cloud pass: the camera climbs through a cloud bank ----------
+   Covers the screen at ~45% of its run; the page jumps to the invitation
+   underneath, then the clouds thin out and reveal it. */
+.cloud-pass {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+}
+.is-opening .cloud-pass { visibility: visible; }
+.cloud-pass__fog {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(65% 55% at 50% 50%, #FFFDF9 0%, #FBF6EE 50%, rgb(251 246 238 / 0.9) 72%, rgb(251 246 238 / 0) 100%);
+  opacity: 0;
+}
+.cloud-pass__bank {
+  position: absolute;
+  left: -30%;
+  width: 160%;
+  height: 85%;
+  bottom: 0;
+  background: url("../assets/clouds/clouds-near.webp") repeat-x 50% 100% / auto 100%;
+  transform: translate3d(0, 110%, 0);
+}
+.cloud-pass__bank--back { opacity: 0.85; background-position: 30% 100%; }
+.is-opening .cloud-pass__fog { animation: pass-fog 2.3s var(--ease-in-out) both; }
+.is-opening .cloud-pass__bank--back { animation: pass-bank 2.3s var(--ease-in-out) both; }
+.is-opening .cloud-pass__bank--front { animation: pass-bank-front 2.3s var(--ease-in-out) both; }
+@keyframes pass-fog {
+  0% { opacity: 0; }
+  35%, 58% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes pass-bank {
+  0% { transform: translate3d(0, 110%, 0) scale(1); }
+  45% { transform: translate3d(0, 5%, 0) scale(1.15); }
+  100% { transform: translate3d(0, -140%, 0) scale(1.35); opacity: 0; }
+}
+@keyframes pass-bank-front {
+  0% { transform: translate3d(0, 130%, 0) scale(1.1); }
+  48% { transform: translate3d(0, 0, 0) scale(1.3); }
+  100% { transform: translate3d(0, -170%, 0) scale(1.6); opacity: 0; }
+}
+
+/* ---------- Larger screens ---------- */
+@media (min-width: 900px) {
+  .opening__title {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.28em;
+    font-size: clamp(4rem, 6.6vw, 6.6rem);
+  }
+  .opening__amp { margin: 0; font-size: 0.7em; }
+  .opening__photo { height: clamp(14rem, 36svh, 24rem); }
+}
+
+/* Short landscape phones: keep everything on one screen. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .opening__stage { padding-top: 3.5rem; padding-bottom: 2rem; }
+  .opening__photo { display: none; }
+  .opening__title { flex-direction: row; gap: 0.25em; font-size: clamp(2.2rem, 7vw, 3.6rem); }
+  .opening__amp { margin: 0; }
+}
+/* Shorter phones (e.g. 375×667): tighten the vertical rhythm so the button stays on screen. */
+@media (max-height: 760px) and (orientation: portrait) {
+  .opening__stage { padding-top: calc(env(safe-area-inset-top, 0px) + 3.25rem); padding-bottom: 2.5rem; }
+  .opening__photo { height: 23svh; }
+  .opening__content { margin-top: 1rem; }
+  .opening__title { margin-top: 0.6rem; font-size: clamp(2.5rem, 13vw, 4.25rem); }
+  .opening__date { margin-top: 0.8rem; }
+  .opening__subtitle { margin-top: 0.7rem; font-size: 1.08rem; }
+  .opening__actions { margin-top: 1.2rem; }
+}
+@media (max-height: 640px) and (orientation: portrait) {
+  .opening__photo { height: 20svh; }
+  .opening__subtitle { font-size: 1rem; }
+}

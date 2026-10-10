@@ -1,0 +1,84 @@
+/* ==========================================================================
+   Motion: opening title reveal, scroll-triggered reveals, reduced motion.
+   Hidden-before-reveal states apply only under html.js, so the content is
+   always visible if scripts fail to load.
+   ========================================================================== */
+
+/* ---------- Opening intro: staged reveal on first paint ---------- */
+.js [data-intro] {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: intro-in 1.4s var(--ease) both;
+}
+.js .opening__line[data-intro] { opacity: 1; transform: none; animation: none; }
+.js .opening__line[data-intro] > span {
+  transform: translateY(105%);
+  animation: line-up 1.6s var(--ease) both;
+}
+.js [data-intro="1"] { animation-delay: 0.6s; }
+.js [data-intro="2"] > span { animation-delay: 0.85s; }
+.js [data-intro="3"] { animation-delay: 1.25s; }
+.js [data-intro="4"] > span { animation-delay: 1.15s; }
+.js [data-intro="5"] { animation-delay: 1.6s; }
+.js [data-intro="6"] { animation-delay: 1.8s; }
+.js [data-intro="7"] { animation-delay: 2.1s; }
+.js .opening__photo { animation: photo-in 2.2s var(--ease) 0.3s both; }
+
+@keyframes intro-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes line-up {
+  from { transform: translateY(105%); }
+  to { transform: none; }
+}
+@keyframes photo-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); clip-path: inset(18% 0 0 0 round 999px 999px 0 0); }
+  to { opacity: 1; transform: none; clip-path: inset(0 0 0 0 round 999px 999px 0 0); }
+}
+
+/* ---------- Scroll reveals ---------- */
+.js .reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition: opacity 1.2s var(--ease), transform 1.2s var(--ease);
+  transition-delay: var(--delay, 0s);
+}
+.js .reveal.is-visible { opacity: 1; transform: none; }
+
+/* Images: a soft curtain lifts and the photo settles from a gentle zoom. */
+.js .reveal--image {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(12% 0 0 0);
+  transition: clip-path 1.6s var(--ease);
+  transition-delay: var(--delay, 0s);
+}
+.js .reveal--image img { transform: scale(1.14); transition: transform 2.4s var(--ease); transition-delay: var(--delay, 0s); }
+.js .reveal--image.is-visible { clip-path: inset(0 0 0 0); }
+.js .reveal--image.is-visible img { transform: scale(1); }
+.js .chapter:nth-of-type(even) .reveal--image { clip-path: inset(12% 0 0 0 round 999px 999px 0 0); }
+.js .chapter:nth-of-type(even) .reveal--image.is-visible { clip-path: inset(0 0 0 0 round 999px 999px 0 0); }
+
+/* Gallery hover zoom must not fight the reveal transform. */
+.js .gallery .reveal--image.is-visible .gallery__btn:hover img { transform: scale(1.045); }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .cloud-track, .sky__light, .sky__glow, .opening__photo img, .opening__button::after, .scroll-cue i { animation: none !important; }
+  .js .reveal, .js .reveal--image, .js [data-intro], .js .opening__line > span {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+  }
+  .js .reveal--image img { transform: none !important; }
+  .opening__veil { display: none; }
+}
