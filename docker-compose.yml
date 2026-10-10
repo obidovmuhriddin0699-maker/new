@@ -1,0 +1,137 @@
+# Local development stack.
+#   docker compose up --build
+# Ollama is NOT containerised: the backend talks to Ollama on the host
+# through host.docker.internal (works on Docker Desktop for Windows/macOS and,
+# via extra_hosts, on Linux).
+
+name: muxriddin
+
+x-backend-env: &backend-env
+  APP_ENV: development
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-muxriddin}:${POSTGRES_PASSWORD:-muxriddin_dev}@postgres:5432/${POSTGRES_DB:-muxriddin}
+  REDIS_URL: redis://redis:6379/0
+  OLLAMA_BASE_URL: ${DOCKER_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+  # The worker is always running here, so publishing (Reels processing can take minutes)
+  # is queued instead of blocking the API request. Fixed on purpose: .env's
+  # PUBLISH_JOBS_MODE=sync is meant for running the backend without Docker.
+  PUBLISH_JOBS_MODE: celery
+  MEDIA_ROOT: /var/lib/muxriddin/media
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-muxriddin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-muxriddin_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-muxriddin}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment: *backend-env
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./backend:/app
+      - media_data:/var/lib/muxriddin/media
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment: *backend-env
+    # -B runs the embedded beat scheduler (Instagram token refresh every 6h).
+    # Keep exactly one worker with -B; the schedule file stays out of the bind mount.
+    command: celery -A app.workers.celery_app worker -B --schedule /tmp/celerybeat-schedule -l info --concurrency=2
+    volumes:
+      - ./backend:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Telegram bot (long polling). Optional: start with
+  #   docker compose --profile telegram up -d
+  # Requires TELEGRAM_ENABLED=true, TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USER_IDS in .env.
+  telegram-bot:
+    profiles: ["telegram"]
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment: *backend-env
+    command: python -m app.integrations.telegram
+    volumes:
+      - ./backend:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: on-failure:5
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    environment:
+      # Server-side only: the Next.js proxy talks to the backend over the compose network.
+      # The browser never calls the backend directly and never sees the JWT.
+      BACKEND_URL: http://backend:8000
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-auto}
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  media_data:

@@ -1,114 +1,111 @@
 import pytest
+from pydantic import ValidationError
 
-from backend.app.config import (
-    LOCAL_CORS_ORIGINS,
-    cookie_secure,
-    cors_origins,
-    is_production,
-    validate_production_configuration,
-)
-from backend.app.database import normalize_database_url
+from app.core.config import Settings, get_settings
 
 
-def production_environment(**overrides: str) -> dict[str, str]:
-    environment = {
-        "APP_ENV": "production",
-        "COOKIE_SECURE": "true",
-        "OLLAMA_BASE_URL": "https://ollama.example.net",
-    }
-    environment.update(overrides)
-    return environment
+def test_settings_load_from_env():
+    s = get_settings()
+    assert s.app_env == "test"
+    assert s.ai_model == "qwen2.5:3b"
+    assert s.meta_login_mode == "instagram"
+    assert s.meta_dry_run is True
 
 
-def test_railway_production_cannot_be_overridden_by_development_label() -> None:
-    assert is_production(
-        {
-            "APP_ENV": "development",
-            "RAILWAY_ENVIRONMENT": "production",
-        }
-    )
+def test_sqlite_fallback_when_database_url_empty(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "")
+    s = Settings(_env_file=None)
+    assert s.effective_database_url.startswith("sqlite:///")
+    assert s.is_sqlite
 
 
-def test_secure_cookies_default_on_in_production_and_off_locally() -> None:
-    assert cookie_secure({"RAILWAY_ENVIRONMENT": "production"})
-    assert not cookie_secure({})
-    assert not cookie_secure({"APP_ENV": "development", "COOKIE_SECURE": "false"})
+def test_cors_origins_comma_separated(monkeypatch):
+    monkeypatch.setenv("CORS_ORIGINS", "http://a.test, http://b.test")
+    assert Settings(_env_file=None).cors_origins == ["http://a.test", "http://b.test"]
 
 
-def test_cookie_secure_rejects_invalid_values() -> None:
-    with pytest.raises(RuntimeError, match="COOKIE_SECURE"):
-        cookie_secure({"COOKIE_SECURE": "sometimes"})
+def test_ai_model_is_configurable(monkeypatch):
+    monkeypatch.setenv("AI_MODEL", "llama3.2:3b")
+    assert Settings(_env_file=None).ai_model == "llama3.2:3b"
 
 
-def test_cors_defaults_to_local_origins_only_outside_production() -> None:
-    assert cors_origins({}) == list(LOCAL_CORS_ORIGINS)
-    assert cors_origins({"RAILWAY_ENVIRONMENT": "production"}) == []
+def test_production_rejects_insecure_defaults(monkeypatch):
+    for key in ("JWT_SECRET_KEY", "TOKEN_ENCRYPTION_KEYS", "DATABASE_URL"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("APP_ENV", "production")
+    with pytest.raises(ValidationError) as exc:
+        Settings(_env_file=None)
+    msg = str(exc.value)
+    assert "JWT_SECRET_KEY" in msg
+    assert "TOKEN_ENCRYPTION_KEYS" in msg
+    assert "DATABASE_URL" in msg
 
 
-@pytest.mark.parametrize(
-    "origins",
-    ["*", "https://frontend.example/path", "http://frontend.example"],
-)
-def test_production_cors_rejects_wildcards_paths_and_http(origins: str) -> None:
-    with pytest.raises(RuntimeError, match="CORS_ORIGINS"):
-        cors_origins(
-            {
-                "APP_ENV": "production",
-                "CORS_ORIGINS": origins,
-            }
-        )
-
-
-def test_production_configuration_accepts_postgres_secure_cookies_and_remote_ollama() -> None:
-    validate_production_configuration(
-        production_environment(CORS_ORIGINS="https://panel.example.net"),
-        "postgresql+psycopg",
-    )
+def test_production_accepts_proper_config(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET_KEY", "x" * 48)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/x")
+    monkeypatch.setenv("CORS_ORIGINS", "https://panel.example.com")
+    monkeypatch.setenv("RATE_LIMIT_BACKEND", "auto")  # tests default to memory
+    monkeypatch.setenv("ALLOWED_HOSTS", "panel.example.com,backend")
+    monkeypatch.setenv("PANEL_PUBLIC_URL", "https://panel.example.com")
+    s = Settings(_env_file=None)
+    assert s.app_env == "production"
 
 
 @pytest.mark.parametrize(
-    ("environment", "database_driver", "message"),
+    ("env", "message"),
     [
-        (production_environment(), "sqlite", "PostgreSQL"),
-        (
-            production_environment(COOKIE_SECURE="false"),
-            "postgresql+psycopg",
-            "COOKIE_SECURE",
-        ),
-        (
-            production_environment(OLLAMA_BASE_URL="http://127.0.0.1:11434"),
-            "postgresql+psycopg",
-            "localhost",
-        ),
-        (
-            production_environment(OLLAMA_BASE_URL=""),
-            "postgresql+psycopg",
-            "OLLAMA_BASE_URL",
-        ),
+        ({"ALLOWED_HOSTS": ""}, "ALLOWED_HOSTS"),
+        ({"PANEL_PUBLIC_URL": "http://panel.example.com"}, "PANEL_PUBLIC_URL"),
+        ({"TRUSTED_PROXIES": "10.0.0.0/8,0.0.0.0/0"}, "TRUSTED_PROXIES"),
+        ({"JWT_ALGORITHM": "none"}, "JWT_ALGORITHM"),
     ],
 )
-def test_production_configuration_rejects_unsafe_or_ephemeral_settings(
-    environment: dict[str, str],
-    database_driver: str,
-    message: str,
-) -> None:
-    with pytest.raises(RuntimeError, match=message):
-        validate_production_configuration(environment, database_driver)
+def test_production_rejects_unsafe_edges(monkeypatch, env, message):
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET_KEY", "x" * 48)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/x")
+    monkeypatch.setenv("CORS_ORIGINS", "https://panel.example.com")
+    monkeypatch.setenv("RATE_LIMIT_BACKEND", "auto")
+    monkeypatch.setenv("ALLOWED_HOSTS", "panel.example.com")
+    monkeypatch.setenv("PANEL_PUBLIC_URL", "https://panel.example.com")
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+    with pytest.raises(ValueError, match=message):
+        Settings(_env_file=None)
+
+
+def test_production_requires_shared_rate_limiting(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET_KEY", "x" * 48)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/x")
+    monkeypatch.setenv("CORS_ORIGINS", "https://panel.example.com")
+    monkeypatch.setenv("RATE_LIMIT_BACKEND", "memory")
+    with pytest.raises(ValueError, match="Rate limiting"):
+        Settings(_env_file=None)
+
+
+def test_secrets_are_masked_in_repr():
+    s = get_settings()
+    text = repr(s)
+    assert s.jwt_secret_key.get_secret_value() not in text
+    assert s.token_encryption_keys.get_secret_value() not in text
 
 
 @pytest.mark.parametrize(
-    ("url", "expected"),
+    "url",
     [
-        (
-            "postgres://user:password@db.example/app",
-            "postgresql+psycopg://user:password@db.example/app",
-        ),
-        (
-            "postgresql://user:password@db.example/app",
-            "postgresql+psycopg://user:password@db.example/app",
-        ),
-        ("sqlite:///./app.db", "sqlite:///./app.db"),
+        "postgres://u:p@db.railway.internal:5432/railway",
+        "postgresql://u:p@db.railway.internal:5432/railway",
     ],
 )
-def test_database_url_normalizes_railway_postgres_schemes(url: str, expected: str) -> None:
-    assert normalize_database_url(url) == expected
+def test_platform_postgres_urls_use_the_psycopg3_driver(url):
+    from app.core.config import Settings
+
+    settings = Settings(database_url=url)
+    assert settings.database_url == "postgresql+psycopg://u:p@db.railway.internal:5432/railway"
+    assert (
+        Settings(database_url="postgresql+psycopg://x@h/d").database_url
+        == "postgresql+psycopg://x@h/d"
+    )

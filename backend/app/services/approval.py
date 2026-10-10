@@ -1,0 +1,353 @@
+"""Human approval decisions and publish authorization.
+
+Rules enforced here:
+* approve / reject / request-edit require a verified, active human approver;
+  agents and system actors are refused (``ApprovalForbiddenError``);
+* the human must state the version they reviewed (``expected_version``);
+  a mismatch is refused, so content that changed meanwhile cannot be approved;
+* an approval binds to (content_id, version, content_hash);
+* ``require_valid_approval`` is the only way to obtain publish authorization
+  and re-checks version, hash, invalidation and the approver's status.
+"""
+
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import cast
+
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app.core.actors import Actor, HumanActor
+from app.core.config import get_settings
+from app.core.errors import (
+    AppError,
+    ApprovalForbiddenError,
+    ApprovalRequiredError,
+    InvalidStateTransitionError,
+    NotFoundError,
+    VersionMismatchError,
+)
+from app.core.transaction import atomic
+from app.models import Approval, Content, InstagramAccount
+from app.models.base import utcnow
+from app.models.enums import (
+    ApprovalDecision,
+    AuditAction,
+    ContentStatus,
+)
+from app.repositories import (
+    ApprovalRepository,
+    ContentAssetRepository,
+    ContentRepository,
+    ContentVersionRepository,
+    UserRepository,
+)
+from app.services.audit import AuditLogService
+from app.services.content_hash import compute_hash, content_snapshot, media_snapshot
+from app.services.content_state import apply_transition, assert_transition
+from app.services.guards import APPROVER_ROLES, require_human_approver
+from app.services.invalidation import cancel_pending_schedules, invalidate_active_approvals
+
+
+@dataclass(frozen=True, slots=True)
+class ApprovalCheck:
+    """Why an approval does or does not authorise publishing the current version."""
+
+    valid: bool
+    approval: Approval | None
+    reasons: tuple[str, ...]
+
+
+APPROVAL_REASON_TEXT = {
+    "no_active_approval": "Joriy versiya uchun amaldagi tasdiq yo‘q.",
+    "snapshot_hash_mismatch": "Tasdiq versiya snapshot'iga mos kelmaydi.",
+    "content_modified": "Kontent tasdiqlangandan keyin o‘zgartirilgan.",
+    "approver_inactive": "Tasdiqlagan foydalanuvchi faol emas yoki huquqi yo‘q.",
+    "approval_expired": "Tasdiq muddati o‘tgan; qayta tasdiqlash kerak.",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class ApprovalResult:
+    approval: Approval
+    content: Content
+    created: bool  # False when an identical approval already existed (idempotent replay)
+
+
+class ApprovalService:
+    def __init__(self, session: Session, audit: AuditLogService | None = None) -> None:
+        self.session = session
+        self.audit = audit or AuditLogService(session)
+        self.contents = ContentRepository(session)
+        self.approvals = ApprovalRepository(session)
+        self.versions = ContentVersionRepository(session)
+        self.assets = ContentAssetRepository(session)
+
+    # ------------------------------------------------------------------ decisions
+    def approve(
+        self, content_id: int, actor: Actor, *, expected_version: int, comment: str | None = None
+    ) -> ApprovalResult:
+        try:
+            with atomic(self.session):
+                require_human_approver(self.session, actor)
+                human = cast(HumanActor, actor)  # verified by the guard above
+                content = self._load(content_id)
+                self._check_version(content, expected_version)
+
+                existing = self.approvals.get_active_approval(content.id, content.version)
+                if existing is not None and content.status in (
+                    ContentStatus.APPROVED,
+                    ContentStatus.SCHEDULED,
+                ):
+                    return ApprovalResult(existing, content, created=False)
+
+                assert_transition(content.status, ContentStatus.APPROVED)
+                self._check_four_eyes(content, human)
+                content_hash = self._verified_hash(content)
+                approval = Approval(
+                    content_id=content.id,
+                    content_version=content.version,
+                    content_hash=content_hash,
+                    decision=ApprovalDecision.APPROVED,
+                    decided_by_user_id=human.user_id,
+                    channel=human.channel,
+                    comment=comment,
+                )
+                self.approvals.add(approval)
+                apply_transition(content, ContentStatus.APPROVED)
+                self._pin_account(content)
+                self.audit.record(
+                    AuditAction.CONTENT_APPROVED,
+                    actor,
+                    content_id=content.id,
+                    content_version=content.version,
+                    details={
+                        "approval_id": approval.id,
+                        "channel": human.channel.value,
+                        "content_hash": content_hash,
+                        "instagram_account_id": content.instagram_account_id,
+                    },
+                )
+                return ApprovalResult(approval, content, created=True)
+        except IntegrityError:
+            # Concurrent approve of the same version: the partial unique index won.
+            existing = self.approvals.get_active_approval(content_id, expected_version)
+            content = self.contents.get(content_id)
+            if existing is None or content is None:
+                raise
+            return ApprovalResult(existing, content, created=False)
+        except AppError as exc:
+            self._record_denial(AuditAction.CONTENT_APPROVED, actor, content_id, exc)
+            raise
+
+    def _pin_account(self, content: Content) -> None:
+        """Content without a target account goes to "the only connected account". Record
+        which one that is at approval time, so connecting a different account later
+        cannot redirect an approved post (changing it needs a new version + approval)."""
+        if content.instagram_account_id is not None:
+            return
+        accounts = self.session.scalars(
+            select(InstagramAccount.id).where(InstagramAccount.deleted_at.is_(None)).limit(2)
+        ).all()
+        if len(accounts) == 1:
+            content.instagram_account_id = accounts[0]
+
+    def reject(
+        self, content_id: int, actor: Actor, *, expected_version: int, comment: str | None = None
+    ) -> Content:
+        return self._decide(
+            content_id,
+            actor,
+            expected_version,
+            comment,
+            decision=ApprovalDecision.REJECTED,
+            target=ContentStatus.REJECTED,
+            action=AuditAction.CONTENT_REJECTED,
+        )
+
+    def request_edit(
+        self, content_id: int, actor: Actor, *, expected_version: int, comment: str | None = None
+    ) -> Content:
+        return self._decide(
+            content_id,
+            actor,
+            expected_version,
+            comment,
+            decision=ApprovalDecision.EDIT_REQUESTED,
+            target=ContentStatus.EDIT_REQUESTED,
+            action=AuditAction.CONTENT_EDIT_REQUESTED,
+        )
+
+    # ------------------------------------------------------------ authorization
+    def evaluate(self, content: Content) -> ApprovalCheck:
+        """Check every condition an approval must meet to authorise publishing."""
+        approval = self.approvals.get_active_approval(content.id, content.version)
+        if approval is None or approval.content_version != content.version:
+            return ApprovalCheck(False, None, ("no_active_approval",))
+        reasons: list[str] = []
+        version_row = self.versions.get_version(content.id, content.version)
+        if version_row is None or version_row.content_hash != approval.content_hash:
+            reasons.append("snapshot_hash_mismatch")
+        if self._current_hash(content) != approval.content_hash:
+            reasons.append("content_modified")
+        approver = UserRepository(self.session).get_active(approval.decided_by_user_id)
+        if approver is None or approver.role not in APPROVER_ROLES:
+            reasons.append("approver_inactive")
+        max_age = get_settings().approval_max_age_hours
+        if max_age > 0 and approval.created_at < utcnow() - timedelta(hours=max_age):
+            reasons.append("approval_expired")
+        return ApprovalCheck(not reasons, approval, tuple(reasons))
+
+    def get_valid_approval(self, content: Content) -> Approval | None:
+        """Active approval that authorises publishing *this exact* content, else None."""
+        check = self.evaluate(content)
+        return check.approval if check.valid else None
+
+    def require_valid_approval(self, content: Content) -> Approval:
+        approval = self.get_valid_approval(content)
+        if approval is None:
+            check = self.evaluate(content)
+            raise ApprovalRequiredError(
+                "A human approval of the current content version is required",
+                details={
+                    "content_id": content.id,
+                    "version": content.version,
+                    "reasons": list(check.reasons),
+                },
+            )
+        return approval
+
+    def revoke(
+        self, content_id: int, actor: Actor, *, expected_version: int, comment: str | None = None
+    ) -> Content:
+        """Withdraw an approval: APPROVED/SCHEDULED -> READY_FOR_REVIEW, schedules cancelled."""
+        try:
+            with atomic(self.session):
+                require_human_approver(self.session, actor)
+                content = self._load(content_id)
+                self._check_version(content, expected_version)
+                if content.status not in (ContentStatus.APPROVED, ContentStatus.SCHEDULED):
+                    raise InvalidStateTransitionError(
+                        "Only APPROVED or SCHEDULED content can have its approval revoked"
+                    )
+                invalidated = invalidate_active_approvals(
+                    self.session, self.audit, content, actor, reason="revoked"
+                )
+                cancel_pending_schedules(self.session, self.audit, content, actor, "revoked")
+                apply_transition(content, ContentStatus.READY_FOR_REVIEW)
+                self.audit.record(
+                    AuditAction.CONTENT_APPROVAL_REVOKED,
+                    actor,
+                    content_id=content.id,
+                    content_version=content.version,
+                    details={"approval_ids": [a.id for a in invalidated], "comment": comment},
+                )
+                return content
+        except AppError as exc:
+            self._record_denial(AuditAction.CONTENT_APPROVAL_REVOKED, actor, content_id, exc)
+            raise
+
+    # ------------------------------------------------------------------ helpers
+    def _check_four_eyes(self, content: Content, human: HumanActor) -> None:
+        if not get_settings().approval_require_different_approver:
+            return
+        version_row = self.versions.get_version(content.id, content.version)
+        if version_row is not None and version_row.created_by_user_id == human.user_id:
+            raise ApprovalForbiddenError(
+                "Four-eyes policy: you wrote this version, another approver must approve it",
+                code="four_eyes_required",
+            )
+
+    def _decide(
+        self,
+        content_id: int,
+        actor: Actor,
+        expected_version: int,
+        comment: str | None,
+        *,
+        decision: ApprovalDecision,
+        target: ContentStatus,
+        action: AuditAction,
+    ) -> Content:
+        try:
+            with atomic(self.session):
+                require_human_approver(self.session, actor)
+                human = cast(HumanActor, actor)  # verified by the guard above
+                content = self._load(content_id)
+                self._check_version(content, expected_version)
+                assert_transition(content.status, target)
+                content_hash = self._current_hash(content)
+                self.approvals.add(
+                    Approval(
+                        content_id=content.id,
+                        content_version=content.version,
+                        content_hash=content_hash,
+                        decision=decision,
+                        decided_by_user_id=human.user_id,
+                        channel=human.channel,
+                        comment=comment,
+                    )
+                )
+                invalidate_active_approvals(
+                    self.session, self.audit, content, actor, reason=decision.value.lower()
+                )
+                cancel_pending_schedules(
+                    self.session, self.audit, content, actor, reason=decision.value.lower()
+                )
+                apply_transition(content, target)
+                self.audit.record(
+                    action,
+                    actor,
+                    content_id=content.id,
+                    content_version=content.version,
+                    details={"channel": human.channel.value, "comment": comment},
+                )
+                return content
+        except AppError as exc:
+            self._record_denial(action, actor, content_id, exc)
+            raise
+
+    def _load(self, content_id: int) -> Content:
+        content = self.contents.get_for_update(content_id)
+        if content is None:
+            raise NotFoundError("Content not found")
+        return content
+
+    @staticmethod
+    def _check_version(content: Content, expected_version: int) -> None:
+        if content.version != expected_version:
+            raise VersionMismatchError(
+                "Content changed since you reviewed it; reload and review the latest version",
+                details={"expected_version": expected_version, "current_version": content.version},
+            )
+
+    def _current_hash(self, content: Content) -> str:
+        media = media_snapshot(self.assets.list_for_content(content.id))
+        return compute_hash(content_snapshot(content, media))
+
+    def _verified_hash(self, content: Content) -> str:
+        """Hash of the working copy; must match the stored snapshot of this version."""
+        current = self._current_hash(content)
+        version_row = self.versions.get_version(content.id, content.version)
+        if version_row is None or version_row.content_hash != current:
+            raise ApprovalRequiredError(
+                "Content does not match its recorded version; it must be re-versioned",
+                code="content_integrity_error",
+            )
+        return current
+
+    def _record_denial(
+        self, action: AuditAction, actor: Actor, content_id: int, exc: AppError
+    ) -> None:
+        if isinstance(exc, NotFoundError):
+            return
+        content = self.contents.get(content_id)
+        self.audit.record_failure(
+            AuditAction.APPROVAL_DENIED,
+            actor,
+            error=exc.message,
+            content_id=content_id if content is not None else None,
+            content_version=content.version if content is not None else None,
+            details={"attempted_action": action.value, "code": exc.code},
+        )

@@ -1,0 +1,5 @@
+User-agent: *
+# Public legal pages (Meta App Review checks these URLs); everything else is private.
+Allow: /privacy
+Allow: /terms
+Disallow: /

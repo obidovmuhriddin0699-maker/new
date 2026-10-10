@@ -1,0 +1,283 @@
+# Production stack (single host). Full guide: docs/DEPLOYMENT.md.
+#
+#   cp .env.production.example .env.production   # fill in every value
+#   ./scripts/deploy.sh                            # build, migrate, start, smoke test
+#
+# Only Caddy is published (80/443): automatic HTTPS for ${DOMAIN}, proxying the panel.
+# PostgreSQL and Redis sit on an internal network with no route to the outside; the
+# backend is not published at all (the panel proxies it server-side).
+
+name: muxriddin-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  init: true
+  restart: unless-stopped
+  logging: *logging
+
+# Runtime settings shared by API, worker, beat and bot. The app connects with the
+# least-privilege role (APP_DB_USER); only the migrate service uses the owner.
+# env_file passes the whole .env.production to these containers, so the database owner's
+# credentials are blanked here: only postgres, migrate (via its DATABASE_URL) and backup
+# ever receive them.
+x-backend-env: &backend-env
+  POSTGRES_USER: ""
+  POSTGRES_PASSWORD: ""
+  APP_ENV: production
+  DATABASE_URL: postgresql+psycopg://${APP_DB_USER:?}:${APP_DB_PASSWORD:?}@postgres:5432/${POSTGRES_DB:-muxriddin}
+  REDIS_URL: redis://:${REDIS_PASSWORD:?}@redis:6379/0
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+  MEDIA_ROOT: /var/lib/muxriddin/media
+  # Only the panel container (fixed address on the edge network) may send X-Forwarded-For.
+  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1,::1,172.30.0.10}
+  PUBLISH_JOBS_MODE: ${PUBLISH_JOBS_MODE:-celery}
+  AI_JOBS_MODE: ${AI_JOBS_MODE:-celery}
+  LOG_JSON: "true"
+
+x-backend: &backend
+  image: muxriddin-backend:${IMAGE_TAG:-prod}
+  build:
+    context: .
+    dockerfile: docker/backend.prod.Dockerfile
+    target: production
+  env_file:
+    - path: ${ENV_FILE:-.env.production}
+      required: true
+  environment: *backend-env
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  <<: *hardening
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-muxriddin_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:-muxriddin}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    shm_size: 128m
+    restart: unless-stopped
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    command:
+      - sh
+      - -c
+      - exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes --save 300 10 --maxmemory 256mb --maxmemory-policy noeviction
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?}
+    volumes:
+      - redis_data:/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *logging
+
+  # One-shot: schema migrations + least-privilege app role, as the database owner.
+  migrate:
+    <<: *backend
+    environment:
+      <<: *backend-env
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-muxriddin_owner}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:-muxriddin}
+      APP_DB_USER: ${APP_DB_USER:?}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?}
+    command: ["sh", "-c", "python -m app.cli migrate && python -m app.cli db-app-role"]
+    restart: "no"
+    networks: [data]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  backend:
+    <<: *backend
+    volumes:
+      - media_data:/var/lib/muxriddin/media
+    networks: [data, edge]
+    mem_limit: 768m
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "-l", "info", "--concurrency=2"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.workers.celery_app inspect ping -d celery@$$HOSTNAME --timeout 10 | grep -q pong"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+    networks: [data, edge]
+    mem_limit: 1g
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Exactly one scheduler (publishing, reconciliation, token refresh, insights, report).
+  beat:
+    <<: *backend
+    command: ["celery", "-A", "app.workers.celery_app", "beat", "-l", "info", "--schedule", "/tmp/celerybeat-schedule"]
+    healthcheck:
+      disable: true
+    networks: [data]
+    mem_limit: 256m
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  telegram-bot:
+    <<: *backend
+    profiles: ["telegram"]
+    command: ["python", "-m", "app.integrations.telegram"]
+    healthcheck:
+      disable: true
+    networks: [data, edge]
+    mem_limit: 256m
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    image: muxriddin-frontend:${IMAGE_TAG:-prod}
+    build:
+      context: .
+      dockerfile: docker/frontend.prod.Dockerfile
+    environment:
+      BACKEND_URL: http://backend:8000
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      # Caddy (the only way in) overwrites X-Forwarded-For with the real client address.
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-true}
+      # Public legal pages (/privacy, /terms) — no secrets are given to the panel.
+      PANEL_PUBLIC_URL: ${PANEL_PUBLIC_URL:-}
+      LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-MUXRIDDIN DESIGN}
+      LEGAL_CONTACT_EMAIL: ${LEGAL_CONTACT_EMAIL:-}
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /app/.next/cache:size=64m,uid=10001,gid=10001
+    networks:
+      edge:
+        ipv4_address: 172.30.0.10
+    mem_limit: 512m
+    depends_on:
+      backend:
+        condition: service_healthy
+    <<: *hardening
+
+  # Daily database + media backups into ./backups (copy them off the server!).
+  backup:
+    image: postgres:16-alpine
+    command: ["sh", "/backup.sh", "daemon"]
+    # Runs as the owner of BACKUP_DIR (your deploy user: `id -u` / `id -g`), so the files can
+    # be copied off the server without sudo. scripts/deploy.sh checks that they match.
+    user: "${BACKUP_UID:-1000}:${BACKUP_GID:-1000}"
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-muxriddin_owner}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      PGDATABASE: ${POSTGRES_DB:-muxriddin}
+      BACKUP_TIME: ${BACKUP_TIME:-02:30}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_HEARTBEAT_URL: ${BACKUP_HEARTBEAT_URL:-}
+    volumes:
+      - ./docker/backup/backup.sh:/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+      - media_data:/media:ro
+    tmpfs:
+      - /tmp:size=16m
+    # data: PostgreSQL; edge: optional heartbeat ping (no published ports).
+    networks: [data, edge]
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # TLS edge: the only service with published ports.
+  caddy:
+    image: caddy:2-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN (e.g. panel.example.com)}
+      CADDY_TLS: ${CADDY_TLS:?set CADDY_TLS to your e-mail (Let's Encrypt) or internal}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    tmpfs:
+      - /tmp:size=16m
+    networks: [edge]
+    read_only: true
+    cap_drop: ["ALL"]
+    cap_add: ["NET_BIND_SERVICE"]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      frontend:
+        condition: service_healthy
+
+  # Optional local LLM in a container: docker compose ... --profile ollama up -d
+  # then set OLLAMA_BASE_URL=http://ollama:11434 and `docker compose exec ollama ollama pull qwen2.5:3b`.
+  ollama:
+    # Pinned (0.40.2 = :latest on 2026-10-09). Bump deliberately: docker buildx imagetools inspect ollama/ollama:<tag>
+    image: ollama/ollama:0.40.2@sha256:b86366bb528bbf7f1424435d165028497a5b69bf6ddb4fa5a87102e2b79f44fb
+    profiles: ["ollama"]
+    volumes:
+      - ollama_data:/root/.ollama
+    networks: [edge]
+    restart: unless-stopped
+    logging: *logging
+
+networks:
+  # No external connectivity: PostgreSQL and Redis are reachable only from app services.
+  data:
+    internal: true
+  # Caddy <-> panel <-> backend, and outbound access (Meta, Telegram, Ollama). Fixed subnet
+  # so the panel has a stable address that the backend trusts for X-Forwarded-For.
+  edge:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  redis_data:
+  media_data:
+  ollama_data:

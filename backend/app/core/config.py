@@ -1,0 +1,302 @@
+"""Application configuration.
+
+All settings come from environment variables (or a local ``.env`` file).
+Nothing secret is hard-coded here: secret fields have no production default and
+are validated at startup when ``APP_ENV=production``.
+"""
+
+from functools import lru_cache
+from typing import Annotated, Literal
+
+from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+Environment = Literal["development", "test", "production"]
+
+# Placeholder used only for local development. Production refuses to start with it.
+_DEV_JWT_SECRET = "dev-only-insecure-jwt-secret-change-me"  # noqa: S105
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=(".env", "../.env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+    )
+
+    # --- App ---
+    app_name: str = "MUXRIDDIN AI INSTAGRAM MANAGER"
+    app_env: Environment = "development"
+    debug: bool = False
+    log_level: str = "INFO"
+    log_json: bool = True
+    api_v1_prefix: str = "/api/v1"
+
+    # --- CORS ---
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:3000"]
+    )
+
+    # --- Database ---
+    # Empty -> SQLite fallback for local development.
+    database_url: str = ""
+    sqlite_path: str = "./data/muxriddin.db"
+    db_echo: bool = False
+
+    # --- Redis / Celery ---
+    redis_url: str = "redis://localhost:6379/0"
+    celery_broker_url: str = ""
+    celery_result_backend: str = ""
+    celery_task_always_eager: bool = False
+
+    # --- Auth ---
+    jwt_secret_key: SecretStr = SecretStr(_DEV_JWT_SECRET)
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+
+    # --- Token encryption (Fernet). Comma-separated: first key encrypts, all keys decrypt.
+    token_encryption_keys: SecretStr = SecretStr("")
+
+    # --- AI provider ---
+    # "mock" is deterministic and for tests/demos only; refused in production.
+    ai_provider: Literal["ollama", "mock"] = "ollama"
+    ollama_base_url: str = "http://localhost:11434"
+    ai_model: str = "qwen2.5:3b"
+    ai_timeout_seconds: float = 120.0
+    ai_temperature: float = 0.6
+    ai_max_output_tokens: int = 2048
+    ai_max_response_chars: int = 60_000
+    ai_structured_max_attempts: int = 2  # 1 call + 1 repair attempt for invalid JSON
+    # "sync": run generation inside the request (dev default).
+    # "celery": enqueue an AIJob for the worker and return 202 immediately.
+    ai_jobs_mode: Literal["sync", "celery"] = "sync"
+    ai_max_active_jobs_per_user: int = 3
+
+    # --- Media generation (no real provider in PHASE 3) ---
+    image_provider: Literal["none", "mock"] = "none"
+    video_provider: Literal["none", "mock"] = "none"
+
+    # --- Approval policy (PHASE 6) ---
+    # 0 = approvals never expire. Otherwise an approval older than this no longer
+    # authorises publishing and the content must be re-approved.
+    approval_max_age_hours: int = 0
+    # "Four eyes": the approver must not be the person who wrote the current version.
+    approval_require_different_approver: bool = False
+    # Telegram digest for content waiting longer than this (0 = off).
+    approval_reminder_hours: int = 24
+
+    # --- Telegram bot (PHASE 5) ---
+    telegram_enabled: bool = False
+    telegram_bot_token: SecretStr = SecretStr("")
+    telegram_bot_username: str = ""  # without @, used for deep links in the panel
+    # Telegram user IDs allowed to talk to the bot (in addition to account linking).
+    telegram_allowed_user_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
+    telegram_action_ttl_hours: int = 72
+    telegram_link_code_ttl_minutes: int = 10
+    telegram_notify_interval_seconds: int = 15
+    panel_public_url: str = "http://localhost:3000"
+
+    # --- Meta / Instagram (Instagram API with Instagram Login). See docs/META_OAUTH.md.
+    meta_login_mode: Literal["instagram", "facebook"] = "instagram"
+    meta_graph_api_version: str = "v26.0"
+    meta_dry_run: bool = True
+    # Instagram API with Instagram Login (Business Login for Instagram). Endpoints are
+    # configurable so they can follow Meta changes without code edits.
+    meta_app_id: str = ""
+    meta_app_secret: SecretStr = SecretStr("")
+    meta_redirect_uri: str = ""  # e.g. https://panel.example.com/instagram/callback
+    meta_scopes: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: [
+            "instagram_business_basic",
+            "instagram_business_content_publish",
+            "instagram_business_manage_insights",
+        ]
+    )
+    meta_required_scopes: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["instagram_business_basic", "instagram_business_content_publish"]
+    )
+    meta_oauth_authorize_url: str = "https://www.instagram.com/oauth/authorize"
+    meta_oauth_token_url: str = "https://api.instagram.com/oauth/access_token"  # noqa: S105
+    meta_graph_base_url: str = "https://graph.instagram.com"
+    meta_http_timeout_seconds: float = 20.0
+    meta_oauth_state_ttl_minutes: int = 10
+    # Refresh long-lived tokens (60 days) when fewer than this many days remain.
+    meta_token_refresh_window_days: int = 15
+
+    # --- Publishing (PHASE 8). See docs/PUBLISHING.md.
+    # sync: the publish request runs in the API process (simple local dev);
+    # celery: it is queued for the worker (recommended for Reels: video processing takes minutes).
+    publish_jobs_mode: Literal["sync", "celery"] = "sync"
+    # Meta recommends polling a container's status_code (at most once per minute for
+    # long videos); images are usually FINISHED immediately.
+    meta_container_poll_interval_seconds: float = 5.0
+    meta_container_max_wait_seconds: float = 300.0
+    # A PROCESSING schedule untouched for this long is reconciled against Meta.
+    publish_reconcile_after_minutes: int = 10
+    publish_max_attempts: int = 3
+    # Used only when Meta's content_publishing_limit response has no quota_total.
+    meta_publish_limit_fallback: int = 50
+
+    # --- Security (PHASE 10). See docs/SECURITY.md.
+    rate_limit_enabled: bool = True
+    # auto/redis: Redis shared counters (memory fallback while Redis is down); memory: tests.
+    rate_limit_backend: Literal["auto", "redis", "memory"] = "auto"
+    # Peers allowed to set X-Forwarded-For (the Next.js server, a reverse proxy). CIDRs ok.
+    trusted_proxies: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["127.0.0.1", "::1"]
+    )
+    # Host headers accepted in production (empty = no check). e.g. panel.example.com,backend
+    allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    max_json_body_kb: int = 1024
+
+    # --- Analytics (PHASE 9). See docs/ANALYTICS.md.
+    # Insights are synced for media published within this many days (bounded API usage).
+    analytics_media_days: int = 30
+    # Analyst report language (uz | ru | en) and whether to ask the AI to phrase it.
+    analytics_report_language: Literal["uz", "ru", "en"] = "uz"
+    analytics_report_use_ai: bool = True
+
+    # --- Media storage (uploads served to Meta over a public HTTPS URL)
+    media_root: str = "./data/media"
+    # Public base URL Meta downloads media from; empty = PANEL_PUBLIC_URL.
+    media_public_base_url: str = ""
+    media_max_image_mb: int = 8
+    media_max_video_mb: int = 100
+
+    # The ops monitor alerts when the backup service (docker-compose.prod.yml) stops
+    # recording backups. Turn off where the platform backs up the database itself
+    # (e.g. Railway Postgres backups) and there is no backup service.
+    backup_monitoring: bool = True
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _split_origins(cls, value: object) -> object:
+        if isinstance(value, str):
+            value = value.strip()
+            if value.startswith("["):
+                import json
+
+                return json.loads(value)
+            return [o.strip() for o in value.split(",") if o.strip()]
+        return value
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _psycopg_driver(cls, value: object) -> object:
+        """Hosting platforms (Railway, Heroku, Render...) hand out ``postgres://`` or
+        ``postgresql://`` URLs; SQLAlchemy would then look for psycopg2, which is not
+        installed. Use the psycopg 3 driver the app ships with."""
+        if isinstance(value, str):
+            value = value.strip()
+            for prefix in ("postgres://", "postgresql://"):
+                if value.startswith(prefix):
+                    return "postgresql+psycopg://" + value[len(prefix) :]
+        return value
+
+    @field_validator("trusted_proxies", "allowed_hosts", mode="before")
+    @classmethod
+    def _split_list(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [v.strip() for v in value.split(",") if v.strip()]
+        return value
+
+    @field_validator("meta_scopes", "meta_required_scopes", mode="before")
+    @classmethod
+    def _split_scopes(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [v.strip() for v in value.replace(" ", ",").split(",") if v.strip()]
+        return value
+
+    @property
+    def effective_media_base_url(self) -> str:
+        return (self.media_public_base_url or self.panel_public_url).rstrip("/")
+
+    @property
+    def meta_configured(self) -> bool:
+        return bool(
+            self.meta_app_id and self.meta_app_secret.get_secret_value() and self.meta_redirect_uri
+        )
+
+    @field_validator("telegram_allowed_user_ids", mode="before")
+    @classmethod
+    def _split_ids(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [int(v) for v in value.replace(";", ",").split(",") if v.strip()]
+        if isinstance(value, int):
+            return [value]
+        return value
+
+    @model_validator(mode="after")
+    def _check_production(self) -> "Settings":
+        if self.app_env == "production":
+            problems = []
+            secret = self.jwt_secret_key.get_secret_value()
+            if secret == _DEV_JWT_SECRET or len(secret) < 32:
+                problems.append("JWT_SECRET_KEY must be set (>= 32 chars)")
+            if not self.token_encryption_keys.get_secret_value():
+                problems.append("TOKEN_ENCRYPTION_KEYS must be set")
+            if not self.database_url.startswith("postgresql"):
+                problems.append("DATABASE_URL must point to PostgreSQL in production")
+            if "*" in self.cors_origins:
+                problems.append("CORS_ORIGINS must not contain '*' in production")
+            if self.debug:
+                problems.append("DEBUG must be false in production")
+            if self.ai_provider == "mock":
+                problems.append("AI_PROVIDER=mock is not allowed in production")
+            if self.telegram_enabled and (
+                not self.telegram_bot_token.get_secret_value() or not self.telegram_allowed_user_ids
+            ):
+                problems.append(
+                    "TELEGRAM_ENABLED requires TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USER_IDS"
+                )
+            if self.meta_app_id and not self.meta_app_secret.get_secret_value():
+                problems.append("META_APP_SECRET must be set when META_APP_ID is set")
+            if self.meta_redirect_uri and not self.meta_redirect_uri.startswith("https://"):
+                problems.append("META_REDIRECT_URI must use https in production")
+            if not self.meta_dry_run and not self.effective_media_base_url.startswith("https://"):
+                problems.append(
+                    "MEDIA_PUBLIC_BASE_URL (or PANEL_PUBLIC_URL) must use https when "
+                    "META_DRY_RUN=false: Meta downloads media from it"
+                )
+            if not self.rate_limit_enabled or self.rate_limit_backend == "memory":
+                problems.append(
+                    "Rate limiting must be enabled with Redis in production "
+                    "(RATE_LIMIT_ENABLED=true, RATE_LIMIT_BACKEND=auto|redis)"
+                )
+            if "mock" in (self.image_provider, self.video_provider):
+                problems.append("mock media providers are not allowed in production")
+            if not self.allowed_hosts:
+                problems.append("ALLOWED_HOSTS must list the host names the API answers to")
+            if self.panel_public_url and not self.panel_public_url.startswith("https://"):
+                problems.append("PANEL_PUBLIC_URL must use https in production")
+            if any(p.strip() in ("0.0.0.0/0", "::/0", "*") for p in self.trusted_proxies):
+                problems.append(
+                    "TRUSTED_PROXIES must not trust every address (clients could forge their IP)"
+                )
+            if not self.jwt_algorithm.startswith("HS"):
+                problems.append("JWT_ALGORITHM must be an HMAC algorithm (HS256/HS384/HS512)")
+            if problems:
+                raise ValueError("Invalid production configuration: " + "; ".join(problems))
+        return self
+
+    @property
+    def effective_database_url(self) -> str:
+        return self.database_url or f"sqlite:///{self.sqlite_path}"
+
+    @property
+    def is_sqlite(self) -> bool:
+        return self.effective_database_url.startswith("sqlite")
+
+    @property
+    def effective_celery_broker_url(self) -> str:
+        return self.celery_broker_url or self.redis_url
+
+    @property
+    def effective_celery_result_backend(self) -> str:
+        return self.celery_result_backend or self.redis_url
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
