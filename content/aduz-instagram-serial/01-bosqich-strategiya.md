@@ -1,6 +1,6 @@
 # ADUZ — 30 kunlik Instagram Reels seriali
 
-> **Yangilanish (Bosqich 2):** ADUZ boti — **@Targetreklammabot**, barcha funksiyalar ✅ ishlamoqda. Jasur obrazi o‘rniga ADUZ vakili rolini **platforma asoschisi** (haqiqiy shaxs) o‘ynaydi. Quyidagi matndagi 🛠 belgilari ✅ deb, "Jasur" esa "Asoschi" deb o‘qilsin. To‘liq yangilangan qahramon tavsifi: `02-bosqich-1-hafta-ssenariylar.md`, 0.2-bo‘lim.
+> **Yangilanish (Bosqich 2):** ADUZ boti — **@Targetreklammabot**, barcha funksiyalar ✅ ishlamoqda. Jasur obrazi o‘rniga ADUZ vakili rolini **platforma asoschisi** — **Muxriddin Obidov** (haqiqiy shaxs) o‘ynaydi. Quyidagi matndagi 🛠 belgilari ✅ deb, "Jasur" esa "Asoschi" deb o‘qilsin. To‘liq yangilangan qahramon tavsifi: `02-bosqich-1-hafta-ssenariylar.md`, 0.2-bo‘lim.
 ## BOSQICH 1: Strategiya, qahramonlar va 30 kunlik jadval
 
 > Serial nomi (ishchi): **"Reklama degani shumi?!"**

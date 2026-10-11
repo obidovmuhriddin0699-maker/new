@@ -2,9 +2,9 @@
 ## 1-hafta (1–7-kunlar): suratga olishga tayyor ssenariylar
 
 > **Yangilangan ma’lumotlar (mijozdan):**
-> - ADUZ boti: **@Targetreklammabot**. Barcha funksiyalar ✅ **ishlamoqda**.
+> - ADUZ boti: **@Targetreklammabot** (manzil mijoz tomonidan tasdiqlangan). Barcha funksiyalar ✅ **ishlamoqda**.
 > - Videolardagi yagona haqiqiy shaxs — **ADUZ platformasi asoschisi** (taqdim etilgan foto). Rustam aka, Dilnoza va Shokir — to‘qima obrazlar.
-> - Jasur obrazi bekor qilindi: ADUZ vakili rolini endi **asoschining o‘zi** o‘ynaydi. Ssenariyda u **"ASOSCHI"** deb belgilangan, qahramonlar unga "uka" yoki "siz" deb murojaat qiladi. Ekranda tanishtiruv yozuvi: *"[Ism Familiya] — ADUZ asoschisi"* (ism montajda qo‘shiladi).
+> - Jasur obrazi bekor qilindi: ADUZ vakili rolini endi **asoschining o‘zi** o‘ynaydi. Ssenariyda u **"ASOSCHI"** deb belgilangan, qahramonlar unga "uka" yoki "siz" deb murojaat qiladi. Ekranda tanishtiruv yozuvi: *"Muxriddin Obidov — ADUZ asoschisi"* (yozuv montajda qo‘shiladi). 8-kundan boshlab qahramonlar unga "Muxriddin" yoki "Muxriddin uka" deb murojaat qiladi.
 > - 1-haftada asoschi faqat 7-kun oxirida paydo bo‘ladi. 1–6-kunlarning "Yechim" qismida botning **haqiqiy ekran yozuvi** (2–4 soniya) va qisqa brend ovozi ishlatiladi.
 > - Dilnoza obrazi uchun standart variant tanlandi: ro‘molsiz. Muqobil satr 0.2-bo‘limda.
 
@@ -815,7 +815,7 @@ Divan ortidan xotirjam ovoz eshitiladi:
 **ASOSCHI:** "Shoshmang, osonroq yo‘li bor."
 Asoschi divan ortidan turib, qo‘lida telefon bilan tabassum qiladi. Rustam aka sakrab turadi:
 **RUSTAM:** "Siz kimsiz?!"
-Ekranda: **"[Ism Familiya] — ADUZ asoschisi"**
+Ekranda: **"Muxriddin Obidov — ADUZ asoschisi"**
 
 ### F. CTA (37–40 s)
 Qora ekran: **"DAVOMI BOR..."**
@@ -831,7 +831,7 @@ Qora ekran: **"DAVOMI BOR..."**
 | 4 | 17–22 | Rustam akaning yaqin plani | Boshini changallaydi | "Qaysi biri ishladi?..." | Hisoblagich | "Tik-tik" | — | Grafikaga |
 | 5 | 22–31 | Grafika + bot ekran yozuvi | — | Diktor | Promo-kod misoli | Texno | Kodlar animatsiyasi | Do‘konga qaytish |
 | 6 | 31–34 | Tepadan, keng plan | Divanga cho‘kadi | "Kimdir buning osonroq yo‘lini..." | — | Musiqa pasayadi | Jim 1 s | Cut |
-| 7 | 34–37 | Ko‘z darajasi, divan orqasi ko‘rinadi | Asoschi divan ortidan turadi, Rustam aka sakraydi | "Shoshmang, osonroq yo‘li bor." / "Siz kimsiz?!" | [Ism Familiya] — ADUZ asoschisi | "Whoosh", ko‘tarinki akkord | Asoschining yuziga sekin push-in | Muzlatish |
+| 7 | 34–37 | Ko‘z darajasi, divan orqasi ko‘rinadi | Asoschi divan ortidan turadi, Rustam aka sakraydi | "Shoshmang, osonroq yo‘li bor." / "Siz kimsiz?!" | Muxriddin Obidov — ADUZ asoschisi | "Whoosh", ko‘tarinki akkord | Asoschining yuziga sekin push-in | Muzlatish |
 | 8 | 37–40 | Qora ekran | — | — | DAVOMI BOR... + CTA | Seriya musiqasi yakuni | — | — |
 
 ### H. AI VIDEO PRODUCTION
