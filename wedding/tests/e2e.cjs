@@ -40,7 +40,7 @@ function wavTone() {
 // Pretend the browser can decode AAC (so the real code path runs with the WAV stand-in).
 const AAC_CAPABLE = () => {
   const orig = HTMLMediaElement.prototype.canPlayType;
-  HTMLMediaElement.prototype.canPlayType = function (t) { return /mp4/.test(t) ? "probably" : orig.call(this, t); };
+  HTMLMediaElement.prototype.canPlayType = function (t) { return /audio\/mp4/.test(t) ? "probably" : orig.call(this, t); };
 };
 
 const results = [];
@@ -164,8 +164,8 @@ function contrast(hex1, hex2) {
         const vw = document.documentElement.clientWidth;
         const overflow = document.documentElement.scrollWidth - window.innerWidth;
         const clipped = [];
-        document.querySelectorAll("main *:not(.cloud-layer):not(.cloud-track):not(.sky *), footer *").forEach((el) => {
-          if (el.closest(".sky, .finale__photo, .opening__photo, .visually-hidden, [hidden], .field--trap")) return;
+        document.querySelectorAll("main *, footer *").forEach((el) => {
+          if (el.closest(".scene__media, .curtain, .dust, .marquee, .visually-hidden, [hidden], .field--trap")) return;
           const cs = getComputedStyle(el);
           if (cs.display === "none" || cs.visibility === "hidden") return;
           const r = el.getBoundingClientRect();
@@ -180,23 +180,33 @@ function contrast(hex1, hex2) {
       assert(!report.clipped.length, `elements outside the viewport: ${report.clipped.join("; ")}`);
       assert(!report.broken.length, `images failed to load: ${report.broken.join(", ")}`);
       assert(!report.noDims.length, `images without width/height (layout shift): ${report.noDims.join(", ")}`);
-      assert(report.count >= 12, `expected the story, gallery and scene photos, found ${report.count}`);
+      assert(report.count >= 8, `expected the gallery and location photos, found ${report.count}`);
+      const films = await page.evaluate(() => [...document.querySelectorAll("video[data-video]")].map((v) => ({ id: v.getAttribute("data-video"), ok: v.readyState >= 2 || !v.src })));
+      assert(films.length === 6, `expected 6 films (2 scenes + 4 chapters), found ${films.length}`);
+      const brokenFilms = films.filter((f) => !f.ok);
+      assert(!brokenFilms.length, `films failed to load: ${brokenFilms.map((f) => f.id).join(", ")}`);
       assert(!page.problems.length, page.problems.join("\n"));
       await page.screenshot({ path: path.join(__dirname, "screenshots", `${w}.png`) }).catch(() => {});
       await page.context().close();
     });
   }
 
-  await test("text never overlaps the opening title at 360px (photo, names, subtitle, button in order)", async () => {
+  await test("360×640: curtain and hero fit one screen with nothing overlapping", async () => {
     const page = await newPage({ viewport: { width: 360, height: 640 } });
     await page.goto(base + "/", { waitUntil: "load" });
     await settle(page);
-    const boxes = await page.evaluate(() => [".opening__photo", ".opening__eyebrow", ".opening__title", ".opening__date", ".opening__subtitle", ".opening__button"]
-      .map((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { s, top: r.top, bottom: r.bottom }; }));
-    for (let i = 1; i < boxes.length; i++) {
-      assert(boxes[i].top >= boxes[i - 1].bottom - 1, `${boxes[i].s} overlaps ${boxes[i - 1].s}`);
-    }
-    assert(boxes[boxes.length - 1].bottom <= 640, "button below the fold on a 360×640 screen");
+    const order = (sels) => page.evaluate((sels) => sels.map((s) => {
+      const r = document.querySelector(s).getBoundingClientRect(); return { s, top: r.top, bottom: r.bottom };
+    }), sels);
+    const check = (boxes, h) => {
+      for (let i = 1; i < boxes.length; i++) assert(boxes[i].top >= boxes[i - 1].bottom - 1, `${boxes[i].s} overlaps ${boxes[i - 1].s}`);
+      assert(boxes[boxes.length - 1].bottom <= h, `${boxes[boxes.length - 1].s} below the fold`);
+    };
+    check(await order([".crest", ".curtain__eyebrow", ".curtain__names", ".curtain__date", ".curtain__button"]), 640);
+    await page.click("[data-open-invitation]", { force: true });
+    await page.waitForTimeout(200);
+    await settle(page);
+    check(await order([".opening__eyebrow", ".opening__title", ".opening__date", ".opening__subtitle", ".scroll-cue"]), 640);
     await page.context().close();
   });
 
@@ -212,6 +222,7 @@ function contrast(hex1, hex2) {
       musicHidden: document.querySelector("[data-music-toggle]").hidden
     }));
     assert(locked.locked && locked.inert && locked.topbarHidden && locked.musicHidden, JSON.stringify(locked));
+    assert(await page.evaluate(() => getComputedStyle(document.querySelector(".opening__stage")).visibility) === "hidden", "hero should be hidden behind the curtain");
     // First Tab stop is the skip link, the next is the open button (nothing invisible in between).
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
@@ -224,9 +235,11 @@ function contrast(hex1, hex2) {
       inert: document.querySelector("#taklif").hasAttribute("inert"),
       focus: document.activeElement.id,
       y: window.scrollY,
-      music: !document.querySelector("[data-music-toggle]").hidden
+      music: !document.querySelector("[data-music-toggle]").hidden,
+      curtain: getComputedStyle(document.querySelector(".curtain")).pointerEvents
     }));
-    assert(!after.inert && after.focus === "taklif" && after.y > 200 && after.music, JSON.stringify(after));
+    // The curtain parts onto the living hero: no jump, focus on the names.
+    assert(!after.inert && after.focus === "opening-title" && after.y === 0 && after.music && after.curtain === "none", JSON.stringify(after));
     assert(!page.problems.length, page.problems.join("\n"));
     await page.context().close();
   });
@@ -236,7 +249,7 @@ function contrast(hex1, hex2) {
       init: [AAC_CAPABLE, () => {
         window.__plays = 0;
         const p = HTMLMediaElement.prototype.play;
-        HTMLMediaElement.prototype.play = function () { window.__plays++; return p.call(this); };
+        HTMLMediaElement.prototype.play = function () { if (this instanceof HTMLAudioElement) window.__plays++; return p.call(this); };
       }]
     });
     const audioRequests = [];
@@ -246,7 +259,7 @@ function contrast(hex1, hex2) {
     });
     await page.goto(base + "/", { waitUntil: "load" });
     await page.waitForTimeout(1500);
-    assert(await page.evaluate(() => window.__plays) === 0, "play() was called before any interaction");
+    assert(await page.evaluate(() => window.__plays) === 0, "music play() was called before any interaction");
     assert(audioRequests.length === 0, "audio was downloaded before the guest opened the invitation");
     await page.click("[data-open-invitation]", { force: true });
     await page.waitForFunction(() => document.querySelector("[data-music-toggle]").getAttribute("aria-pressed") === "true", null, { timeout: 5000 });
@@ -328,7 +341,7 @@ function contrast(hex1, hex2) {
     const [download] = await Promise.all([page.waitForEvent("download"), page.click("[data-add-calendar]")]);
     const text = fs.readFileSync(await download.path(), "utf8");
     assert(/DTSTART:20261006T110000Z/.test(text), "DTSTART missing or wrong");
-    assert(/LOCATION:Versal to‘yxonasi\\, Farg‘ona shahri/.test(text), "LOCATION missing");
+    assert(/LOCATION:Qo‘qon shahri/.test(text), "LOCATION missing");
     await page.context().close();
   });
 
@@ -343,15 +356,15 @@ function contrast(hex1, hex2) {
     await page.waitForSelector("[data-lightbox].is-open");
     await page.waitForFunction(() => document.querySelector("[data-lightbox-img]").naturalWidth > 0);
     const count = () => page.textContent("[data-lightbox-count]");
-    assert(await count() === "1 / 7", await count());
+    assert(await count() === "1 / 6", await count());
     assert(await page.evaluate(() => document.activeElement.closest("[data-lightbox]") !== null), "focus not moved into the lightbox");
     await page.keyboard.press("ArrowRight");
-    assert(await count() === "2 / 7", await count());
+    assert(await count() === "2 / 6", await count());
     await page.keyboard.press("ArrowLeft");
     await page.keyboard.press("ArrowLeft");
-    assert(await count() === "7 / 7", await count());
+    assert(await count() === "6 / 6", await count());
     await page.click("[data-lightbox-next]");
-    assert(await count() === "1 / 7", await count());
+    assert(await count() === "1 / 6", await count());
     await page.waitForFunction(() => document.querySelector("[data-lightbox-img]").classList.contains("is-ready"));
     const alt = await page.getAttribute("[data-lightbox-img]", "alt");
     assert(alt && alt.length > 5, "lightbox image needs alt text");
@@ -379,9 +392,9 @@ function contrast(hex1, hex2) {
       box.dispatchEvent(new TouchEvent("touchend", { touches: [], changedTouches: [mk(200 + dx)], bubbles: true }));
     }, dx);
     await swipe(-120);
-    assert(await page.textContent("[data-lightbox-count]") === "4 / 7", "swipe left should go forward");
+    assert(await page.textContent("[data-lightbox-count]") === "4 / 6", "swipe left should go forward");
     await swipe(140);
-    assert(await page.textContent("[data-lightbox-count]") === "3 / 7", "swipe right should go back");
+    assert(await page.textContent("[data-lightbox-count]") === "3 / 6", "swipe right should go back");
     await page.tap("[data-lightbox-close].lightbox__btn");
     await page.waitForSelector("[data-lightbox]", { state: "hidden" });
     await page.context().close();
@@ -395,7 +408,7 @@ function contrast(hex1, hex2) {
     const link = page.locator("[data-map-link]");
     const href = await link.getAttribute("href");
     assert(/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/.test(href), href);
-    assert(decodeURIComponent(href).includes("Versal to‘yxonasi, Farg‘ona shahri"), href);
+    assert(decodeURIComponent(href).includes("Qo‘qon shahri"), href);
     assert(await link.getAttribute("target") === "_blank" && /noopener/.test(await link.getAttribute("rel")), "target/rel");
     assert(/Xaritada ochish/.test(await link.textContent()), "link text");
     await page.context().close();
@@ -544,10 +557,11 @@ function contrast(hex1, hex2) {
     await openInvitation(page);
     const s = await page.evaluate(() => ({
       reveal: getComputedStyle(document.querySelector("#hikoya .reveal")).opacity,
-      drift: getComputedStyle(document.querySelector(".cloud-track")).animationName,
+      drift: getComputedStyle(document.querySelector(".scene__film")).animationName,
+      films: [...document.querySelectorAll("video[data-video]")].every((v) => v.paused),
       y: window.scrollY
     }));
-    assert(s.reveal === "1" && s.drift === "none" && s.y > 200, JSON.stringify(s));
+    assert(s.reveal === "1" && s.drift === "none" && s.films, JSON.stringify(s));
     await page.context().close();
   });
 
@@ -594,7 +608,7 @@ function contrast(hex1, hex2) {
     await page.goto("file://" + path.join(ROOT, "index.html"), { waitUntil: "load" });
     await page.click("[data-open-invitation]", { force: true });
     await page.waitForFunction(() => !document.documentElement.classList.contains("is-locked"));
-    const ok = await page.evaluate(() => document.querySelector("#tafsilotlar .section-title").textContent.includes("Umida"));
+    const ok = await page.evaluate(() => document.querySelector("#tafsilotlar .section-title").textContent.includes("Maftun"));
     assert(ok, "content did not render from file://");
     assert(!page.problems.filter((p) => !/requestfailed/.test(p)).length, page.problems.join("\n"));
     await page.context().close();

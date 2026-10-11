@@ -2,44 +2,74 @@
    B–I · Content sections
    ========================================================================== */
 
-/* ---------- B · Invitation ---------- */
-.invitation {
-  text-align: center;
-  background: linear-gradient(180deg, var(--ivory), var(--cream) 140%);
-}
+/* ---------- B · Invitation: glass card over a film ---------- */
+.invitation { text-align: center; padding-block: clamp(5rem, 14vw, 9rem); }
 .invitation:focus { outline: none; }
+.glass {
+  background: linear-gradient(160deg, rgb(28 22 17 / 0.58), rgb(14 12 10 / 0.42));
+  -webkit-backdrop-filter: blur(6px) saturate(1.15);
+  backdrop-filter: blur(6px) saturate(1.15);
+  box-shadow: 0 40px 90px -40px rgb(0 0 0 / 0.85), inset 0 1px 0 rgb(255 240 210 / 0.08);
+}
+.invitation__card { padding: clamp(3rem, 9vw, 4.5rem) clamp(1.6rem, 7vw, 4rem); }
 .invitation__greeting {
-  margin-top: 1.6rem;
+  margin-top: 1.4rem;
   font-family: var(--serif);
   font-weight: 400;
   font-size: var(--fs-h2);
-  line-height: 1.05;
-  letter-spacing: -0.01em;
+  line-height: 1.08;
 }
 .invitation__lead {
-  max-width: 34rem;
-  margin: 1.6rem auto 0;
+  max-width: 30rem;
+  margin: 1.4rem auto 0;
   font-family: var(--serif);
   font-style: italic;
   font-size: var(--fs-lead);
   line-height: 1.4;
-  color: var(--taupe);
+  color: var(--on-dark);
   text-wrap: balance;
 }
+.invitation__body { margin-top: 1.8rem; }
 .invitation__body p {
-  max-width: 36rem;
+  max-width: 32rem;
   margin: 0 auto;
-  color: var(--taupe);
+  color: var(--on-dark-soft);
   text-wrap: pretty;
 }
-.invitation__body p + p { margin-top: 1.1rem; }
+.invitation__body p + p { margin-top: 1rem; }
 .invitation__signature {
-  margin-top: 2.6rem;
+  margin-top: 2.2rem;
   font-family: var(--serif);
   font-style: italic;
   font-size: 1.35rem;
-  color: var(--gold-deep);
+  color: var(--gold-light);
 }
+
+/* ---------- Gold marquee band ---------- */
+.marquee {
+  overflow: hidden;
+  padding: 1.15rem 0;
+  background: var(--noir);
+  border-block: 1px solid rgb(214 186 124 / 0.28);
+}
+.marquee--light { background: var(--ivory); border-color: var(--line); --foil: var(--foil-light); }
+.marquee__track {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+}
+.marquee__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.6rem;
+  padding-right: 1.6rem;
+  font-family: var(--serif);
+  font-size: clamp(1.3rem, 4vw, 1.9rem);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+.marquee__item i { width: 6px; height: 6px; transform: rotate(45deg); background: var(--foil-dark); }
+@keyframes marquee { to { transform: translate3d(-50%, 0, 0); } }
 
 /* ---------- C · Our story (timeline) ---------- */
 .story { background: var(--cream); }
@@ -63,7 +93,7 @@
 .timeline__rail span {
   position: absolute;
   inset: 0;
-  background: linear-gradient(var(--gold), var(--gold-deep));
+  background: linear-gradient(#E9D29A, #B8913F 50%, #8A6A2E);
   transform-origin: top;
   transform: scaleY(var(--progress, 0));
 }
@@ -82,19 +112,22 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--cream);
-  border: 1px solid var(--gold);
-  box-shadow: 0 0 0 5px var(--cream);
+  background: var(--foil-dark);
+  border: 0;
+  transform: rotate(45deg);
+  border-radius: 1px;
+  box-shadow: 0 0 0 5px var(--cream), 0 0 14px 2px rgb(201 158 70 / 0.45);
 }
 .chapter__media {
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--champagne);
+  border-radius: var(--arch);
+  background: var(--noir);
   aspect-ratio: 4 / 5;
-  max-width: 26rem;
+  max-width: 24rem;
+  box-shadow: 0 0 0 1px var(--gold-line), 0 0 0 7px var(--cream), 0 0 0 8px var(--gold-line), 0 40px 70px -40px rgb(47 40 34 / 0.55);
 }
-.chapter:nth-of-type(even) .chapter__media { border-radius: var(--arch); }
+.chapter__media video,
 .chapter__media img {
   width: 100%;
   height: 100%;
@@ -153,9 +186,9 @@
   line-height: 0.9;
 }
 .details__day {
-  font-size: clamp(7rem, 30vw, 13rem);
-  color: var(--ink);
+  font-size: clamp(7.5rem, 32vw, 14rem);
   letter-spacing: -0.02em;
+  padding-inline: 0.04em;
 }
 .details__month {
   margin-top: 0.4rem;
@@ -215,73 +248,65 @@
   .details__item { grid-template-columns: 1fr; gap: 0.35rem; }
 }
 
-/* ---------- E · Countdown ---------- */
-.countdown {
-  overflow: hidden;
-  text-align: center;
-  background: linear-gradient(180deg, var(--ivory) 0%, #EFE4D5 55%, var(--champagne) 100%);
-}
+/* ---------- E · Countdown over the moonlit film ---------- */
+.countdown { text-align: center; padding-block: clamp(6rem, 16vw, 10rem); }
 .countdown .container { position: relative; z-index: 1; }
-.countdown__sky {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.cloud-layer--band {
-  --ratio: 0.2734;
-  --drift: 200s;
-  bottom: -3%;
-  opacity: 0.6;
-}
-.cloud-layer--band .cloud-track { background-image: url("../assets/clouds/clouds-near.webp"); }
-
 .countdown__timer {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  max-width: 46rem;
+  max-width: 44rem;
   margin: 0 auto;
 }
 .countdown__cell {
+  position: relative;
   display: grid;
-  gap: 0.5rem;
-  padding: 0.5rem 0.25rem;
+  gap: 0.6rem;
+  padding: 0.6rem 0.25rem;
 }
-.countdown__cell + .countdown__cell { border-left: 1px solid var(--line); }
+.countdown__cell + .countdown__cell::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 1px;
+  background: linear-gradient(transparent, var(--gold-line), transparent);
+}
 .countdown__value {
   font-family: var(--serif);
-  font-size: clamp(2.6rem, 11vw, 5.6rem);
+  font-size: clamp(2.8rem, 12vw, 5.8rem);
   line-height: 1;
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--ink);
+  filter: drop-shadow(0 4px 22px rgb(0 0 0 / 0.5));
 }
 .countdown__label {
   font-size: 0.68rem;
   font-weight: 500;
-  letter-spacing: 0.24em;
-  margin-right: -0.24em;
+  letter-spacing: 0.26em;
+  margin-right: -0.26em;
   text-transform: uppercase;
-  color: var(--taupe);
+  color: var(--on-dark-soft);
 }
 .countdown__message {
-  max-width: 34rem;
+  max-width: 32rem;
   margin: 0 auto;
   font-family: var(--serif);
   font-style: italic;
   font-size: var(--fs-lead);
   line-height: 1.4;
-  color: var(--taupe);
+  color: var(--on-dark);
   text-wrap: balance;
 }
 .countdown__note {
   margin-top: 2.2rem;
   font-size: var(--fs-sm);
   letter-spacing: 0.08em;
-  color: var(--taupe);
+  color: var(--on-dark-soft);
 }
+.countdown .details__actions { margin-top: 2rem; }
 
 /* ---------- F · Gallery ---------- */
-/* Starts in the same warm white as the countdown's cloud bank, so there is no seam. */
-.gallery { background: linear-gradient(180deg, #F8F2EA, var(--cream) 30%, var(--ivory)); }
+.gallery { background: linear-gradient(180deg, var(--ivory), var(--cream) 60%, var(--ivory)); }
 .gallery__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -316,6 +341,17 @@
   opacity: 1;
   box-shadow: inset 0 0 0 3px var(--ivory), inset 0 0 0 5px var(--gold-deep);
 }
+.gallery__btn::before {
+  /* Inner gold hairline on every photo */
+  content: "";
+  position: absolute;
+  inset: 8px;
+  z-index: 1;
+  border: 1px solid rgb(240 220 170 / 0.55);
+  pointer-events: none;
+  transition: inset 0.6s var(--ease), border-color 0.6s var(--ease);
+}
+.gallery__btn:hover::before { inset: 12px; border-color: rgb(246 231 188 / 0.9); }
 .gallery__btn::after {
   content: "";
   position: absolute;
@@ -328,11 +364,12 @@
 .gallery__btn:hover::after { opacity: 1; }
 
 @media (min-width: 1024px) {
-  .gallery__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .gallery__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* ---------- G · Location ---------- */
-.location { background: var(--ivory); }
+.location { background: var(--noir); color: var(--on-dark); }
+.location .eyebrow { color: var(--gold-light); }
 .location__grid {
   display: grid;
   gap: clamp(2.5rem, 6vw, 5rem);
@@ -346,7 +383,8 @@
   max-width: 24rem;
   width: 100%;
   margin-inline: auto;
-  background: var(--champagne);
+  background: var(--noir-2);
+  box-shadow: 0 0 0 1px var(--gold-line), 0 0 0 8px var(--noir), 0 0 0 9px var(--gold-line), 0 50px 90px -40px rgb(0 0 0 / 0.9);
 }
 .location__photo img { width: 100%; height: 100%; object-fit: cover; }
 .location__card { text-align: center; }
@@ -356,22 +394,23 @@
   font-weight: 400;
   font-size: var(--fs-h2);
   line-height: 1.05;
+  color: var(--on-dark);
 }
 .location__city {
   margin-top: 0.9rem;
   font-family: var(--serif);
   font-style: italic;
   font-size: var(--fs-lead);
-  color: var(--taupe);
+  color: var(--gold-light);
 }
-.location__address { margin-top: 0.6rem; color: var(--taupe); }
-.location__address:empty { display: none; }
+.location__address { margin-top: 0.6rem; color: var(--on-dark-soft); }
+.location__address:empty, .location__city:empty { display: none; }
 .location__time {
   margin: 1.6rem 0 2.2rem;
   font-size: var(--fs-sm);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--taupe);
+  color: var(--on-dark-soft);
 }
 
 @media (min-width: 820px) {
@@ -385,133 +424,53 @@
 .rsvp { background: linear-gradient(180deg, var(--ivory), var(--cream)); }
 
 /* ---------- I · Final scene ---------- */
-.finale {
-  position: relative;
-  min-height: var(--screen);
-  display: grid;
-  overflow: hidden;
-  isolation: isolate;
-  color: var(--ivory);
-  background: var(--night);
-}
-.finale__sky { display: none; }
-.finale__photo {
-  position: absolute;
-  inset: -8% 0;
-  z-index: 0;
-  translate: 0 var(--py, 0px);
-}
-.finale__photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 62%;
-}
-.finale__photo::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgb(31 26 22 / 0.72) 0%, rgb(31 26 22 / 0.45) 30%, rgb(31 26 22 / 0.08) 52%, rgb(31 26 22 / 0.15) 66%, rgb(31 26 22 / 0.7) 100%);
-}
+.finale { text-align: center; }
 .finale__content {
   position: relative;
   z-index: 2;
-  align-self: start;
-  padding: calc(var(--section-y) * 0.8) var(--gutter) 0;
-  text-align: center;
+  width: 100%;
+  max-width: 40rem;
+  padding: 6rem var(--gutter) 5rem;
 }
-@media (max-width: 400px) {
-  .finale__content { padding-top: calc(var(--section-y) * 0.55); }
-  .finale__message { margin-top: 1rem; }
-}
-/* Short phones: keep the text clear of the silhouettes (the footer repeats the date). */
-@media (max-width: 899px) and (max-height: 720px) {
-  .finale__content { padding-top: 2.75rem; }
-  .finale__date { display: none; }
-}
-.finale .eyebrow { color: #F1E4CC; }
+.finale__crest { width: 7rem; height: 7rem; margin: 0 auto 0.6rem; display: block; filter: drop-shadow(0 4px 18px rgb(0 0 0 / 0.5)); }
 .finale__names {
-  margin-top: 1.2rem;
+  margin-top: 1rem;
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(2.4rem, 10.4vw, 7rem); /* one line on a 360px phone */
-  line-height: 1;
-  letter-spacing: 0.01em;
-  text-shadow: 0 2px 30px rgb(31 26 22 / 0.35);
+  font-size: clamp(2.5rem, 11vw, 6.4rem);
+  line-height: 1.02;
+  filter: drop-shadow(0 4px 26px rgb(0 0 0 / 0.55));
 }
-.finale__names em { font-style: italic; color: #EBD6B0; }
+.finale__names em { font-style: italic; }
 .finale__message {
-  max-width: 30rem;
-  margin: 1.4rem auto 0;
+  max-width: 28rem;
+  margin: 1.6rem auto 0;
   font-family: var(--serif);
   font-style: italic;
   font-size: var(--fs-lead);
   line-height: 1.4;
-  color: #F6EEE2;
-  text-shadow: 0 1px 18px rgb(31 26 22 / 0.5);
+  color: var(--on-dark);
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.6);
   text-wrap: balance;
 }
 .finale__date {
-  margin-top: 1.4rem;
+  margin-top: 1.6rem;
   font-size: var(--fs-xs);
-  letter-spacing: 0.42em;
-  margin-right: -0.42em;
-  color: #E9DCC6;
-}
-.finale__front { z-index: 1; }
-.finale__front .cloud-layer--near { bottom: -6%; opacity: 0.9; }
-
-/* Wide screens: the portrait photograph becomes a tall arch in a sunset-lit sky. */
-@media (min-width: 900px) {
-  .finale {
-    color: var(--ink);
-    background: linear-gradient(180deg, #E7D9C8 0%, #F2E8DB 50%, var(--ivory) 100%);
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 6rem var(--gutter) 8rem;
-  }
-  .finale__sky { display: block; }
-  .finale__photo {
-    position: relative;
-    inset: auto;
-    grid-column: 2;
-    grid-row: 1;
-    height: min(78vh, 46rem);
-    aspect-ratio: 9 / 16;
-    border-radius: var(--arch);
-    overflow: hidden;
-    box-shadow: 0 40px 80px -40px rgb(47 40 34 / 0.6);
-  }
-  .finale__photo::after { background: linear-gradient(180deg, transparent 60%, rgb(31 26 22 / 0.35)); }
-  .finale__content {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    align-self: center;
-    padding: 0;
-    display: grid;
-    grid-template-columns: 1fr min(78vh * 9 / 16, 26rem) 1fr;
-    column-gap: clamp(2rem, 4vw, 4rem);
-    text-align: left;
-  }
-  .finale__content > * { grid-column: 3; }
-  .finale__content > .finale__names { grid-column: 3; }
-  .finale .eyebrow { color: var(--gold-deep); margin-right: 0; }
-  .finale__names { color: var(--ink); text-shadow: none; font-size: clamp(3.2rem, 5.6vw, 5.6rem); }
-  .finale__names em { color: var(--gold-deep); }
-  .finale__message { margin-left: 0; color: var(--taupe); text-shadow: none; }
-  .finale__date { color: var(--taupe); }
+  letter-spacing: 0.45em;
+  margin-right: -0.45em;
+  color: var(--gold-light);
 }
 
 /* ---------- Footer ---------- */
 .footer {
-  padding: 2.5rem var(--gutter) calc(2.5rem + env(safe-area-inset-bottom, 0px));
+  padding: 2.5rem var(--gutter) calc(5rem + env(safe-area-inset-bottom, 0px));
   text-align: center;
   font-size: var(--fs-xs);
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--taupe);
-  background: var(--ivory);
+  color: var(--on-dark-soft);
+  background: var(--noir);
+  border-top: 1px solid rgb(214 186 124 / 0.2);
 }
 .footer__credit { margin-top: 0.6rem; letter-spacing: 0.12em; text-transform: none; }
 .footer__credit:empty { display: none; }

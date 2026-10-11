@@ -16,6 +16,18 @@
   --line: rgb(102 87 72 / 0.22);
   --night: #1F1A16;
 
+  /* Luxury noir + champagne gold */
+  --noir: #0E0C0A;
+  --noir-2: #17130F;
+  --gold-light: #E6CB8F;     /* gold text on noir (AAA) */
+  --gold-line: rgb(214 186 124 / 0.55);
+  --on-dark: #F3EADB;
+  --on-dark-soft: #CDBFA9;
+  /* Foil gradients: brighter on noir, deeper on ivory so text keeps contrast. */
+  --foil-dark: linear-gradient(100deg, #A9823A 0%, #F0DCA6 18%, #C29A4B 36%, #FFF1C9 50%, #B48C41 64%, #EDD49A 82%, #A9823A 100%);
+  --foil-light: linear-gradient(100deg, #6B4F22 0%, #A9823F 20%, #7A5C2A 38%, #B8924C 50%, #6E5225 64%, #A07A38 82%, #6B4F22 100%);
+  --foil: var(--foil-light);
+
   /* Type */
   --serif: "Instrument Serif", "Cormorant Garamond", "Times New Roman", Georgia, serif;
   --sans: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -160,6 +172,46 @@ ol, ul { padding: 0; list-style: none; }
   color: var(--ink);
   text-wrap: balance;
 }
+.section-title--light { color: var(--on-dark); }
+.section-title--light em { color: var(--gold-light) !important; }
+.eyebrow--light { color: var(--gold-light); }
+
+/* Gold foil lettering (animated sheen). Scenes switch to the brighter foil. */
+.gold-text {
+  background-image: var(--foil);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: foil 9s linear infinite;
+}
+.scene, .finale, .curtain, .marquee { --foil: var(--foil-dark); }
+
+/* Gold line ornaments */
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.gold-divider { display: flex; justify-content: center; margin: 1.6rem auto 0; }
+.gold-divider svg { width: min(15rem, 70%); height: 1rem; overflow: visible; }
+
+/* Thin gold frame with filigree corners */
+.frame { position: relative; }
+.frame::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid var(--gold-line);
+  pointer-events: none;
+}
+.frame__corner { position: absolute; width: 46px; height: 46px; pointer-events: none; }
+.frame__corner svg { width: 100%; height: 100%; display: block; }
+.frame__corner--tl { top: 0; left: 0; }
+.frame__corner--tr { top: 0; right: 0; transform: scaleX(-1); }
+.frame__corner--bl { bottom: 0; left: 0; transform: scaleY(-1); }
+.frame__corner--br { bottom: 0; right: 0; transform: scale(-1, -1); }
+
+/* Gold-rimmed arch for photos and films */
+.arch-frame { box-shadow: 0 0 0 1px var(--gold-line), 0 0 0 7px var(--ivory), 0 0 0 8px var(--gold-line), 0 40px 70px -40px rgb(47 40 34 / 0.55); }
+
 .section-title em, .serif-em {
   font-style: italic;
   color: var(--gold-deep);
@@ -241,6 +293,27 @@ ol, ul { padding: 0; list-style: none; }
 }
 .btn--primary:hover { border-color: var(--gold-deep); box-shadow: 0 14px 30px -18px rgb(47 40 34 / 0.6); }
 .btn--ghost { --btn-hover-bg: var(--ink); }
+/* Gold buttons: foil fill with a light sweep; outline variant for dark scenes. */
+.btn--gold {
+  --btn-fg: #241A0C;
+  --btn-hover-bg: #F6E5B5;
+  --btn-hover-fg: #241A0C;
+  border: 0;
+  background: var(--foil-dark);
+  background-size: 220% 100%;
+  box-shadow: 0 0 0 1px rgb(255 240 200 / 0.35) inset, 0 18px 40px -18px rgb(201 158 70 / 0.65);
+  animation: foil 6s linear infinite;
+}
+.btn--gold-outline {
+  --btn-fg: var(--gold-light);
+  --btn-hover-bg: var(--gold-light);
+  --btn-hover-fg: #241A0C;
+  border-color: var(--gold-line);
+}
+@keyframes foil {
+  from { background-position: 0% 50%; }
+  to { background-position: 220% 50%; }
+}
 .btn--block { width: 100%; }
 .btn[disabled], .btn[aria-disabled="true"] { cursor: progress; }
 

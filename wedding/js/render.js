@@ -35,6 +35,59 @@
     }).join("");
   }
 
+  /** Silent looping film; js/video.js loads and plays it only while it's on screen. */
+  function film(id, cls) {
+    var cfg = L.view.cfg;
+    var meta = (cfg.videos || {})[id];
+    if (!meta) {
+      console.warn("[taklifnoma] Video id \"" + id + "\" is not defined in config.videos.");
+      return "";
+    }
+    return '<video class="' + cls + '" muted loop playsinline preload="none" disablepictureinpicture' +
+      ' poster="' + L.asset("assets/video/" + id + ".webp") + '"' +
+      ' data-video="' + L.asset("assets/video/" + id + ".mp4") + '"' +
+      ' data-video-webm="' + L.asset("assets/video/" + id + ".webm") + '"' +
+      ' aria-label="' + L.escapeHtml(meta.alt || "") + '"></video>';
+  }
+
+  /** A scene's background: a film from config.videos, or a photo from config.images
+      (photos get the same slow cinematic drift, so every scene feels alive). */
+  function renderScenes(cfg) {
+    var scenes = cfg.scenes || {};
+    L.$$("[data-scene]").forEach(function (slot) {
+      var id = scenes[slot.getAttribute("data-scene")];
+      var isFilm = id && (cfg.videos || {})[id];
+      var isPhoto = id && !isFilm && (cfg.images || {})[id];
+      var poster = isFilm ? L.asset("assets/video/" + id + ".webp") : isPhoto ? L.largest(id) : "";
+      var media = isFilm ? film(id, "scene__film")
+        : isPhoto ? L.picture(id, { sizes: "(min-width: 900px) 30rem, 100vw", eager: slot.getAttribute("data-scene") === "opening" })
+          .replace("<img ", '<img class="scene__film scene__still" ') : "";
+      if (id && !media) console.warn("[taklifnoma] Scene \"" + id + "\" is neither in config.videos nor config.images.");
+      slot.innerHTML = (poster ? '<div class="scene__backdrop" style="background-image:url(\'' + poster + '\')"></div>' : "") +
+        media + '<div class="scene__scrim"></div>';
+    });
+  }
+
+  function renderMarquee(v) {
+    var item = '<span class="marquee__item"><span class="gold-text">' + L.escapeHtml(v.text.namesInline) +
+      '</span><i></i><span class="gold-text">' + L.escapeHtml(v.text.dateDots.replace(/ · /g, ".")) + "</span><i></i></span>";
+    var half = new Array(7).join(item); // 6 copies; the track holds two halves for a seamless loop
+    L.$$("[data-marquee]").forEach(function (track) { track.innerHTML = half + half; });
+  }
+
+  /** Wrap each letter in a span so the names can be revealed letter by letter. */
+  function splitLetters() {
+    L.$$("[data-split]").forEach(function (el) {
+      var text = el.textContent;
+      el.setAttribute("aria-label", text);
+      el.innerHTML = Array.prototype.map.call(text, function (ch, i) {
+        // Outer span animates; inner span carries the foil (clip-text can't sit on an animated layer).
+        return '<span class="ch" aria-hidden="true" style="--i:' + i + '"><span class="ch__g">' +
+          (ch === " " ? "&nbsp;" : L.escapeHtml(ch)) + "</span></span>";
+      }).join("");
+    });
+  }
+
   function renderStory(cfg) {
     var list = L.$('[data-slot="story"]');
     var items = cfg.storyContent || [];
@@ -43,10 +96,9 @@
       return;
     }
     var html = items.map(function (item) {
-      var media = item.image
-        ? '<div class="chapter__media reveal reveal--image">' +
-          L.picture(item.image, { sizes: "(min-width: 820px) 26rem, 85vw" }) + "</div>"
-        : "";
+      var inner = item.video && (cfg.videos || {})[item.video] ? film(item.video, "chapter__film")
+        : item.image ? L.picture(item.image, { sizes: "(min-width: 820px) 26rem, 85vw" }) : "";
+      var media = inner ? '<div class="chapter__media reveal reveal--image">' + inner + "</div>" : "";
       return '<li class="chapter">' + media +
         '<div class="chapter__body">' +
         (item.label ? '<p class="chapter__label reveal">' + L.escapeHtml(item.label) + "</p>" : "") +
@@ -101,8 +153,9 @@
       invitationGreeting: inv.greeting || "",
       invitationLead: inv.lead || "",
       invitationSignature: inv.signature || "",
-      venueName: cfg.venueName || "",
-      venueCity: cfg.venueCity || "",
+      // No venue name yet → the city takes its place (and isn't repeated below it).
+      venueName: cfg.venueName || cfg.venueCity || "",
+      venueCity: cfg.venueName ? cfg.venueCity || "" : "",
       venueAddress: cfg.venueAddress || "",
       finalMessage: finalScene.message || "",
       musicCredit: cfg.backgroundMusic && cfg.musicTitle ? "Musiqa: " + cfg.musicTitle : "",
@@ -110,17 +163,20 @@
       rsvpLead: v.text.deadlineLong
         ? "Iltimos, " + v.text.deadlineLong + "gacha javobingizni bildiring — bu bizga tayyorgarlikni to‘g‘ri rejalashtirishga yordam beradi."
         : "Iltimos, ishtirokingizni oldindan bildiring — bu bizga tayyorgarlikni to‘g‘ri rejalashtirishga yordam beradi.",
-      rsvpContact: rsvp.contactNote || ""
+      rsvpContact: rsvp.contactNote || "",
+      initialGroom: v.groom.charAt(0),
+      initialBride: v.bride.charAt(0)
     }));
+    splitLetters();
+    renderScenes(cfg);
+    renderMarquee(v);
 
     renderInvitation(cfg);
     renderStory(cfg);
     renderGallery(cfg);
 
-    renderPhoto("[data-opening-photo]", opening.image, { eager: true, sizes: "(min-width: 900px) 20rem, 60vw" });
     var locationImage = cfg.locationImage === undefined ? "staircase" : cfg.locationImage;
     renderPhoto('[data-slot="locationPhoto"]', locationImage, { sizes: "(min-width: 820px) 24rem, 90vw" });
-    renderPhoto('[data-slot="finalePhoto"]', finalScene.image, { sizes: "(min-width: 900px) 26rem, 100vw" });
 
     var map = L.$("[data-map-link]");
     map.href = v.mapUrl;

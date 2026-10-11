@@ -1,5 +1,5 @@
 /* ==========================================================================
-   LOVE IN THE CLOUDS — central configuration
+   Asilbek & Maftun — central configuration
    --------------------------------------------------------------------------
    Every name, date, text, image, audio file, colour and link on the site
    comes from this file. Edit the values below; no other file needs to change.
@@ -7,9 +7,9 @@
    Paths are relative to index.html. Keep the quotes and commas intact.
    ========================================================================== */
 window.WEDDING_CONFIG = {
-  coupleNames: "Muxriddin & Umida",
-  groom: "Muxriddin",
-  bride: "Umida",
+  coupleNames: "Asilbek & Maftun",
+  groom: "Asilbek",
+  bride: "Maftun",
 
   // ⚠️ 6-oktabr 2026 sanasi o‘tib ketgan. Taklifnomani tarqatishdan oldin sanani
   //    tasdiqlang yoki yangilang. Countdown shu qiymatlardan hisoblanadi.
@@ -19,20 +19,20 @@ window.WEDDING_CONFIG = {
   // How long the celebration lasts; used for the calendar file and "to‘y bugun" state.
   eventDurationHours: 6,
 
-  venueName: "Versal to‘yxonasi",
-  venueCity: "Farg‘ona shahri",
+  // To‘yxona nomini kiriting (masalan "… to‘yxonasi"). Bo‘sh bo‘lsa, shahar nomi ko‘rsatiladi.
+  venueName: "",
+  venueCity: "Qo‘qon shahri",
   // Leave empty until the exact address is confirmed — nothing is shown when empty.
   venueAddress: "",
   // Paste the exact Google Maps / Yandex Maps link here. When empty, the button
   // opens a map search for venueName + venueCity (not a verified pin).
   mapUrl: "",
-  locationImage: "staircase", // photo next to the venue details ("" to hide)
+  locationImage: "lace-arm", // photo next to the venue details ("" to hide)
 
   opening: {
     eyebrow: "To‘yga taklifnoma",
     subtitle: "Hayotimizning eng go‘zal kunida sizni yonimizda ko‘rishdan mamnun bo‘lamiz.",
     button: "Taklifnomani ochish",
-    image: "window", // id from `images` below; set to "" for a sky-only opening
   },
 
   invitationText: {
@@ -43,44 +43,58 @@ window.WEDDING_CONFIG = {
       "Sizni nikoh to‘yimizga lutfan taklif etamiz. Hayotimizning bu yangi sahifasini eng yaqin insonlarimiz davrasida boshlash biz uchun katta baxt.",
       "Tashrifingiz va samimiy duolaringiz biz uchun eng qimmatli sovg‘a bo‘ladi.",
     ],
-    signature: "Hurmat bilan, Muxriddin va Umida",
+    signature: "Hurmat bilan, Asilbek va Maftun",
+  },
+
+  // Short silent films used as living backgrounds. Files: assets/video/{id}.mp4 (+ .webm)
+  // and {id}.webp (poster shown while loading, on data-saver / low-power mode and with
+  // reduced motion). Cut from the three videos supplied for this invitation.
+  videos: {
+    "window-kiss":    { alt: "Deraza yonida bir-birini quchgan juftlik" },
+    "window-smile":   { alt: "Deraza oldida jilmayib turgan kelin va kuyov" },
+    "window-embrace": { alt: "Deraza yonida quchoqlashgan kelin va kuyov" },
+    "hands":          { alt: "Kelinning qo‘li kuyovning qo‘lida" },
+    "street-spin":    { alt: "Shahar ko‘chasida kelinni ko‘tarib aylantirayotgan kuyov" },
+    "street-embrace": { alt: "Shahar ko‘chasida quchoqlashgan kelin va kuyov" },
+  },
+  // What lives behind each section: a film id (from `videos`) or a photo id (from
+  // `images`, gently animated). "" = plain noir.
+  scenes: {
+    opening: "window-kiss",
+    invitation: "love-letter",
+    countdown: "street-embrace",
+    finale: "roses-moon",
   },
 
   // "Bizning hikoyamiz". `label` is free text (a year, a season, a chapter).
+  // `video` (from `videos`) plays in the chapter's gold arch; `image` is the fallback.
   // The texts below are gentle placeholders — replace them with your own story.
   storyContent: [
-    { label: "I bob", title: "Ilk uchrashuv", text: "Bir qarash, bir tabassum — va ikkimiz ham hali nomini bilmagan iliq tuyg‘u.", image: "touch" },
-    { label: "II bob", title: "Bir-birimizni kashf etib", text: "Uzun suhbatlar, umumiy orzular va har kuni sekin-asta qurilgan ishonch.", image: "evening-hands" },
-    { label: "III bob", title: "Va’da", text: "Ota-onalarimizning duosi bilan uzuk taqildi. Javob esa faqat bitta edi.", image: "rings-blossom" },
-    { label: "IV bob", title: "Bir umrga", text: "Endi bu baxtni barcha yaqinlarimiz bilan baham ko‘rishga tayyormiz.", image: "first-dance" },
+    { label: "I bob", title: "Ilk uchrashuv", text: "Bir qarash, bir tabassum — va ikkimiz ham hali nomini bilmagan iliq tuyg‘u.", video: "hands" },
+    { label: "II bob", title: "Bir-birimizni kashf etib", text: "Uzun suhbatlar, umumiy orzular va har kuni sekin-asta qurilgan ishonch.", video: "street-spin" },
+    { label: "III bob", title: "Va’da", text: "Ota-onalarimizning duosi bilan uzuk taqildi. Javob esa faqat bitta edi.", video: "window-smile" },
+    { label: "IV bob", title: "Bir umrga", text: "Endi bu baxtni barcha yaqinlarimiz bilan baham ko‘rishga tayyormiz.", video: "window-embrace" },
   ],
 
   // Photo gallery (ids from `images`). Order = display order.
-  galleryImages: ["pink-embrace", "roses", "ring-on", "staircase", "bouquet-hands", "moon", "rose-sunset"],
+  galleryImages: ["roses-moon", "window-kiss-still", "hands-ring", "street-lift", "love-letter", "window-hug"],
 
   finalScene: {
-    image: "beach",
     message: "Sevgimizning eng go‘zal lahzasida yonimizda bo‘lishingizni chin dildan kutib qolamiz.",
   },
 
   // Every photo on the site. Files live in assets/images/{id}-{width}.webp.
   // `widths` lists the sizes on disk; `ratio` is width/height (prevents layout shift).
-  // These are the photos supplied with the earlier version of the site. If any of
-  // them is not your own photograph, replace it before publishing.
+  // The two photographs and the film stills supplied for this invitation.
   images: {
-    "window":        { widths: [480, 720], ratio: "4/5",     alt: "Baland ravoqli deraza oldida kelin va kuyov siluetlari" },
-    "touch":         { widths: [480, 720], ratio: "4/5",     alt: "Bir-biriga intilgan ikki qo‘l" },
-    "evening-hands": { widths: [480, 720], ratio: "3/4",     alt: "Kechki chiroqlar fonida nikoh uzugi taqilgan qo‘llar" },
-    "rings-blossom": { widths: [480, 720], ratio: "4/5",     alt: "Pushti gullar orasida turgan nikoh uzugi" },
-    "first-dance":   { widths: [480, 960], ratio: "3/4",     alt: "Kelin va kuyovning ilk raqsi" },
-    "pink-embrace":  { widths: [480, 720], ratio: "3/4",     alt: "Pushti libos fonida bir-birini quchgan qo‘llar" },
-    "roses":         { widths: [480, 720], ratio: "4/5",     alt: "Qizil atirgullar guldastasi yonida qo‘l ushlashib turgan juftlik" },
-    "ring-on":       { widths: [480, 720], ratio: "720/427", alt: "Kuyov kelinning barmog‘iga uzuk taqmoqda" },
-    "staircase":     { widths: [480, 720], ratio: "3/4",     alt: "Keng zinapoyada kelin va kuyov" },
-    "bouquet-hands": { widths: [480, 720], ratio: "4/5",     alt: "Oq libos va pushti guldasta ustida qo‘llar" },
-    "moon":          { widths: [480, 720], ratio: "9/16",    alt: "To‘lin oy fonida qo‘l ushlashgan juftlik siluetlari" },
-    "rose-sunset":   { widths: [480, 736], ratio: "4/5",     alt: "Quyosh botishida ochilgan qizil atirgul" },
-    "beach":         { widths: [480, 720], ratio: "9/16",    alt: "Quyosh botayotgan dengiz bo‘yida qo‘l ushlashgan juftlik siluetlari" },
+    "roses-moon":        { widths: [480, 720], ratio: "736/1308", alt: "Oy ostidagi oq atirgullar orasida qizil atirgul va kapalak" },
+    "love-letter":       { widths: [480, 720], ratio: "736/1308", alt: "Qizil atirgullar orasidagi muhabbat maktubi" },
+    "hands-ring":        { widths: [480, 720], ratio: "720/1174", alt: "Uzuk taqilgan qo‘llar bir-birini ushlab turibdi" },
+    "lace-arm":          { widths: [480, 720], ratio: "720/1174", alt: "To‘rli yengli kelin kuyovning qo‘lidan tutgan" },
+    "street-lift":       { widths: [480, 720], ratio: "9/16",     alt: "Shahar ko‘chasida kelinni ko‘targan kuyov" },
+    "street-hug":        { widths: [480, 720], ratio: "9/16",     alt: "Ko‘chada guldasta bilan quchoqlashgan juftlik" },
+    "window-kiss-still": { widths: [480, 720], ratio: "9/16",     alt: "Deraza yonida bir-biriga qaragan kelin va kuyov" },
+    "window-hug":        { widths: [480, 720], ratio: "9/16",     alt: "Deraza yonida quchoqlashgan kelin va kuyov" },
   },
 
   // Played only after the guest presses "Taklifnomani ochish".

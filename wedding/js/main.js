@@ -22,6 +22,8 @@
     var v = L.view;
 
     safely("render", L.render);
+    safely("video", L.video.init);
+    safely("dust", L.dust.init);
     safely("audio", L.audio.init);
     safely("opening", L.opening.init);
     safely("motion", L.motion.init);

@@ -1,6 +1,6 @@
-# Love in the Clouds — Muxriddin & Umida
+# Asilbek & Maftun — luxury wedding invitation
 
-A cinematic, mobile-first wedding invitation website. Pure HTML, CSS and vanilla
+A cinematic, mobile-first wedding invitation website in a minimal noir-and-gold style, with living film backgrounds. Pure HTML, CSS and vanilla
 JavaScript: no framework, no build step, no runtime dependencies.
 
 > **⚠️ Before sharing:** the configured date, **6 October 2026, 16:00**, has already
@@ -62,15 +62,17 @@ Update them together with `config.js`. After deploying, change `og:image` to an 
 `ratio` is width/height and reserves space before the image loads (no layout shift). In the
 gallery, images wider than 1.2:1 automatically span two columns.
 
-> **About the current photos:** they are the photos supplied with the earlier version of
-> this site (the `gh-pages` branch). Where they came from isn't recorded, so the alt
-> texts describe each scene without claiming it shows the couple. If any of them isn't
-> Muxriddin and Umida's own photograph, replace it before publishing.
+> **Media:** every film and photo comes from the three videos and two images supplied for
+> this invitation. The films are cut into six short scenes (`assets/video/`), and the
+> gallery uses the two images plus stills from the films. The alt texts describe each scene
+> without naming anyone. Two notes on the source files: the love-letter image carries a
+> small "IN.LOVE" Pinterest mark in its bottom-right corner, and the window film has a
+> small white heart sticker in the frame. Both were left exactly as supplied.
 
 ## Single-file version: `dist/index.html`
 
-`dist/index.html` is the **finished invitation in one file** (about 5 MB). All styles,
-scripts, fonts, photos, clouds and the music are embedded, so it opens by double-click,
+`dist/index.html` is the **finished invitation in one file** (about 10.5 MB, films included). All styles,
+scripts, fonts, photos, films and the music are embedded, so it opens by double-click,
 can be sent on Telegram, and can be uploaded to any host on its own. Settings are in the
 `config.js` block inside the file. After editing the multi-file sources, rebuild it with:
 
@@ -83,8 +85,8 @@ music downloaded only on click), so prefer it for hosting when possible.
 
 ## Video version: `dist/taklifnoma-video.mp4`
 
-A 72-second vertical video (1080×1920, 30 fps, H.264/AAC, about 11 MB) of the real site.
-It shows the opening, the tap on "Taklifnomani ochish", the cloud pass and every section
+A 73-second vertical video (1080×1920, 30 fps, H.264/AAC, about 17 MB) of the real site.
+It shows the velvet curtain, the tap on "Taklifnomani ochish", the curtain parting and every section
 through to the final scene, with "Asadov — Silencio" starting at the tap. It's ready for
 Telegram, Instagram Stories and WhatsApp.
 
@@ -106,14 +108,16 @@ wedding/
 ├── css/
 │   ├── fonts.css         self-hosted Instrument Serif + Manrope (OFL), latin + latin-ext
 │   ├── base.css          tokens, reset, typography, buttons
-│   ├── opening.css       sky, cloud layers, opening scene, cloud-pass transition
+│   ├── opening.css       video scenes, velvet curtain gate, gold crest, hero
 │   ├── sections.css      invitation, story, details, countdown, gallery, location, finale
 │   ├── components.css    top bar, menu, music toggle, lightbox, RSVP form
 │   └── motion.css        intro reveal, scroll reveals, reduced-motion rules
 ├── js/                   classic scripts (work from file:// too), loaded with defer
 │   ├── core.js           config → view model, time-zone maths, <picture> builder
-│   ├── render.js         fills the page from config
-│   ├── opening.js        the "Taklifnomani ochish" gate
+│   ├── render.js         fills the page from config (scenes, story films, marquee)
+│   ├── video.js          films: load near the screen, play while visible, poster fallback
+│   ├── dust.js           drifting gold dust (canvas, time-based, pauses off screen)
+│   ├── opening.js        the "Taklifnomani ochish" velvet-curtain gate
 │   ├── audio.js          music (user-initiated only), toggle, missing-file handling
 │   ├── motion.js         IntersectionObserver reveals, parallax, top bar
 │   ├── nav.js            section menu
@@ -123,12 +127,12 @@ wedding/
 │   └── main.js           boot (each feature isolated)
 ├── assets/
 │   ├── images/           WebP photos, two widths each
-│   ├── clouds/           generated, seamlessly tiling cloud layers (tools/generate_clouds.py)
+│   ├── video/            six silent film loops (MP4 + WebM) and their posters
 │   ├── audio/            Asadov Silencio.m4a
 │   ├── fonts/  icons/  textures/
 ├── docs/RSVP.md          connecting the form to Google Sheets / Formspree
 ├── tests/e2e.cjs         Playwright end-to-end suite
-└── tools/                static server, cloud generator, preview-image renderer
+└── tools/                static server, preview-image, single-file and video renderers
 ```
 
 ## 4. Music
@@ -170,18 +174,21 @@ take once the date is confirmed.
 
 ## 7. Design system (summary)
 
-- **Palette:** warm ivory `#FBF7F1`, cream `#F4ECE0`, champagne `#EADCC6`, beige `#DCCBB3`,
-  taupe `#665748` (text), ink `#2F2822`, brushed gold `#A88A5C` (lines and large accents
-  only) and `#7E6440` (small gold text, WCAG AA on ivory/cream).
-- **Type:** Instrument Serif for names and headings (tracked capitals on the opening,
-  italics for accents); Manrope for body text and controls; fluid `clamp()` scale; small
-  uppercase eyebrows with optical centring.
-- **Layout:** mobile-first single column, editorial two-column compositions from 820px,
-  arches echoing the opening photograph, generous whitespace, 72rem content width.
-- **Motion:** three drifting cloud layers with depth parallax, a slow camera push on
-  arrival, a staged title reveal, a cloud pass when the invitation opens, and
-  IntersectionObserver reveals with soft image zoom. Only `transform`, `opacity` and
-  `clip-path` are animated. Everything is disabled under `prefers-reduced-motion`.
+- **Style:** minimal luxury. Deep noir film scenes (`#0E0C0A`) alternate with calm ivory
+  sections, with champagne gold as the only accent.
+- **Gold accents:** an animated foil gradient on the names, headings and numerals; a laurel
+  monogram crest that draws itself; filigree corner frames on the invitation and RSVP cards;
+  gold-rimmed arches around films and photos; line-drawn gold dividers; diamond markers
+  on the story rail; a gold marquee band; and drifting gold dust.
+- **Films as backgrounds (`config.scenes`):** on phones they fill the section; on wide
+  screens the portrait film sits in a tall gold-rimmed arch over a blurred copy of itself,
+  so 720p sources stay sharp. Photos can be scenes too, with a slow cinematic drift.
+- **Motion:** a velvet curtain with a gold seam parts at the tap; names reveal letter by
+  letter; story films open like an iris; glass cards; warm light leaks over every film.
+  Only `transform`, `opacity`, `clip-path` and `filter` are animated. With
+  `prefers-reduced-motion`, Save-Data or iOS Low Power Mode, films stay on their posters
+  and the motion is switched off.
+- **Type:** Instrument Serif in tracked capitals and italics; Manrope for text and controls.
 
 ## 8. Testing
 
@@ -201,4 +208,4 @@ honesty, single submission on double submit, server errors and retry, and the cl
 state; reduced motion; semantic structure; colour contrast; and `file://` loading.
 
 Other tools: `npm run previews` re-renders the link-preview image and icon;
-`npm run clouds` regenerates the cloud layers (needs Python with Pillow and NumPy).
+`npm run build` rebuilds `dist/index.html`; `npm run video` re-renders the video.

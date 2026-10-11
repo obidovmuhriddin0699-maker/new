@@ -1,14 +1,14 @@
 """Bundle the whole site into one self-contained file: dist/index.html.
 
-Every stylesheet, script, font, photo, cloud layer, icon and the music track is
+Every stylesheet, script, font, photo, film, icon and the music track is
 inlined (data URIs), so the file opens by double-click, from Telegram, a USB
 stick or any host — no other files needed. config.js stays readable near the
 top of the file, so texts and settings can still be edited in place.
 
     python3 tools/build_single.py
 
-Photos are embedded once, at their largest size (the multi-file site keeps the
-smaller responsive sizes for faster mobile loading).
+Photos are embedded once, at their largest size, and films as MP4 only (the
+multi-file site keeps smaller responsive sizes, WebM copies and lazy loading).
 """
 
 import base64
@@ -21,7 +21,7 @@ OUT = ROOT / "dist" / "index.html"
 
 MIME = {
     ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml",
-    ".woff2": "font/woff2", ".m4a": "audio/mp4",
+    ".woff2": "font/woff2", ".m4a": "audio/mp4", ".mp4": "video/mp4",
 }
 
 
@@ -59,6 +59,11 @@ def asset_map() -> dict:
         assets[f"assets/images/{f.name}"] = data_uri(f)
     for f in (ROOT / "assets" / "audio").glob("*.m4a"):
         assets[f"assets/audio/{f.name}"] = data_uri(f)
+    # Films: H.264 MP4 (plays in every phone and desktop browser) + posters.
+    # The WebM copies are left out to keep the file size down.
+    for f in sorted((ROOT / "assets" / "video").glob("*")):
+        if f.suffix in (".mp4", ".webp"):
+            assets[f"assets/video/{f.name}"] = data_uri(f)
     return assets
 
 

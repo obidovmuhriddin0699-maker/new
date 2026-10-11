@@ -37,6 +37,8 @@ function loadPlaywright() {
 function pageClock() {
   let vt = 0;
   let seq = 1;
+  const setRealTimeout = window.setTimeout.bind(window);
+  const clearRealTimeout = window.clearTimeout.bind(window);
   const timers = [];
   const base = Date.now();
   window.setTimeout = (fn, ms, ...args) => {
@@ -64,13 +66,29 @@ function pageClock() {
         a.currentTime = (a.__vt == null ? 0 : a.__vt) + ms;
         a.__vt = a.currentTime;
       });
+      // Films: seek each visible one forward by exactly one frame (looping).
+      const seeks = [];
+      document.querySelectorAll("video[data-video]").forEach((v) => {
+        if (!v.src || !v.duration) return;
+        const r = v.getBoundingClientRect();
+        v.__vt = (v.__vt || 0) + ms / 1000;
+        if (r.bottom < 0 || r.top > innerHeight) return;
+        seeks.push(new Promise((done) => {
+          const t = setRealTimeout(done, 1500);
+          v.addEventListener("seeked", () => { clearRealTimeout(t); done(); }, { once: true });
+          v.currentTime = v.__vt % v.duration;
+        }));
+      });
+      return Promise.all(seeks);
     },
     reset() {
       document.getAnimations().forEach((a) => { a.pause(); a.currentTime = 0; a.__vt = 0; });
     }
   };
-  // The soundtrack is added by ffmpeg; in the page the player just "plays".
-  HTMLMediaElement.prototype.canPlayType = () => "probably";
+  // The soundtrack is added by ffmpeg; in the page the music player just "plays".
+  // Films never play on their own here — the clock seeks them frame by frame.
+  const canPlay = HTMLMediaElement.prototype.canPlayType;
+  HTMLMediaElement.prototype.canPlayType = function (t) { return /audio\//.test(t) ? "probably" : canPlay.call(this, t); };
   HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
   HTMLMediaElement.prototype.pause = function () {};
 }
@@ -105,9 +123,15 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
              animation: tap 0.8s cubic-bezier(.22,1,.36,1) forwards; }
       @keyframes tap { from { transform: scale(0.35); opacity: 1; } to { transform: scale(1.7); opacity: 0; } }`
   });
-  // Load every photo up front so nothing pops in mid-shot.
+  // Load every photo and film up front so nothing pops in mid-shot.
   await page.evaluate(async () => {
     document.querySelectorAll("img[loading=lazy]").forEach((i) => { i.loading = "eager"; });
+    const films = [...document.querySelectorAll("video[data-video]")];
+    films.forEach((v) => {
+      if (!v.src) v.src = v.canPlayType('video/mp4; codecs="avc1.64001F"') ? v.getAttribute("data-video") : v.getAttribute("data-video-webm");
+      v.preload = "auto";
+    });
+    await Promise.all(films.map((v) => (v.readyState >= 2 ? 0 : new Promise((r) => { v.addEventListener("loadeddata", r, { once: true }); v.addEventListener("error", r, { once: true }); }))));
     await Promise.all([...document.images].map((i) => (i.complete ? 0 : new Promise((r) => { i.onload = i.onerror = r; }))));
     await document.fonts.ready;
   });
@@ -121,6 +145,7 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
     for (let i = 0; i < n; i++) {
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       await page.evaluate((dt) => window.__clock.advance(dt), DT);
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
       await page.screenshot({ path: path.join(FRAMES, `f${String(frame).padStart(5, "0")}.jpg`), type: "jpeg", quality: 90 });
       frame++;
       videoTime += DT / 1000;
@@ -150,9 +175,9 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   }
 
   console.log("Rendering frames…");
-  // 1 · Opening: names reveal in the clouds.
-  await hold(4.4);
-  // 2 · Guest taps "Taklifnomani ochish" → music starts, camera passes through the clouds.
+  // 1 · The velvet curtain: the gold crest draws itself.
+  await hold(3.6);
+  // 2 · The guest taps "Taklifnomani ochish": music starts, the curtain parts, the hero comes alive.
   const btn = await page.locator("[data-open-invitation]").boundingBox();
   await page.evaluate(({ x, y }) => {
     const t = document.createElement("div");
@@ -163,35 +188,34 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   await hold(0.35);
   await page.evaluate(() => document.querySelector("[data-open-invitation]").click());
   musicAt = videoTime;
-  await hold(3.6);
+  await hold(5.6);
   // 3 · Walk through the invitation.
-  await visit("#taklif", 2.2);
-  await visit(".invitation__body", 2.2, 140);
-  await visit("#hikoya", 1.2);
-  for (let i = 1; i <= 4; i++) await visit(`.chapter:nth-of-type(${i})`, 1.7);
+  await visit(".invitation__card", 3.4, 24);
+  await visit(".invitation__body", 2.0, 220);
+  await visit("#hikoya", 1.4);
+  for (let i = 1; i <= 4; i++) await visit(`.chapter:nth-of-type(${i})`, 2.0);
   await visit("#tafsilotlar", 1.6);
-  await visit(".details__list", 2.0, 120);
-  await visit("#sanoq", 3.0, 20);
+  await visit(".details__list", 1.8, 120);
+  await visit("#sanoq", 3.4, 0);
   await visit("#galereya", 1.6);
   // Lightbox: open a photo, swipe through two more.
   await page.evaluate(() => document.querySelector("[data-gallery-index='0']").click());
   await page.waitForTimeout(250);
-  await hold(1.7);
+  await hold(1.6);
   for (let i = 0; i < 2; i++) {
     await page.keyboard.press("ArrowRight");
     await hold(0.3);
     await page.waitForTimeout(250);
-    await hold(1.4);
+    await hold(1.3);
   }
   await page.keyboard.press("Escape");
   await hold(0.6);
-  await visit(".gallery__item:nth-child(4)", 1.6);
-  await visit(".location__photo", 1.4);
-  await visit(".location__card", 2.4, 120);
-  await visit("#javob", 2.0);
-  await visit(".rsvp__card", 2.0, 90);
+  await visit(".gallery__item:nth-child(4)", 1.4);
+  await visit("#manzil", 2.6, 0);
+  await visit("#javob", 1.8);
+  await visit(".rsvp__card", 1.8, 90);
   // 4 · Final scene.
-  await visit("#yakun", 5.5, 0);
+  await visit("#yakun", 6.0, 0);
 
   await browser.close();
   server.close();

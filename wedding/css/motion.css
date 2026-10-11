@@ -4,38 +4,43 @@
    always visible if scripts fail to load.
    ========================================================================== */
 
-/* ---------- Opening intro: staged reveal on first paint ---------- */
-.js [data-intro] {
-  opacity: 0;
-  transform: translateY(16px);
-  animation: intro-in 1.4s var(--ease) both;
+/* ---------- Hero: revealed as the curtain parts ---------- */
+.js [data-hero] { opacity: 0; transform: translateY(18px); }
+.js.is-opened [data-hero] { animation: intro-in 1.6s var(--ease) both; }
+.js .opening__name[data-hero] { opacity: 1; transform: none; }
+.js .opening__name .ch { opacity: 0; transform: translateY(0.45em) scale(0.96); filter: blur(6px); }
+.js.is-opened .opening__name .ch {
+  animation: letter-in 1.5s var(--ease) both;
+  animation-delay: calc(var(--d, 0s) + var(--i) * 0.07s);
 }
-.js .opening__line[data-intro] { opacity: 1; transform: none; animation: none; }
-.js .opening__line[data-intro] > span {
-  transform: translateY(105%);
-  animation: line-up 1.6s var(--ease) both;
-}
-.js [data-intro="1"] { animation-delay: 0.6s; }
-.js [data-intro="2"] > span { animation-delay: 0.85s; }
-.js [data-intro="3"] { animation-delay: 1.25s; }
-.js [data-intro="4"] > span { animation-delay: 1.15s; }
-.js [data-intro="5"] { animation-delay: 1.6s; }
-.js [data-intro="6"] { animation-delay: 1.8s; }
-.js [data-intro="7"] { animation-delay: 2.1s; }
-.js .opening__photo { animation: photo-in 2.2s var(--ease) 0.3s both; }
+.js.is-opened [data-hero="1"] { animation-delay: 1.1s; }
+.js .opening__name[data-hero="2"] { --d: 1.35s; }
+.js.is-opened [data-hero="3"] { animation-delay: 2.1s; }
+.js .opening__name[data-hero="4"] { --d: 2.0s; }
+.js.is-opened [data-hero="5"] { animation-delay: 2.6s; }
+.js.is-opened [data-hero="6"] { animation-delay: 2.85s; }
+.js.is-opened [data-hero="7"] { animation-delay: 3.3s; }
 
 @keyframes intro-in {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: none; }
 }
-@keyframes line-up {
-  from { transform: translateY(105%); }
-  to { transform: none; }
+@keyframes letter-in {
+  from { opacity: 0; transform: translateY(0.45em) scale(0.96); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
 }
-@keyframes photo-in {
-  from { opacity: 0; transform: translateY(24px) scale(0.97); clip-path: inset(18% 0 0 0 round 999px 999px 0 0); }
-  to { opacity: 1; transform: none; clip-path: inset(0 0 0 0 round 999px 999px 0 0); }
-}
+
+/* Gold dividers draw outward from the diamond (clip, since <use> content can't be styled). */
+.js .gold-divider.reveal svg,
+.js .reveal .gold-divider svg { clip-path: inset(0 50% 0 50%); transition: clip-path 1.8s var(--ease) 0.3s; }
+.js .gold-divider.reveal.is-visible svg,
+.js .reveal.is-visible .gold-divider svg { clip-path: inset(0 0 0 0); }
+
+/* Films inside the story open like an iris. The clip sits on the film, not on the
+   observed frame: IntersectionObserver counts a clipped-away target as invisible. */
+.js .chapter__media.reveal--image { clip-path: none; }
+.js .chapter__media.reveal--image > * { clip-path: circle(0% at 50% 60%); transition: clip-path 1.8s var(--ease); }
+.js .chapter__media.reveal--image.is-visible > * { clip-path: circle(75% at 50% 50%); }
 
 /* ---------- Scroll reveals ---------- */
 .js .reveal {
@@ -57,8 +62,6 @@
 .js .reveal--image img { transform: scale(1.14); transition: transform 2.4s var(--ease); transition-delay: var(--delay, 0s); }
 .js .reveal--image.is-visible { clip-path: inset(0 0 0 0); }
 .js .reveal--image.is-visible img { transform: scale(1); }
-.js .chapter:nth-of-type(even) .reveal--image { clip-path: inset(12% 0 0 0 round 999px 999px 0 0); }
-.js .chapter:nth-of-type(even) .reveal--image.is-visible { clip-path: inset(0 0 0 0 round 999px 999px 0 0); }
 
 /* Gallery hover zoom must not fight the reveal transform. */
 .js .gallery .reveal--image.is-visible .gallery__btn:hover img { transform: scale(1.045); }
@@ -73,12 +76,16 @@
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
-  .cloud-track, .sky__light, .sky__glow, .opening__photo img, .opening__button::after, .scroll-cue i { animation: none !important; }
-  .js .reveal, .js .reveal--image, .js [data-intro], .js .opening__line > span {
+  .scene__film, .scene__media::after, .scroll-cue i, .gold-text, .btn--gold, .marquee__track { animation: none !important; }
+  .dust { display: none; }
+  .js .reveal, .js .reveal--image, .js [data-hero], .js .opening__name .ch {
     opacity: 1 !important;
     transform: none !important;
     clip-path: none !important;
   }
   .js .reveal--image img { transform: none !important; }
-  .opening__veil { display: none; }
+  .js .chapter__media.reveal--image > * { clip-path: none !important; }
+  .crest__stem, .crest__ring { stroke-dashoffset: 0 !important; }
+  .crest__leaf, .crest__mono { opacity: 1 !important; }
+  .js .gold-divider svg { clip-path: none !important; }
 }

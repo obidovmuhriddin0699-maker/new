@@ -8,7 +8,6 @@
     "test": "node tests/e2e.cjs",
     "test:setup": "npx playwright install chromium",
     "previews": "node tools/render-previews.cjs",
-    "clouds": "python3 tools/generate_clouds.py",
     "build": "python3 tools/build_single.py",
     "video": "node tools/render-video.cjs"
   },

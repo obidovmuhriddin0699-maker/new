@@ -116,20 +116,10 @@
     update();
   }
 
-  /** Pause cloud drift in scenes that are off screen (saves battery on phones). */
-  function initCloudPausing() {
-    if (!("IntersectionObserver" in window)) return;
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) { e.target.classList.toggle("is-offscreen", !e.isIntersecting); });
-    }, { rootMargin: "100px 0px" });
-    L.$$(".opening, .countdown, .finale").forEach(function (el) { io.observe(el); });
-  }
-
   window.LITC.motion = {
     init: function () {
       initReveals();
       initScrollEffects();
-      initCloudPausing();
     }
   };
 })();
