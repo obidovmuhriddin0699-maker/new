@@ -67,6 +67,20 @@ gallery, images wider than 1.2:1 automatically span two columns.
 > texts describe each scene without claiming it shows the couple. If any of them isn't
 > Muxriddin and Umida's own photograph, replace it before publishing.
 
+## Single-file version: `dist/index.html`
+
+`dist/index.html` is the **finished invitation in one file** (about 5 MB). All styles,
+scripts, fonts, photos, clouds and the music are embedded, so it opens by double-click,
+can be sent on Telegram, and can be uploaded to any host on its own. Settings are in the
+`config.js` block inside the file. After editing the multi-file sources, rebuild it with:
+
+```bash
+npm run build        # python3 tools/build_single.py
+```
+
+The multi-file folder loads faster on phones (responsive image sizes, lazy loading,
+music downloaded only on click), so prefer it for hosting when possible.
+
 ## 3. Structure
 
 ```

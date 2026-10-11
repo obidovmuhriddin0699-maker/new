@@ -109,7 +109,7 @@
         markUnavailable("this browser cannot play " + type);
         return;
       }
-      audio.src = encodeURI(cfg.backgroundMusic);
+      audio.src = L.asset(cfg.backgroundMusic);
       audio.addEventListener("error", function () {
         var code = audio.error ? audio.error.code : 0;
         markUnavailable(code === 4 ? "file missing or unsupported (" + cfg.backgroundMusic + ")" : "media error " + code);

@@ -11,6 +11,9 @@
 
   var reducedMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 
+  /** Asset URL: inlined data URI in the single-file build (dist/index.html), else the encoded path. */
+  function asset(path) { return (window.__ASSETS && window.__ASSETS[path]) || encodeURI(path); }
+
   function $(selector, root) { return (root || document).querySelector(selector); }
   function $$(selector, root) { return Array.prototype.slice.call((root || document).querySelectorAll(selector)); }
   function pad(n) { return String(n).padStart(2, "0"); }
@@ -135,6 +138,7 @@
   window.LITC = {
     $: $,
     $$: $$,
+    asset: asset,
     pad: pad,
     escapeHtml: escapeHtml,
     zonedTime: zonedTime,
@@ -168,8 +172,10 @@
       var max = widths[widths.length - 1];
       var ratio = String(item.ratio || "4/5").split("/").map(Number);
       var height = Math.round(max * ratio[1] / ratio[0]);
-      var src = function (w) { return encodeURI("assets/images/" + id + "-" + w + ".webp"); };
-      var srcset = widths.map(function (w) { return src(w) + " " + w + "w"; }).join(", ");
+      var src = function (w) { return asset("assets/images/" + id + "-" + w + ".webp"); };
+      // Single-file build embeds only the largest size, so no srcset there.
+      var srcset = window.__ASSETS ? src(max) + " " + max + "w"
+        : widths.map(function (w) { return src(w) + " " + w + "w"; }).join(", ");
       var alt = escapeHtml(opts.alt != null ? opts.alt : item.alt || "");
       var loading = opts.eager ? 'fetchpriority="high"' : 'loading="lazy"';
       return '<img src="' + src(max) + '" srcset="' + srcset + '" sizes="' + (opts.sizes || "100vw") + '"' +
@@ -181,7 +187,7 @@
     largest: function (id) {
       var item = (window.LITC.view.cfg.images || {})[id] || {};
       var widths = item.widths || [720];
-      return encodeURI("assets/images/" + id + "-" + Math.max.apply(null, widths) + ".webp");
+      return asset("assets/images/" + id + "-" + Math.max.apply(null, widths) + ".webp");
     },
 
     /** Lock / unlock page scrolling (menu, lightbox). Nested calls are counted. */
