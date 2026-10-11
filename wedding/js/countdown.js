@@ -89,6 +89,18 @@
       }
       calendarBtn.addEventListener("click", downloadCalendar);
 
+      /** Update a digit group; when it changes, its wrapper rolls the new value in. */
+      function setCell(unit, text) {
+        var el = cells[unit];
+        if (el.textContent === text) return;
+        el.textContent = text;
+        if (L.reducedMotion()) return;
+        var wrap = el.parentElement;
+        wrap.classList.remove("is-rolling");
+        void wrap.offsetWidth; // restart the animation
+        wrap.classList.add("is-rolling");
+      }
+
       function setPhase(phase) {
         if (phase === lastPhase) return;
         lastPhase = phase;
@@ -113,10 +125,10 @@
         if (now >= v.startMs) { setPhase("during"); schedule(); return; }
         setPhase("before");
         var parts = split(v.startMs - now);
-        cells.days.textContent = String(parts.days);
-        cells.hours.textContent = L.pad(parts.hours);
-        cells.minutes.textContent = L.pad(parts.minutes);
-        cells.seconds.textContent = L.pad(parts.seconds);
+        setCell("days", String(parts.days));
+        setCell("hours", L.pad(parts.hours));
+        setCell("minutes", L.pad(parts.minutes));
+        setCell("seconds", L.pad(parts.seconds));
         // Screen readers hear a calm summary once a minute, not every second.
         var summary = "To‘ygacha " + parts.days + " " + LIVE_UNITS.days + ", " + parts.hours + " " +
           LIVE_UNITS.hours + " va " + parts.minutes + " " + LIVE_UNITS.minutes + " qoldi.";

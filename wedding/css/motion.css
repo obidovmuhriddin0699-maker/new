@@ -85,7 +85,9 @@
   }
   .js .reveal--image img { transform: none !important; }
   .js .chapter__media.reveal--image > * { clip-path: none !important; }
-  .crest__stem, .crest__ring { stroke-dashoffset: 0 !important; }
-  .crest__leaf, .crest__mono { opacity: 1 !important; }
+  .emblem__line { stroke-dashoffset: 0 !important; }
+  .crest__mono { opacity: 1 !important; }
+  .rays, .curtain__flash { display: none; }
+  .opening__name .ch__g { animation: none !important; }
   .js .gold-divider svg { clip-path: none !important; }
 }

@@ -45,8 +45,9 @@
     if (options.music !== false && L.audio) L.audio.start();
     else if (L.audio) L.audio.reveal();
 
-    // The velvet panels part (CSS) and the hero below comes alive.
+    // The doors swing open (CSS), sparklers fire (dust.js) and the hero comes alive.
     root.classList.add("is-opened");
+    document.dispatchEvent(new CustomEvent("invitation:open"));
 
     var target = options.target || targetFromHash();
     window.setTimeout(function () {

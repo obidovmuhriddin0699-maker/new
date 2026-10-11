@@ -273,11 +273,20 @@
   background: linear-gradient(transparent, var(--gold-line), transparent);
 }
 .countdown__value {
+  display: block;
+  overflow: hidden;
   font-family: var(--serif);
   font-size: clamp(2.8rem, 12vw, 5.8rem);
   line-height: 1;
   font-variant-numeric: tabular-nums lining-nums;
   filter: drop-shadow(0 4px 22px rgb(0 0 0 / 0.5));
+}
+/* Each digit rolls in from above when it changes (wrapper animates; the foil stays still). */
+.countdown__digits { display: inline-block; }
+.countdown__value.is-rolling { animation: roll 0.6s var(--ease); }
+@keyframes roll {
+  from { transform: translateY(-38%); opacity: 0.15; }
+  to { transform: none; opacity: 1; }
 }
 .countdown__label {
   font-size: 0.68rem;
@@ -432,7 +441,7 @@
   max-width: 40rem;
   padding: 6rem var(--gutter) 5rem;
 }
-.finale__crest { width: 7rem; height: 7rem; margin: 0 auto 0.6rem; display: block; filter: drop-shadow(0 4px 18px rgb(0 0 0 / 0.5)); }
+.finale__crest { width: 6.2rem; height: 7.4rem; margin: 0 auto 0.6rem; display: block; filter: drop-shadow(0 4px 18px rgb(0 0 0 / 0.5)); }
 .finale__names {
   margin-top: 1rem;
   font-family: var(--serif);

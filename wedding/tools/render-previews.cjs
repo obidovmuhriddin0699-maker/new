@@ -23,7 +23,7 @@ function loadPlaywright() {
   const og = await browser.newPage({ viewport: { width: 1200, height: 630 } });
   await og.goto(base + "/", { waitUntil: "networkidle" });
   // The preview is the velvet gate: gold crest, names and date (button hidden).
-  await og.addStyleTag({ content: ".curtain__button,.preview-badge{display:none!important}.crest{width:12rem!important}" });
+  await og.addStyleTag({ content: ".curtain__button,.preview-badge{display:none!important}.crest{width:10rem!important}" });
   await og.evaluate(() => document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) { /* infinite */ } }));
   await og.waitForTimeout(500);
   await og.screenshot({ path: path.join(out, "og-image.jpg"), type: "jpeg", quality: 84 });

@@ -1,6 +1,6 @@
-# Asilbek & Maftun — luxury wedding invitation
+# Kamron & Farangiz — Crystal Ballroom wedding invitation
 
-A cinematic, mobile-first wedding invitation website in a minimal noir-and-gold style, with living film backgrounds. Pure HTML, CSS and vanilla
+A cinematic, mobile-first wedding invitation website in a modern Art Deco "crystal ballroom" style (noir, champagne gold, crystal sparkle) with living film backgrounds. Pure HTML, CSS and vanilla
 JavaScript: no framework, no build step, no runtime dependencies.
 
 > **⚠️ Before sharing:** the configured date, **6 October 2026, 16:00**, has already
@@ -62,12 +62,11 @@ Update them together with `config.js`. After deploying, change `og:image` to an 
 `ratio` is width/height and reserves space before the image loads (no layout shift). In the
 gallery, images wider than 1.2:1 automatically span two columns.
 
-> **Media:** every film and photo comes from the three videos and two images supplied for
+> **Media:** every film and photo comes from the four videos and three images supplied for
 > this invitation. The films are cut into six short scenes (`assets/video/`), and the
-> gallery uses the two images plus stills from the films. The alt texts describe each scene
-> without naming anyone. Two notes on the source files: the love-letter image carries a
-> small "IN.LOVE" Pinterest mark in its bottom-right corner, and the window film has a
-> small white heart sticker in the frame. Both were left exactly as supplied.
+> gallery uses the three images plus stills from the films. The alt texts describe each
+> scene without naming anyone. The street-embrace video is the same clip that was supplied
+> for the previous version.
 
 ## Single-file version: `dist/index.html`
 
@@ -86,7 +85,7 @@ music downloaded only on click), so prefer it for hosting when possible.
 ## Video version: `dist/taklifnoma-video.mp4`
 
 A 73-second vertical video (1080×1920, 30 fps, H.264/AAC, about 17 MB) of the real site.
-It shows the velvet curtain, the tap on "Taklifnomani ochish", the curtain parting and every section
+It shows the Art Deco doors, the tap on "Taklifnomani ochish", the doors opening with sparklers, and every section
 through to the final scene, with "Asadov — Silencio" starting at the tap. It's ready for
 Telegram, Instagram Stories and WhatsApp.
 
@@ -108,7 +107,7 @@ wedding/
 ├── css/
 │   ├── fonts.css         self-hosted Instrument Serif + Manrope (OFL), latin + latin-ext
 │   ├── base.css          tokens, reset, typography, buttons
-│   ├── opening.css       video scenes, velvet curtain gate, gold crest, hero
+│   ├── opening.css       video scenes, Art Deco door gate, emblem, sunburst, hero
 │   ├── sections.css      invitation, story, details, countdown, gallery, location, finale
 │   ├── components.css    top bar, menu, music toggle, lightbox, RSVP form
 │   └── motion.css        intro reveal, scroll reveals, reduced-motion rules
@@ -116,8 +115,8 @@ wedding/
 │   ├── core.js           config → view model, time-zone maths, <picture> builder
 │   ├── render.js         fills the page from config (scenes, story films, marquee)
 │   ├── video.js          films: load near the screen, play while visible, poster fallback
-│   ├── dust.js           drifting gold dust (canvas, time-based, pauses off screen)
-│   ├── opening.js        the "Taklifnomani ochish" velvet-curtain gate
+│   ├── dust.js           sparkle engine: gold dust, crystal glints, sparkler fountains
+│   ├── opening.js        the "Taklifnomani ochish" door gate
 │   ├── audio.js          music (user-initiated only), toggle, missing-file handling
 │   ├── motion.js         IntersectionObserver reveals, parallax, top bar
 │   ├── nav.js            section menu
@@ -174,21 +173,26 @@ take once the date is confirmed.
 
 ## 7. Design system (summary)
 
-- **Style:** minimal luxury. Deep noir film scenes (`#0E0C0A`) alternate with calm ivory
-  sections, with champagne gold as the only accent.
-- **Gold accents:** an animated foil gradient on the names, headings and numerals; a laurel
-  monogram crest that draws itself; filigree corner frames on the invitation and RSVP cards;
-  gold-rimmed arches around films and photos; line-drawn gold dividers; diamond markers
-  on the story rail; a gold marquee band; and drifting gold dust.
-- **Films as backgrounds (`config.scenes`):** on phones they fill the section; on wide
-  screens the portrait film sits in a tall gold-rimmed arch over a blurred copy of itself,
-  so 720p sources stay sharp. Photos can be scenes too, with a slow cinematic drift.
-- **Motion:** a velvet curtain with a gold seam parts at the tap; names reveal letter by
-  letter; story films open like an iris; glass cards; warm light leaks over every film.
-  Only `transform`, `opacity`, `clip-path` and `filter` are animated. With
-  `prefers-reduced-motion`, Save-Data or iOS Low Power Mode, films stay on their posters
-  and the motion is switched off.
-- **Type:** Instrument Serif in tracked capitals and italics; Manrope for text and controls.
+- **Style:** modern Art Deco "crystal ballroom". Deep noir film scenes alternate with calm
+  ivory sections; champagne gold is the accent, with crystal-white sparkle.
+- **Logo:** an Art Deco arch emblem (stepped shoulders, sunburst fan, diamond apex) with the
+  couple's monogram. It draws itself line by line on the gate and returns in the finale; the
+  favicon, home-screen icon and link preview use it too.
+- **Gate:** two Art Deco doors with a gold arch pattern swing open in 3D. Light pours through
+  the gap and sparkler fountains burst up from the bottom corners.
+- **Hero:** names in gold foil revealed letter by letter, with a bright glint sweeping across
+  them every few seconds and a slowly turning deco sunburst behind.
+- **Sparkle engine (`js/dust.js`):** rising gold dust, crystal star glints that flare like
+  light on a chandelier, and sparkler fountains (a burst at the opening, continuous in the
+  finale). Each particle is a pure function of time.
+- **Ornaments:** stepped deco corners on cards, fan-and-diamond dividers, gold-rimmed arches
+  around films and photos, a gold marquee band, glass cards over films, warm light leaks.
+- **Countdown:** each digit rolls in when it changes.
+- **Films as backgrounds (`config.scenes`):** full-bleed on phones; on wide screens the
+  portrait film sits in a tall gold arch over a blurred copy of itself. Photos can be scenes
+  too, with a slow cinematic drift.
+- **Accessibility:** `prefers-reduced-motion`, Save-Data and iOS Low Power Mode switch the
+  films to posters and turn off the doors, sparkles, glints and rays.
 
 ## 8. Testing
 

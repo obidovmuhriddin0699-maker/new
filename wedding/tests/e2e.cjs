@@ -165,7 +165,7 @@ function contrast(hex1, hex2) {
         const overflow = document.documentElement.scrollWidth - window.innerWidth;
         const clipped = [];
         document.querySelectorAll("main *, footer *").forEach((el) => {
-          if (el.closest(".scene__media, .curtain, .dust, .marquee, .visually-hidden, [hidden], .field--trap")) return;
+          if (el.closest(".scene__media, .curtain, .dust, .rays, .marquee, .visually-hidden, [hidden], .field--trap")) return;
           const cs = getComputedStyle(el);
           if (cs.display === "none" || cs.visibility === "hidden") return;
           const r = el.getBoundingClientRect();
@@ -341,7 +341,7 @@ function contrast(hex1, hex2) {
     const [download] = await Promise.all([page.waitForEvent("download"), page.click("[data-add-calendar]")]);
     const text = fs.readFileSync(await download.path(), "utf8");
     assert(/DTSTART:20261006T110000Z/.test(text), "DTSTART missing or wrong");
-    assert(/LOCATION:Qo‘qon shahri/.test(text), "LOCATION missing");
+    assert(/LOCATION:Andijon shahri/.test(text), "LOCATION missing");
     await page.context().close();
   });
 
@@ -408,7 +408,7 @@ function contrast(hex1, hex2) {
     const link = page.locator("[data-map-link]");
     const href = await link.getAttribute("href");
     assert(/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/.test(href), href);
-    assert(decodeURIComponent(href).includes("Qo‘qon shahri"), href);
+    assert(decodeURIComponent(href).includes("Andijon shahri"), href);
     assert(await link.getAttribute("target") === "_blank" && /noopener/.test(await link.getAttribute("rel")), "target/rel");
     assert(/Xaritada ochish/.test(await link.textContent()), "link text");
     await page.context().close();
@@ -608,7 +608,7 @@ function contrast(hex1, hex2) {
     await page.goto("file://" + path.join(ROOT, "index.html"), { waitUntil: "load" });
     await page.click("[data-open-invitation]", { force: true });
     await page.waitForFunction(() => !document.documentElement.classList.contains("is-locked"));
-    const ok = await page.evaluate(() => document.querySelector("#tafsilotlar .section-title").textContent.includes("Maftun"));
+    const ok = await page.evaluate(() => document.querySelector("#tafsilotlar .section-title").textContent.includes("Farangiz"));
     assert(ok, "content did not render from file://");
     assert(!page.problems.filter((p) => !/requestfailed/.test(p)).length, page.problems.join("\n"));
     await page.context().close();
