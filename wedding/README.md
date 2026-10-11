@@ -81,6 +81,22 @@ npm run build        # python3 tools/build_single.py
 The multi-file folder loads faster on phones (responsive image sizes, lazy loading,
 music downloaded only on click), so prefer it for hosting when possible.
 
+## Video version: `dist/taklifnoma-video.mp4`
+
+A 72-second vertical video (1080×1920, 30 fps, H.264/AAC, about 11 MB) of the real site.
+It shows the opening, the tap on "Taklifnomani ochish", the cloud pass and every section
+through to the final scene, with "Asadov — Silencio" starting at the tap. It's ready for
+Telegram, Instagram Stories and WhatsApp.
+
+```bash
+npm run video                                   # node tools/render-video.cjs (Playwright + ffmpeg)
+VIDEO_NOW=2026-11-06T10:00 npm run video        # moment the countdown is shown from
+```
+
+A video is frozen in time, so the countdown in it is rendered as seen at `VIDEO_NOW`
+(default `2026-09-06T10:00`, i.e. 30 days before the configured date). **Re-render after
+the date is confirmed**, and pick a `VIDEO_NOW` shortly before you send it.
+
 ## 3. Structure
 
 ```
