@@ -25,21 +25,23 @@ PART = "5-qism"
 
 # (start_s, speaker, text_for_tts, subtitle)
 LINES = [
-    (0.6, "rus", "Bugun divan sotmadim. Bugun... yozishdim.", "Bugun divan sotmadim. Bugun... yozishdim."),
-    (4.4, "rus", "Ishonmaysizmi? Mana, eshiting.", "Ishonmaysizmi? Mana, eshiting."),
-    (8.4, "rus", "Ertalab mijoz keldi. Men unga: bir minut, dedim.",
+    (0.4, "rus", "[tired]Eh... bugun divan sotmadim.[p=450][sad]Bugun...[p=250]yozishdim.",
+     "Eh... bugun divan sotmadim. Bugun... yozishdim."),
+    (5.2, "rus", "[ironic]Ishonmaysizmi?[p=200][warm]Mana, eshiting.", "Ishonmaysizmi? Mana, eshiting."),
+    (8.3, "rus", "[neutral]Ertalab mijoz keldi.[p=200][happy]Men unga: bir minut, dedim.",
      "Ertalab mijoz keldi. Men unga: «Bir minut», dedim."),
-    (12.4, "rus", "Bir minutim... yarim soat bo'ldi.", "Bir minutim... yarim soat bo‘ldi."),
-    (16.3, "xot", "Dadasi, ovqat sovib qoldi!", "(Xotini) Dadasi, ovqat sovib qoldi!"),
-    (18.7, "rus", "Hozir! Admin yozyapti!", "Hozir! Admin yozyapti!"),
-    (20.6, "rus", "Chekni yubordim, ko'rdingizmi? Yana yuboraymi?", "Chekni yubordim, ko‘rdingizmi? Yana yuboraymi?"),
-    (24.4, "dik", "Qo'lda qilinsa, reklama o'nlab mayda ishga bo'linib ketadi. "
-                  "Aduzda kanal tanlash, buyurtma va kuzatish bir joyda.",
+    (12.6, "rus", "[ironic]Bir minutim...[p=300][sad]yarim soat bo'ldi.", "Bir minutim... yarim soat bo‘ldi."),
+    (16.0, "xot", "[shout]Dadasi![p=150][worried]Ovqat sovib qoldi!", "(Xotini) Dadasi! Ovqat sovib qoldi!"),
+    (18.35, "rus", "[angry]Hozir, hozir![p=80]Admin yozyapti!", "Hozir, hozir! Admin yozyapti!", 1.12),
+    (20.8, "rus", "[worried]Chekni yubordim, ko'rdingizmi?[p=120][ironic]Yana yuboraymi?",
+     "Chekni yubordim, ko‘rdingizmi? Yana yuboraymi?", 1.1),
+    (24.4, "dik", "[warm]Qo'lda qilinsa, reklama o'nlab mayda ishga bo'linadi.[p=250]"
+                  "Aduzda tanlash, buyurtma va kuzatish[p=100]bir joyda.",
      "Qo‘lda qilinsa, reklama o‘nlab mayda ishga bo‘linadi. ADUZ'da tanlash, buyurtma va kuzatish — bir joyda.",
-     1.08),
-    (32.5, "sho", "Toga! Muammo hal! Ikki yuz ming obunachisi bor kanal topdim!",
+     1.12),
+    (32.4, "sho", "[shout]Toga![p=150][excited]Muammo hal![p=150]Ikki yuz ming obunachisi bor kanal topdim!",
      "Toga! Muammo hal! 200 ming obunachisi bor kanal topdim!"),
-    (36.6, "rus", "Ikki yuz ming?!", "200 ming?!"),
+    (36.5, "rus", "[excited]Ikki yuz ming?!", "200 ming?!"),
 ]
 
 
@@ -281,7 +283,7 @@ def scene5(t, envs):
     enter = ease_out_back(prog(t, 0.0, 0.7))
     sho = person("sho", eye=1.15, brows=14, mouth=voice.mouth(envs, "sho", tt, "grin"), arms="phones_up")
     paste_scaled(img, sho, 1310 - enter * 500, 1130 + 20 * math.sin(t * 9) * (1 - prog(t, 0, 3)), 0.86)
-    hope = tt > 36.4
+    hope = tt > 36.6
     spr = rustam("none", brows=30 if hope else 10, tilt=-10 if hope else 0, eye=1.25 if hope else 1.0, look=14,
                  mouth=voice.mouth(envs, "rus", tt, "grin" if hope else "O"))
     RX, RY, RS = 290, 1120, 0.92
