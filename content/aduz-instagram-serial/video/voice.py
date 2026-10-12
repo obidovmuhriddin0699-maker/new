@@ -26,6 +26,10 @@ SPEAKERS = {
     "dil": ("dilnavoz", 100, 100, 1.0),  # Dilnoza
     "xot": ("dilnavoz", 96, 100, 0.93),  # Rustam akaning xotini: kattaroq ayol
     "dik": ("dilnavoz", 95, 98, 0.97),   # Diktor: iliq ayol ovozi (qahramonlardan ajralib turadi)
+    "asos": ("islom", 94, 100, 1.0),     # Muxriddin Obidov: xotirjam, ishonchli
+    "ayol": ("dilnavoz", 104, 104, 1.07),  # yosh xaridor ayol
+    "ota": ("islom", 88, 96, 0.86),      # keksa xaridor
+    "yig": ("islom", 104, 100, 1.06),    # yosh xaridor yigit
 }
 VOICE_OVERRIDES = {}  # masalan {"dil": ("sevinch", 100, 100, 1.0)} — yangi RHVoice bo'lsa
 
@@ -197,3 +201,45 @@ def mouth(envs, who, t, quiet="closed", fps=30):
     if v > 0.12:
         return "open" if int(t * 12) % 2 == 0 else "closed"
     return quiet
+
+
+# ---------------------------------------------------------------- quality check
+_VOWELS = set("aeiouAEIOU")
+
+
+def syllables(text):
+    plain = re.sub(r"\[[^\]]*\]", " ", text)
+    return sum(1 for ch in plain if ch in _VOWELS)
+
+
+def qa(lines, timings, speech, lo=3.6, hi=6.2):
+    """Print a per-line report and return a list of problems (empty = OK).
+
+    Checks: speaking rate (syllables/s), overlaps, clipping, loudness spread between lines.
+    """
+    problems, rms_db = [], []
+    print(f"{'#':>2} {'kim':5} {'boshi':>6} {'oxiri':>6} {'dur':>5} {'bo‘g‘/s':>7} {'peak':>6} {'rms':>6}")
+    for i, (line, (a, b, who, sub)) in enumerate(zip(lines, timings)):
+        seg = speech[int(a * SR): int(b * SR)]
+        dur = b - a
+        pauses = sum(int(x) for x in re.findall(r"\[p=(\d+)\]", line[2])) / 1000
+        rate = syllables(line[2]) / max(dur - pauses, 1e-3)
+        peak = 20 * math.log10(max(1e-6, float(np.abs(seg).max())))
+        voiced = seg[np.abs(seg) > 0.02]
+        rms = 20 * math.log10(max(1e-6, math.sqrt(float(np.mean(voiced ** 2))) if len(voiced) else 1e-6))
+        rms_db.append(rms)
+        flag = []
+        if rate > hi:
+            flag.append("tez")
+        if rate < lo and dur > 1.2:
+            flag.append("sekin")
+        if peak > -0.5:
+            flag.append("clip")
+        if a < line[0] - 0.01 or a > line[0] + 0.25:
+            flag.append(f"surildi {line[0]:.1f}->{a:.1f}")
+        print(f"{i:>2} {who:5} {a:6.2f} {b:6.2f} {dur:5.2f} {rate:7.2f} {peak:6.1f} {rms:6.1f} {' '.join(flag)}")
+        problems += [f"{i}:{f}" for f in flag]
+    if rms_db and max(rms_db) - min(rms_db) > 4:
+        problems.append(f"balandlik farqi {max(rms_db) - min(rms_db):.1f} dB")
+    print("Muammolar:", problems or "yo‘q")
+    return problems
