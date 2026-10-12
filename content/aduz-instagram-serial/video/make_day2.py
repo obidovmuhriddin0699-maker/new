@@ -361,7 +361,7 @@ def headline(d, s, y=430, size=92, color=YELLOW, pop=1.0):
     draw_text_c(d, W / 2, y, s, f, color, stroke=8)
 
 
-def chat_card(base, y, who, msg, k, accent):
+def chat_card(base, y, who, msg, k, accent, tag=True):
     """Slide-in chat card; k=animation progress 0..1."""
     if k <= 0:
         return
@@ -374,8 +374,9 @@ def chat_card(base, y, who, msg, k, accent):
     lines = wrap(d, msg, font(42, "Bold"), 800)
     for i, ln in enumerate(lines[:2]):
         d.text((126, 80 + i * 54), ln, font=font(42, "Bold"), fill=INK)
-    rrect(d, (720, 22, 940, 62), 12, fill=(225, 225, 230))
-    draw_text_c(d, 830, 27, "Shartli misol", font(24, "SemiBold"), (90, 90, 100))
+    if tag:
+        rrect(d, (720, 22, 940, 62), 12, fill=(225, 225, 230))
+        draw_text_c(d, 830, 27, "Shartli misol", font(24, "SemiBold"), (90, 90, 100))
     x = int(60 + (1 - ease_out_back(k)) * 1100)
     base.alpha_composite(card, (x, int(y)))
 
