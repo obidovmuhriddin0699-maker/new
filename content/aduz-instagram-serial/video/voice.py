@@ -16,28 +16,30 @@ import numpy as np
 
 SR = 44100
 
-# speaker -> (RHVoice voice, rate %, pitch %)
+# speaker -> (RHVoice voice, rate %, pitch %, timbre shift)
+# timbre shift moves pitch AND formants together (rubberband): <1 = kattaroq/qariroq, >1 = yoshroq/yengilroq.
+# Shu tufayli bir xil bazaviy ovozdan ham har bir qahramon alohida eshitiladi.
 SPEAKERS = {
-    "rus": ("islom", 100, 92),      # Rustam aka: past, xotirjam
-    "sho": ("islom", 112, 122),     # Shokir: yosh, tez, baland
-    "dil": ("dilnavoz", 100, 100),  # Dilnoza
-    "xot": ("dilnavoz", 96, 108),   # Rustam akaning xotini (kadr ortidan)
-    "dik": ("islom", 96, 104),      # Diktor
-    "xar": ("islom", 104, 112),     # Xaridor
+    "rus": ("islom", 98, 100, 0.92),     # Rustam aka: 42 yosh, chuqur, salmoqli
+    "sho": ("islom", 110, 104, 1.13),    # Shokir: 19 yosh, yengil, tez
+    "xar": ("islom", 102, 100, 1.05),    # Xaridor
+    "dil": ("dilnavoz", 100, 100, 1.0),  # Dilnoza
+    "xot": ("dilnavoz", 96, 100, 0.93),  # Rustam akaning xotini: kattaroq ayol
+    "dik": ("dilnavoz", 95, 98, 0.97),   # Diktor: iliq ayol ovozi (qahramonlardan ajralib turadi)
 }
+VOICE_OVERRIDES = {}  # masalan {"dil": ("sevinch", 100, 100, 1.0)} — yangi RHVoice bo'lsa
 
 # gentle voice chain: clean lows, soften harsh highs, even out level, tiny room
-VOICE_CHAIN = ("highpass=f=75,"
-               "afftdn=nr=10:nf=-45,"                     # vocoder hiss out
-               "agate=threshold=0.008:ratio=3:attack=5:release=120,"
-               "equalizer=f=140:t=q:w=1:g=2.5,"            # warmth / body
-               "equalizer=f=320:t=q:w=1.4:g=-3,"           # less boxy
-               "equalizer=f=2800:t=q:w=1.6:g=2.5,"         # clarity
-               "equalizer=f=5500:t=q:w=2:g=-4,"            # soften buzz
-               "lowpass=f=8800,"
-               "deesser=i=0.4,"
-               "acompressor=threshold=-22dB:ratio=2.5:attack=10:release=150:makeup=3:knee=6,"
-               "aecho=0.88:0.4:18|33:0.07|0.04")           # small warm room
+VOICE_CHAIN = ("highpass=f=70,"
+               "afftdn=nr=6:nf=-50,"                      # vocoder hiss, gently
+               "equalizer=f=150:t=q:w=1:g=2,"              # warmth / body
+               "equalizer=f=330:t=q:w=1.4:g=-2.5,"         # less boxy
+               "equalizer=f=2800:t=q:w=1.6:g=2,"           # clarity
+               "equalizer=f=5500:t=q:w=2:g=-3.5,"          # soften vocoder buzz
+               "lowpass=f=9000,"
+               "deesser=i=0.35,"
+               "acompressor=threshold=-22dB:ratio=2.2:attack=12:release=180:makeup=2.5:knee=8,"
+               "aecho=0.9:0.35:16|29:0.06|0.035")          # small warm room
 PHONE_CHAIN = "highpass=f=280,lowpass=f=3600,acompressor=threshold=-20dB:ratio=3:makeup=4"
 
 
@@ -81,7 +83,7 @@ def to_ssml(text):
 
 
 def tts(text, speaker, path, rate_mul=1.0):
-    voice, rate, pitch = SPEAKERS[speaker]
+    voice, rate, pitch, _shift = VOICE_OVERRIDES.get(speaker, SPEAKERS[speaker])
     ssml = to_ssml(text) if "[" in text else None
     cmd = ["RHVoice-test", "-p", voice, "-q", "max", "-r", str(int(rate * rate_mul)), "-t", str(pitch), "-o", path]
     if ssml:
@@ -103,11 +105,15 @@ def save(path, sig):
         w.writeframes((sig * 32767).astype(np.int16).tobytes())
 
 
-def render_line(text, speaker, tmp, idx, phone=False, rate_mul=1.0):
+def render_line(text, speaker, tmp, idx, phone=False, rate_mul=1.0):  # noqa: C901
     raw = os.path.join(tmp, f"v{idx}_raw.wav")
     out = os.path.join(tmp, f"v{idx}.wav")
     tts(text, speaker, raw, rate_mul)
-    chain = (PHONE_CHAIN if phone else VOICE_CHAIN) + ",afade=t=in:d=0.02,areverse,afade=t=in:d=0.06,areverse"
+    shift = VOICE_OVERRIDES.get(speaker, SPEAKERS[speaker])[3]
+    timbre = (f"rubberband=pitch={shift}:formant=shifted:transients=smooth:pitchq=quality,"
+              if abs(shift - 1.0) > 1e-3 else "")
+    chain = timbre + (PHONE_CHAIN if phone else VOICE_CHAIN) + \
+        ",afade=t=in:d=0.02,areverse,afade=t=in:d=0.08,areverse"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", raw, "-af", chain, "-ar", str(SR), "-ac", "1", out],
                    check=True)
     sig = load(out)
@@ -120,7 +126,7 @@ def render_line(text, speaker, tmp, idx, phone=False, rate_mul=1.0):
         nb = int(0.22 * SR)
         rng = np.random.default_rng(idx)
         br = np.convolve(rng.standard_normal(nb), np.ones(40) / 40, mode="same")
-        br *= np.sin(np.linspace(0, np.pi, nb)) ** 2 * 0.012
+        br *= np.sin(np.linspace(0, np.pi, nb)) ** 2 * 0.006
         sig = np.concatenate([br, np.zeros(int(0.04 * SR)), sig])
     # per-line loudness match (RMS of voiced part)
     rms = math.sqrt(float(np.mean(sig[np.abs(sig) > 0.02] ** 2))) if np.any(np.abs(sig) > 0.02) else 0.1
