@@ -13,6 +13,8 @@ import wave
 from functools import lru_cache
 
 import numpy as np
+
+import voice
 from PIL import Image, ImageDraw, ImageFilter
 
 from make_day2 import (BRAND, INK, RED, WHITE, YELLOW, FPS, H, W, SR, add, bg_room, bg_shop, clamp, dilnoza,
@@ -34,7 +36,7 @@ LINES = [
     (16.5, "rus", "Beshta rasm yubordim-ku!", "Beshta rasm, ikkita ovozli xabar yubordim-ku!", 150),
     (18.8, "dil", "Bir soat tepada, keyin lentada.", "Bir soat tepada, keyin lentada.", 155),
     (21.75, "rus", "Lentaga?! Atlasmi?!", "Lentaga?! Qanaqa lenta? Atlasmi?", 145),
-    (24.3, "dik", "Sana, soat, format, muddat va to'lov oldindan aniq bo'lsin. ADUZda bular buyurtmada belgilanadi.",
+    (24.3, "dik", "Sana, soat, format, muddat va to'lov oldindan aniq bo'lsin. Aduzda bular buyurtmada belgilanadi.",
      "Sana, soat, format, muddat va to‘lov oldindan aniq bo‘lsin. ADUZ'da bular buyurtmada belgilanadi.", 165),
     (32.2, "dil", "Bo'ldi. Ertaga, soat yigirmada.", "Bo‘ldi. Ertaga, soat 20:00 da.", 165),
     (35.3, "rus", "Qaysi ertaga?", "Qaysi ertaga?", 140),
@@ -46,36 +48,15 @@ VOICES = {"rus": ["-v", "uz+m1", "-p", "30"], "dil": ["-v", "uz+f3", "-p", "58"]
 
 # ---------------------------------------------------------------- speech
 def synth(tmp):
-    track = np.zeros(int(SR * DUR) + SR)
-    per = {k: np.zeros_like(track) for k in VOICES}
-    timings = []
-    for i, (start, who, tts, sub, speed) in enumerate(LINES):
-        raw = os.path.join(tmp, f"l{i}.wav")
-        out = os.path.join(tmp, f"l{i}_44.wav")
-        subprocess.run(["espeak-ng", *VOICES[who], "-s", str(speed), "-w", raw, tts], check=True)
-        af = "highpass=f=110,lowpass=f=6500,aecho=0.8:0.6:40:0.15,volume=1.6"
-        if who in ("rus", "dil"):  # phone-call colour during the split-screen call
-            if 8 <= start < 24 or start >= 32:
-                af = "highpass=f=300,lowpass=f=3400,volume=2.2"
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", raw, "-af", af,
-                        "-ar", str(SR), "-ac", "1", out], check=True)
-        with wave.open(out) as w:
-            sig = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768
-        add(track, sig, start)
-        add(per[who], sig, start)
-        timings.append((start, start + len(sig) / SR, who, sub))
-    n = int(DUR * FPS)
-    hop = SR // FPS
-    envs = {}
-    for k, sig in per.items():
-        e = np.array([math.sqrt(float(np.mean(sig[f * hop:(f + 1) * hop] ** 2))) for f in range(n)])
-        envs[k] = e / max(1e-9, e.max())
-    return track[: int(SR * DUR)], envs, timings
+    """Natural voice (RHVoice) via voice.py; phone colour on the call lines."""
+    lines = [(st, who, tts, sub) for (st, who, tts, sub, _speed) in LINES]
+    on_call = lambda start, who: who in ("rus", "dil") and (8 <= start < 24 or start >= 32)
+    return voice.build_speech(lines, DUR, FPS, tmp, phone_fn=on_call)
 
 
 def speaking(envs, who, t):
     e = envs[who]
-    return e[min(len(e) - 1, int(t * FPS))] > 0.15
+    return e[min(len(e) - 1, int(t * FPS))] > 0.12
 
 
 def mouth_of(envs, who, t, quiet="closed"):
@@ -388,7 +369,7 @@ def main(out, preview=None):
             frame(float(ts), envs, timings).convert("RGB").save(f"preview4_{ts}.png")
         return
     wav = os.path.join(tmp, "mix.wav")
-    write_wav(wav, music_and_sfx() + speech)
+    voice.mix(speech, music_and_sfx(), wav, tmp)
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
            "-r", str(FPS), "-i", "-", "-i", wav, "-c:v", "libx264", "-preset", "medium", "-crf", "20",
            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-shortest", "-movflags", "+faststart", out]

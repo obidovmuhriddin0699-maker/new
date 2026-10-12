@@ -13,6 +13,8 @@ import wave
 from functools import lru_cache
 
 import numpy as np
+
+import voice
 from PIL import Image, ImageDraw
 
 from make_day2 import (BRAND, INK, RED, WHITE, YELLOW, FPS, H, W, SR, add, bg_room, chat_card, clamp,
@@ -44,32 +46,10 @@ VOICES = {"dil": ["-v", "uz+f3", "-p", "58"], "dik": ["-v", "uz+m3", "-p", "38"]
 
 # ---------------------------------------------------------------- speech
 def synth(tmp):
-    """Return mixed speech track, Dilnoza envelope per frame and line timings."""
-    track = np.zeros(int(SR * DUR) + SR)
-    dil = np.zeros_like(track)
-    timings = []
-    for i, (start, who, tts, sub, speed) in enumerate(LINES):
-        raw = os.path.join(tmp, f"l{i}.wav")
-        out = os.path.join(tmp, f"l{i}_44.wav")
-        subprocess.run(["espeak-ng", *VOICES[who], "-s", str(speed), "-w", raw, tts], check=True)
-        # soften the robotic edge: band-limit, light room, resample
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", raw, "-af",
-                        "highpass=f=120,lowpass=f=6500,aecho=0.8:0.6:40:0.15,volume=1.6",
-                        "-ar", str(SR), "-ac", "1", out], check=True)
-        with wave.open(out) as w:
-            sig = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768
-        add(track, sig, start)
-        if who == "dil":
-            add(dil, sig, start)
-        timings.append((start, start + len(sig) / SR, who, sub))
-    n = int(DUR * FPS)
-    env = np.zeros(n)
-    hop = SR // FPS
-    for f in range(n):
-        seg = dil[f * hop:(f + 1) * hop]
-        env[f] = math.sqrt(float(np.mean(seg ** 2))) if len(seg) else 0
-    env = env / max(1e-9, env.max())
-    return track[: int(SR * DUR)], env, timings
+    """Natural voice (RHVoice) via voice.py; returns speech, Dilnoza mouth envelope and timings."""
+    lines = [(st, who, tts, sub) for (st, who, tts, sub, _speed) in LINES]
+    speech, envs, timings = voice.build_speech(lines, DUR, FPS, tmp)
+    return speech, envs.get("dil"), timings
 
 
 # ---------------------------------------------------------------- visuals
@@ -99,7 +79,7 @@ def desk_front(img, phone_on_desk=False, glow=False):
 
 def dil_sprite(t, env, look=0, base_eye=1.0, brows=0, quiet_mouth="closed"):
     fi = min(len(env) - 1, int(t * FPS))
-    speaking = env[fi] > 0.18
+    speaking = env[fi] > 0.12
     blink = (t % 3.7) < 0.12
     eye = 0.1 if blink else base_eye
     return dilnoza(eye=eye, look=look, mouth="open" if speaking and int(t * 10) % 2 == 0 else
@@ -326,7 +306,7 @@ def main(out, preview=None):
     for (a, b, who, sub) in timings:
         print(f"{a:5.1f}-{b:5.1f} {who}: {sub}")
     wav = os.path.join(tmp, "mix.wav")
-    write_wav(wav, music_and_sfx() + speech * 1.0)
+    voice.mix(speech, music_and_sfx(), wav, tmp)
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
            "-r", str(FPS), "-i", "-", "-i", wav, "-c:v", "libx264", "-preset", "medium", "-crf", "20",
            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-shortest", "-movflags", "+faststart", out]
