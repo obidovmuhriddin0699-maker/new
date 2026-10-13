@@ -34,8 +34,8 @@ SPEAKERS = {
 # energetic "promo" voices matched to the reference reel (median F0 ~190 Hz, wide range):
 # pitch is raised with formants preserved so the timbre stays human, not chipmunk.
 SPEAKERS.update({
-    "narr": ("islom", 112, 116, 1.42),   # asoschi / boshlovchi — jonli, baland ohang
-    "rus8": ("islom", 108, 112, 1.30),   # Rustam aka — 3D multfilm uslubidagi ekspressiv ovoz
+    "narr": ("islom", 108, 135, 1.22),   # asoschi / boshlovchi — jonli, baland ohang (tiniqroq: kamroq shift)
+    "rus8": ("islom", 104, 125, 1.14),   # Rustam aka — 3D multfilm uslubidagi ekspressiv ovoz
 })
 FORMANT_PRESERVE = {"narr", "rus8"}
 VOICE_OVERRIDES = {}  # masalan {"dil": ("sevinch", 100, 100, 1.0)} — yangi RHVoice bo'lsa
@@ -50,7 +50,7 @@ VOICE_CHAIN = ("highpass=f=70,"
                "lowpass=f=9000,"
                "deesser=i=0.35,"
                "acompressor=threshold=-22dB:ratio=2.2:attack=12:release=180:makeup=2.5:knee=8,"
-               "aecho=0.9:0.35:16|29:0.06|0.035")          # small warm room
+               "aecho=0.9:0.3:14:0.03")                    # just a touch of room (clearer)
 PHONE_CHAIN = "highpass=f=280,lowpass=f=3600,acompressor=threshold=-20dB:ratio=3:makeup=4"
 
 
@@ -122,7 +122,8 @@ def render_line(text, speaker, tmp, idx, phone=False, rate_mul=1.0):  # noqa: C9
     tts(text, speaker, raw, rate_mul)
     shift = VOICE_OVERRIDES.get(speaker, SPEAKERS[speaker])[3]
     fmode = "preserved" if speaker in FORMANT_PRESERVE else "shifted"
-    timbre = (f"rubberband=pitch={shift}:formant={fmode}:transients=smooth:pitchq=quality,"
+    timbre = (f"rubberband=pitch={shift}:formant={fmode}:transients=crisp:detector=soft:window=short:"
+              f"pitchq=quality,"
               if abs(shift - 1.0) > 1e-3 else "")
     chain = timbre + (PHONE_CHAIN if phone else VOICE_CHAIN) + \
         ",afade=t=in:d=0.02,areverse,afade=t=in:d=0.08,areverse"

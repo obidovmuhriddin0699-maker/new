@@ -85,17 +85,18 @@ def load_frame(path):
     return Image.open(path).convert("RGBA")
 
 
-def clip_at(name, t, dur, zoom=(1.0, 1.08)):
-    """Frame of a slowed clip at local time t; holds the last frame with a slow push-in."""
+def clip_at(name, t, dur, zoom=None):
+    """Frame of a slowed clip at local time t. If the scene is longer than the clip, it plays
+    back and forth (boomerang) instead of freezing on the last frame."""
     fr = clip_frames(name)
-    i = min(len(fr) - 1, int(t * FPS))
-    img = load_frame(fr[i]).copy()
-    z = zoom[0] + (zoom[1] - zoom[0]) * clamp(t / max(dur, 0.1))
-    if z > 1.001:
-        nw, nh = int(W * z), int(H * z)
-        img = img.resize((nw, nh), Image.BILINEAR).crop(((nw - W) // 2, (nh - H) // 2, (nw - W) // 2 + W,
-                                                          (nh - H) // 2 + H))
-    return img
+    n = len(fr)
+    i = int(t * FPS)
+    if n > 1:
+        period = 2 * (n - 1)
+        i %= period
+        if i >= n:
+            i = period - i
+    return load_frame(fr[i]).copy()
 
 
 @lru_cache(None)
@@ -228,6 +229,7 @@ def sc_words(t, dur):
         e = ease_out_back(k)
         x = W / 2 + side * (1 - e) * 1100
         jitter = 6 * math.sin(t * 13 + i) if t > t0 + 0.45 else 0
+        y = y + 10 * math.sin(t * 2.2 + i * 1.3)
         ty = y + (840 - y) * implode
         tx = x + (W / 2 - x) * implode + jitter
         size = int(96 * (1 - 0.6 * implode))
@@ -281,9 +283,9 @@ def sc_steps(t, dur):
         if k <= 0:
             continue
         e = ease_out_back(k)
-        y = 330 + i * 250
+        y = 330 + i * 250 + 7 * math.sin(t * 2.0 + i * 0.9)
         active = st <= t < (starts[i + 1] if i + 1 < len(starts) else 99)
-        x0 = 250 + (1 - e) * 800
+        x0 = 250 + (1 - e) * 800 + 5 * math.cos(t * 1.6 + i)
         neon_pill(img, (x0, y + 40, x0 + 720, y + 200), active, min(1, k * 1.5))
         d = ImageDraw.Draw(img)
         d.text((x0 + 150, y + 62), title, font=font(52, "Black"), fill=WHITE)
@@ -357,7 +359,7 @@ def sc_cta(t, dur):
         kk = prog(t, 0.6 + i * 0.2, 1.0 + i * 0.2)
         if kk <= 0:
             continue
-        y = 540 + i * 150
+        y = 540 + i * 150 + 6 * math.sin(t * 2.4 + i)
         x0 = 170 + (1 - ease_out_back(kk)) * 800
         neon_pill(img, (x0, y, x0 + 740, y + 116), False, kk)
         d = ImageDraw.Draw(img)
@@ -381,10 +383,23 @@ def bounds(timings):
     return [(starts[i], starts[i + 1] if i + 1 < len(starts) else DUR) for i in range(len(starts))]
 
 
+def camera(img, t, a, b):
+    """Slow push-in within each scene plus a gentle drift, so the picture is always alive."""
+    k = clamp((t - a) / max(b - a, 0.1))
+    z = 1.02 + 0.045 * ease(k)
+    dx = 10 * math.sin(t * 0.9)
+    dy = 8 * math.cos(t * 0.7)
+    nw, nh = int(W * z), int(H * z)
+    big = img.resize((nw, nh), Image.BICUBIC)
+    x0 = int((nw - W) / 2 + dx)
+    y0 = int((nh - H) / 2 + dy)
+    return big.crop((x0, y0, x0 + W, y0 + H))
+
+
 def frame(t, timings, bnds):
     for i, (a, b) in enumerate(bnds):
         if a <= t < b or (i == len(bnds) - 1 and t >= a):
-            img = SCENES[i](t - a, b - a)
+            img = camera(SCENES[i](t - a, b - a), t, a, b)
             break
     # light flash on cuts
     for a, _ in bnds[1:]:
