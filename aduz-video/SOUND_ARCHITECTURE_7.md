@@ -45,6 +45,18 @@ Bu hujjat `audio.py` dan avtomatik yaratiladi (`python3 audio.py 7 --cuesheet SO
 | `imp.crash` | L5 | Crash tarelka (yumshatilgan) |
 | `imp.sparkle` | L5 | Uchqunlar: D-pentatonik qo'ng'iroqchalar to'dasi |
 | `brand.logo` | L6 | ADUZ sonic logo (5–1–3 motiv) |
+| `fx.window` | L3 | Oyna ochilishi: yumshoq 'bloop' (balandligi sozlanadi) |
+| `fx.paper` | L3 | Qog'oz shitirlashi (daftar, chek) |
+| `fx.sticky` | L3 | Stiker 'shap' etib yopishishi |
+| `fx.tab` | L3 | Brauzer tabi ochilishi |
+| `fx.magnet` | L4 | Magnit maydoni: ko'tariluvchi tremolo g'uvullash |
+| `fx.absorb` | L5 | Bo'lak magnitga 'yutilishi': pastga tushuvchi ton + thump |
+| `fx.snap` | L3 | Karta joyiga 'chiq' etib tushishi |
+| `ui.cart` | L3 | Savatchaga qo'shish: pop + qo'ng'iroqcha |
+| `ui.pay` | L3 | To'lov: klik + muvaffaqiyat akkordi |
+| `fx.pulse` | L3 | Hub impulsi: ma'lumot oqimi |
+| `tr.implode` | L4 | Implosion: hamma narsa markazga so'riladi |
+| `tr.flip` | L4 | Karta aylanishi: ikki marta 'fvip' |
 
 ## Musiqa (score)
 

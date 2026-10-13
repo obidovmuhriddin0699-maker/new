@@ -12,6 +12,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 5 | `ADUZ_5-qism.mp4` | Hisobotlarning yo'qligi |
 | 6 | `ADUZ_6-qism.mp4` | ADUZ kashfiyoti |
 | 7 | `ADUZ_7-qism.mp4` | Platforma interfeysi bilan tanishuv |
+| 8 | `ADUZ_8-qism.mp4` | Yagona Marketplace yechimi |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -173,6 +174,32 @@ o'tishlar xilma-xil — squeegee-wipe (tartibsizlikni "artib tashlaydi") va whip
 | 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
 
 Raqamlar (47 sozlama, 128 sahifa, 2 daqiqa) va boshqa platformaning ko'rinishi umumlashtirilgan namuna — biror real mahsulot nomi ishlatilmagan.
+
+## 8-qism: "Yagona Marketplace yechimi"
+
+**Yangi ko'rinish:** muammo sahnasida telefon yo'q — kamera katta "tartibsiz ish stoli" bo'ylab pastga suzadi
+(Telegram, Direkt, Excel, daftar, stikerlar, 14 tabli brauzer, kontaktlar, chek — orasida qizil uzuq-uzuq iplar),
+oxirida orqaga tortilib butun stolni bir kadrda ko'rsatadi. Yechimda ADUZ magnit bo'lib hamma bo'laklarni o'ziga tortadi,
+logotip telefonga aylanadi. Natija — jonli "hub" xaritasi. Yangi o'tishlar: `implode` (spiral bo'lib markazga so'rilish)
+va `cardFlip` (karta aylanishi).
+
+**Ovoz:** [`SOUND_ARCHITECTURE_8.md`](SOUND_ARCHITECTURE_8.md) — 12 ta yangi tovush (oyna, qog'oz, stiker, tab, magnit, yutilish,
+snap, savatcha, to'lov, impuls, implode, flip) va cue-sheet. Stereo kenglik hikoyaga ergashadi: muammoda har bir bo'lak ekrandagi
+joyidan eshitiladi, plucklar beat'ga bo'ysunmaydi (3:4) — keng va tarqoq; magnitda kenglik 1,7 → 0,35 ga qisqarib, tovush markazga
+"yig'iladi"; natijada yana keng ochiladi. Sonic logo G tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "8-QISM · Yagona marketplace". Ish stoli: adminlar chati, Direkt, `kanallar_final_2.xlsx` (#REF! bilan), daftar ("JAMI: ???"), stikerlar ("Adminga qayta yoz!", "Narx?"), 14 tabli brauzer, kontaktlar, "KIMGA?" muhrli chek. Lupa "?" bilan qidiradi | Kanallar ro'yxati — Excel'da, adminlar — chatda, narxlar — daftarda... |
+| 0:05–0:10.5 | 1. Muammo | *QAYSI EXCEL? · QAYSI CHAT? · CHEK QAYERDA?*. 8.3 s: kamera orqaga tortiladi — butun tartibsizlik. **TARQOQ — 8 ta joyda, bitta reklama uchun** | Har bir kanal alohida joyda. Bitta reklama uchun — sakkizta ilova. |
+| 0:10.5–0:11 | O'tish | Implosion: stol spiral bo'lib markazga so'riladi, yashil halqa | — |
+| 0:11–0:16 | 2. Yechim | ADUZ magniti: 8 bo'lak chetlardan uchib kelib "yutiladi". Logo telefonga aylanadi → Marketplace: qidiruv, kategoriyalar (Moda tanlanadi), kanal kartalari. "+" bosilganda kanal savatchaga uchadi (1…5) | ADUZ hammasini bitta marketplace'ga jamlaydi: qidiring, tanlang, savatchaga qo'shing. |
+| 0:16–0:22 | 2. Yechim | Savatcha: 5 kanal, jami 1 640 000 so'm → **Bitta to'lov** → To'landi. 18.5 s: **BITTA JOY — barcha kanallar · bitta to'lov**. "Buyurtma qabul qilindi!" | Besh kanal — bitta buyurtma, bitta to'lov, bitta chek. |
+| 0:21.75–0:22.15 | O'tish | Karta aylanishi | — |
+| 0:22–0:27 | 3. Natija | "Hammasi bir joyda": markazda ADUZ, atrofida 6 kategoriya (Yangiliklar, Moda, Biznes, Ta'lim, Sport, Oziq-ovqat), iplar bo'ylab impulslar oqadi. Oltin pillar: **1 ilova · 1 to'lov · 1 hisobot** | Barcha kanallar, to'lovlar va hisobotlar — bir joyda. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Narxlar yig'indisi: 320 000 + 280 000 + 410 000 + 250 000 + 380 000 = 1 640 000 so'm. Kanal nomlari namuna.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

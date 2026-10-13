@@ -421,6 +421,31 @@ function whipPan(t, a, b, drawA, drawB) {
   for (let k = 3; k >= 0; k--) ghost(drawB, W * 1.15 - off + k * 70 * Math.sin(Math.PI * p), k ? .18 : 1);
   withAlpha(Math.sin(Math.PI * p) * .35, () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); });
 }
+// Transition: drawA spirals into a point (implosion), a ring flashes, drawB bursts out with overshoot.
+function implode(t, a, b, drawA, drawB, color) {
+  const p = prog(t, a, b), mid = .55;
+  if (p < mid) {
+    const q = eIn(p / mid);
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(q * 1.4); ctx.scale(1 - q * .98, 1 - q * .98); ctx.translate(-W / 2, -H / 2);
+    drawA(t); ctx.restore();
+    withAlpha(q, () => { ctx.fillStyle = '#020806'; ctx.globalCompositeOperation = 'destination-over'; ctx.fillRect(0, 0, W, H); });
+  } else {
+    const q = (p - mid) / (1 - mid);
+    camera(lerp(.2, 1, eBack(q)), (1 - eOut(q)) * -.5, 0, 0, () => drawB(t));
+  }
+  const r = prog(t, a + (b - a) * (mid - .08), a + (b - a) * (mid + .3));
+  if (r > 0 && r < 1) withAlpha(1 - r, () => {
+    ctx.beginPath(); ctx.arc(W / 2, H / 2, 40 + 900 * eOut(r), 0, 7); ctx.lineWidth = 30 * (1 - r) + 3; ctx.strokeStyle = color; ctx.stroke();
+  });
+}
+// Transition: card flip — drawA folds to an edge, drawB unfolds from it.
+function cardFlip(t, a, b, drawA, drawB) {
+  const p = eInOut(prog(t, a, b)), first = p < .5, k = first ? 1 - p * 2 : p * 2 - 1;
+  ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(Math.max(.001, k), 1 - .06 * (1 - k)); ctx.translate(-W / 2, -H / 2);
+  (first ? drawA : drawB)(t);
+  withAlpha((1 - k) * .6, () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
+  ctx.restore();
+}
 // Film grain + vignette, frame-stable for rendering.
 let GRAIN = null;
 function filmLook(t, grain = .07, vignette = .38) {
