@@ -301,9 +301,9 @@ BLOCK_FN = [block1, block2, block3, block4, block5]
 def camera(img, t, a, b):
     """Continuous gentle camera (push-in per block + drift) — the picture never stands still."""
     k = clamp((t - a) / max(b - a, 0.1))
-    z = 1.015 + 0.04 * ease(k) + 0.006 * math.sin(t * 1.7)
-    dx = 14 * math.sin(t * 0.8)
-    dy = 10 * math.cos(t * 0.65)
+    z = 1.02 + 0.07 * k                      # constant-speed push (no ease -> never slows to a stop)
+    dx = -20 + 40 * k + 6 * math.sin(t * 1.3)  # steady pan + small sway
+    dy = 8 * math.cos(t * 0.9)
     nw, nh = int(W * z), int(H * z)
     big = img.resize((nw, nh), Image.BICUBIC)
     x0 = int((nw - W) / 2 + dx)
