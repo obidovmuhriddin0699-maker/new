@@ -805,7 +805,144 @@ def render_5():
 T5_KPI = 11.5
 
 
-V2 = {4: render_4, 5: render_5}
+def keystroke():
+    x = seconds(0.04)
+    return filt(rng.standard_normal(len(x)), "bandpass", [1800, 6000]) * np.exp(-x / 0.006) + np.sin(2 * np.pi * 900 * x) * np.exp(-x / 0.004) * 0.3
+
+
+def rewind(dur=0.45):
+    x = seconds(dur)
+    f = 1800 * 2 ** (-4 * x / dur)
+    return (np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.5 + sweep_filter(rng.standard_normal(len(x)), 4000, 400) * 0.6) * np.sin(np.pi * x / dur)
+
+
+def choir(notes, dur):
+    """Airy 'aah' swell: detuned sines with slow vibrato."""
+    x = seconds(dur)
+    v = sum(np.sin(2 * np.pi * m(n) * x + 0.004 * m(n) * np.sin(2 * np.pi * 5 * x) / 5) + 0.5 * np.sin(2 * np.pi * m(n) * 1.004 * x) for n in notes)
+    s = v / len(notes) * (x / dur) ** 1.5
+    return np.stack([s, np.roll(s, int(0.015 * SR))], axis=1)
+
+
+def render_6():
+    """6-qism: ADUZ kashfiyoti. 4-qism uslubi (v2 Mixer), 120 BPM. D minor -> G major -> C major."""
+    M = Mixer()
+    # ---------- Scene 1 (0-10.55): tedious form, typing is the rhythm ----------
+    M.put("music", 0.0, pad([m(38), m(41), m(45), m(50)], 10.6, cutoff=700, attack=1.5), 0.32, verb=0.3)
+    for i, at in enumerate(np.arange(2.0, 8.5, 0.25)):
+        x = seconds(0.22)
+        cut = 250 + 1500 * ((at - 2) / 6.5) ** 1.5
+        note = m(26) if i % 8 not in (6, 7) else m(29)
+        M.put("music", at, filt(saw(note, x) * np.exp(-x / 0.12), "lowpass", cut), 0.22)
+    for at in np.arange(5.5, 8.5, 0.5):
+        M.put("drums", at, kick(0.8), 0.5)
+        M.kicks.append(at)
+        M.put("drums", at + 0.25, hat(), 0.12, 0.3)
+    g = np.random.default_rng(6)
+    for f0, dur in [(1.0, .5), (1.7, .5), (2.4, .7), (3.95, .5), (4.4, .5), (5.0, .5), (6.8, .7), (7.6, .7)]:  # typing per field
+        for k in np.arange(f0, f0 + dur, 0.0625):
+            M.put("sfx", k + g.uniform(0, 0.012), keystroke(), 0.12 * g.uniform(0.6, 1), g.uniform(-0.3, 0.3))
+    for at in (1.0, 1.7, 2.4, 3.95, 4.4, 5.0):
+        M.put("sfx", at, ui_click(), 0.1, 0.2)
+    M.put("sfx", 3.1, glitch_hit(), 0.3, -0.2, verb=0.2)  # wrong format
+    M.put("sfx", 3.1, tone(330, 0.15, "sine", 0.002, 0.06), 0.12)
+    M.put("sfx", 3.25, tone(262, 0.25, "sine", 0.002, 0.1), 0.12)
+    M.put("sfx", 5.7, tone(220, 0.3, "square", 0.005, 0.12), 0.07)  # session expired
+    M.put("sfx", 5.95, tone(175, 0.45, "square", 0.005, 0.2), 0.07)
+    M.put("sfx", 6.2, ui_click(), 0.25)
+    M.put("sfx", 6.3, rewind(0.45), 0.3, verb=0.2)  # form resets
+    for at, p in ((5.6, -0.4), (6.6, 0.4), (7.6, -0.4)):
+        M.put("sfx", at, glitch_hit(), 0.42, p, verb=0.25)
+    M.put("sfx", 8.5, boom(1.0), 0.75, verb=0.4)
+    M.put("sfx", 8.5, clap(), 0.4, verb=0.5)
+    M.put("sfx", 8.5, crash(), 0.33)
+    M.put("sfx", 8.6, riser(1.95), 0.32)
+    # doors open: heavy slide spreading out + light "aah"
+    slide = whoosh(0.5, 200, 1500)
+    M.put("sfx", 10.55, np.stack([slide * np.linspace(.6, 1, len(slide)), slide * np.linspace(.6, 1, len(slide))[::-1]], axis=1), 0.4, verb=0.3)
+    M.put("sfx", 10.2, choir([67, 71, 74, 79], 0.85), 0.22, verb=0.6)
+
+    # ---------- Scene 2 (11-21.75): bright four-on-the-floor, G Em C D ----------
+    M.put("sfx", 11.0, boom(0.8), 0.55, verb=0.35)
+    M.put("sfx", 11.0, crash(), 0.28)
+    prog2 = [(11, [55, 59, 62, 66], 43), (13, [52, 55, 59, 62], 40), (15, [48, 52, 55, 59], 36), (17, [50, 54, 57, 62], 38), (19, [55, 59, 62, 66], 43), (21, [52, 55, 59, 62], 40)]
+    for start, notes, root in prog2:
+        dur = min(2.0, 21.75 - start)
+        M.put("music", start, supersaw([m(n) for n in notes], dur, cutoff=2600), 0.3, verb=0.25)
+        M.put("music", start, pad([m(n + 12) for n in notes[:3]], dur, cutoff=3000, attack=0.2), 0.12, verb=0.3)
+        for b in np.arange(0, dur - 0.01, 0.25):
+            M.put("music", start + b, sub(m(root) * (2 if int(b * 4) % 2 else 1), 0.2), 0.28)
+        for j, b in enumerate(np.arange(0, dur - 0.01, 0.25)):
+            M.put("music", start + b, bell(m(notes[j % 4] + 12), 0.4, 1.4, 0.18), 0.06, 0.35 * np.sin(j * 1.3), verb=0.3)
+    for at in np.arange(11.0, 21.75, 0.5):
+        M.put("drums", at, kick(), 0.55)
+        M.kicks.append(at)
+        M.put("drums", at + 0.25, hat(at % 2 > 1.4), 0.14, 0.3)
+        if int(round(at * 2)) % 2 == 1:
+            M.put("drums", at, clap(), 0.28, verb=0.2)
+    for at in np.arange(11.9, 13.5, 0.16):  # stopwatch
+        M.put("sfx", at, tick(True), 0.06, 0.5)
+    M.put("sfx", 12.0, ui_click(), 0.4)  # START
+    M.put("sfx", 12.15, bell(1320, 0.25, 0.8, 0.06), 0.14, 0.3)  # /start
+    for k, n in enumerate((67, 71, 74, 79)):  # bot welcome card
+        M.put("sfx", 12.6 + k * 0.05, bell(m(n + 12), 0.6, 1.2, 0.2), 0.08, -0.3 + 0.2 * k, verb=0.3)
+    M.put("sfx", 13.2, ui_click(), 0.4)  # login
+    M.put("sfx", 13.35, ding(m(83)), 0.18, verb=0.3)
+    M.put("sfx", 13.5, bell(m(91), 0.8, 1.5, 0.3), 0.1, verb=0.4)  # stopwatch stops at 10 s
+    M.put("sfx", 13.7, whoosh(0.5, 600, 3000), 0.2, 0.4)
+    for i in range(6):  # tiles cascade, G pentatonic
+        M.put("sfx", 14.2 + i * 0.15, bell(m([67, 69, 71, 74, 76, 79][i] + 12), 0.4, 1.5, 0.14), 0.13, -0.4 + i * 0.16, verb=0.25)
+    for i in range(6):  # guided tour pings
+        M.put("sfx", 15.3 + i * 0.45, bell(m([79, 83, 86, 88, 91, 95][i]), 0.5, 1.0, 0.18), 0.08, -0.5 + 0.2 * i, verb=0.35)
+        M.put("sfx", 15.3 + i * 0.45, whoosh(0.18, 2000, 5000), 0.04, -0.5 + 0.2 * i)
+    M.put("sfx", 17.2, bell(m(79), 0.3, 1.0, 0.1), 0.12)
+    M.put("sfx", 18.5, boom(0.9), 0.65, verb=0.4)  # "1 BOSISH"
+    M.put("sfx", 18.5, crash(), 0.3)
+    for k, f in enumerate((m(79), m(83), m(86), m(91))):
+        M.put("sfx", 18.5 + k * 0.03, bell(f, 1.6, 2.5, 0.5), 0.07, -0.3 + k * 0.2, verb=0.5)
+    for k, f in enumerate((m(74), m(79), m(83), m(86))):  # welcome sheet chime
+        M.put("sfx", 19.9 + k * 0.07, bell(f, 1.4, 1.2, 0.45), 0.1, -0.2 + k * 0.13, verb=0.5)
+    M.put("sfx", 21.0, riser(1.0), 0.28)
+
+    # ---------- Scene 3 (22-32): uplifting C G Am F, journey milestones ----------
+    M.put("sfx", 21.75, whoosh(0.5, 500, 8000), 0.3, verb=0.3)
+    M.put("sfx", 22.0, boom(0.9), 0.6, verb=0.45)
+    M.put("sfx", 22.0, crash(), 0.36)
+    prog3 = [(22, [60, 64, 67], 48), (24, [55, 59, 62], 43), (26, [57, 60, 64], 45), (28, [53, 57, 60], 41), (30, [60, 64, 67, 72], 48)]
+    for start, notes, root in prog3:
+        M.put("music", start, supersaw([m(n) for n in notes] + [m(notes[0] + 12)], 2.0, cutoff=3200 if start < 27 else 1800), 0.3 if start < 27 else 0.22, verb=0.3)
+        M.put("music", start, pad([m(n + 12) for n in notes], 2.0 + (0.6 if start == 30 else 0), cutoff=2600, attack=0.3), 0.16, verb=0.4)
+        for b in np.arange(0, 1.99, 0.5 if start >= 27 else 0.25):
+            M.put("music", start + b, sub(m(root), 0.22 if start < 27 else 0.45), 0.3)
+    melody = [(22, 79), (22.5, 76), (23, 79), (23.5, 84), (24, 83), (24.5, 79), (25, 74), (25.5, 79),
+              (26, 81), (26.5, 79), (27, 76), (28, 77), (28.5, 76), (29, 72), (29.5, 74), (30, 76)]
+    for at, n in melody:
+        M.put("music", at, bell(m(n + 12), 1.0, 1.8, 0.35), 0.12, 0.15, verb=0.45)
+    for at in np.arange(22.0, 26.75, 0.5):
+        M.put("drums", at, kick(1.1), 0.6)
+        M.kicks.append(at)
+        M.put("drums", at + 0.25, hat(True), 0.13, 0.35)
+        if int(round(at * 2)) % 2 == 1:
+            M.put("drums", at, clap(), 0.32, verb=0.25)
+    path = seconds(2.35)
+    M.put("sfx", 22.6, np.sin(2 * np.pi * np.cumsum(350 * 2 ** (2 * path / 2.35)) / SR) * np.sin(np.pi * path / 2.35) * 0.4, 0.08, verb=0.3)
+    for k, (at, n) in enumerate(((22.8, 72), (23.5, 76), (24.2, 79), (24.95, 84))):  # milestones
+        M.put("sfx", at, bell(m(n + 12), 0.9, 1.6, 0.3), 0.16, -0.3 + 0.2 * k, verb=0.4)
+    M.put("sfx", 25.0, boom(0.6), 0.45, verb=0.4)
+    for k in range(18):
+        M.put("sfx", 25.0 + g.uniform(0, 0.8), bell(m(int(g.choice([84, 88, 91, 96, 100]))), 0.8, 1.5, 0.25), 0.05, g.uniform(-0.8, 0.8), verb=0.5)
+    for i in range(3):
+        M.put("sfx", 25.2 + i * 0.25, bell(m(79 + 5 * i), 0.5, 1.2, 0.2), 0.14, -0.4 + 0.4 * i, verb=0.3)
+    M.put("sfx", 27.0, whoosh(0.6, 3000, 800), 0.18, verb=0.4)
+    M.put("sfx", 28.3, bell(1760, 3.0, 1.0, 0.9), 0.2, verb=0.6)
+    M.put("sfx", 28.3, bell(2637, 3.0, 0.8, 0.7), 0.08, 0.3, verb=0.6)
+
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.2, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+
+V2 = {4: render_4, 5: render_5, 6: render_6}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}

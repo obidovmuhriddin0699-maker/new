@@ -386,6 +386,21 @@ function pixelDissolve(t, a, b, drawA, drawB, color, ox = W / 2, oy = H / 2) {
   ctx.clip(); drawB(t); ctx.restore();
   for (const [cx, cy, s, q] of live) withAlpha(1 - q, () => { ctx.fillStyle = color; ctx.fillRect(cx - s / 2, cy - s / 2, s, s); });
 }
+// Transition: drawA splits down the middle and slides open like doors, light pouring through onto drawB.
+function splitDoors(t, a, b, drawA, drawB, color) {
+  const p = eInOut(prog(t, a, b)), gap = p * W / 2;
+  drawB(t);
+  const beam = ctx.createLinearGradient(W / 2 - gap - 160, 0, W / 2 + gap + 160, 0);
+  beam.addColorStop(0, 'rgba(255,255,255,0)'); beam.addColorStop(.5, `rgba(255,255,255,${.85 * (1 - p)})`); beam.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = beam; ctx.fillRect(0, 0, W, H);
+  for (const side of [-1, 1]) {
+    ctx.save(); ctx.beginPath();
+    side < 0 ? ctx.rect(-gap, 0, W / 2, H) : ctx.rect(W / 2 + gap, 0, W / 2, H);
+    ctx.clip(); ctx.translate(side * gap, 0); drawA(t); ctx.restore();
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 60;
+    ctx.fillStyle = color; ctx.fillRect(W / 2 + side * gap - (side < 0 ? 8 : 0), 0, 8, H); ctx.restore();
+  }
+}
 // Film grain + vignette, frame-stable for rendering.
 let GRAIN = null;
 function filmLook(t, grain = .07, vignette = .38) {

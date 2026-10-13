@@ -10,6 +10,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 3 | `ADUZ_3-qism.mp4` | Soxta obunachilar va ishonchsizlik |
 | 4 | `ADUZ_4-qism.mp4` | Vaqtni o'g'irlaydigan jarayonlar |
 | 5 | `ADUZ_5-qism.mp4` | Hisobotlarning yo'qligi |
+| 6 | `ADUZ_6-qism.mp4` | ADUZ kashfiyoti |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -128,6 +129,24 @@ chastotalar mono), bus-kompressor (2:1), iliqlik va "havo" EQ, yumshoq saturatsi
 
 Raqamlar bir-biriga mos: 5 ta kanal xarajati jami 1 970 000 so'm, mijozlar 42+9+38+31+6 = 126, 1 970 000 / 126 ≈ 15 600 so'm.
 Kanal nomlari va raqamlar namuna uchun.
+
+## 6-qism: "ADUZ kashfiyoti"
+
+4-qism uslubida (motion toolkit + v2 ovoz dvigateli, `render_6`). Yangi o'tish: `splitDoors` — eski sahna o'rtadan
+ikki eshikdek ochilib, ichidan yorug'lik bilan ADUZ chiqadi. Mux'da `loudnorm` dan keyin `alimiter` (−1,5 dBFS) qo'yilgan.
+
+| Vaqt | Kadr | Ekranda | Audio / SFX | Diktor |
+|---|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "6-QISM · ADUZ kashfiyoti". Orqada labirint devorlari paydo bo'lib boradi. Telefonda uzun "Ro'yxatdan o'tish" formasi: Ism, Familiya, Pasport, STIR, bank hisobi, MFO, yuridik manzil, shartnoma PDF... "Qadam 1/12". Pasport maydoni: "Noto'g'ri format!" (qizil, titraydi) | D-minor pad, filtrlangan bas pulsi; ritmni klaviatura taqillashi beradi; xato signali | Yangi platforma? Uzun ro'yxatdan o'tish, hujjatlar, shartnomalar... |
+| 0:05–0:10.5 | 1. Muammo | "Sessiya muddati tugadi — qaytadan boshlang": forma tozalanib, qadam 4/12 → **1/12** ga qaytadi. Qizil so'zlar: *YANA BIR ILOVA? · MURAKKAB · PULIM XAVFSIZMI?*. 8.5 s: **12 QADAM — faqat ro'yxatdan o'tish uchun** | Ogohlantirish ohangi, teskari "rewind", kick + hat, glitch-zarbalar, boom + crash, riser | Murakkab bo'lsa-chi? Pulim xavfsizmi? — va siz yana eski usulda qolasiz. |
+| 0:10.5–0:11 | O'tish | Kadr ikki eshikdek ochiladi, o'rtadan yorug'lik, yashil chegaralar | Og'ir "sirpanish" whoosh'i chap-o'ngga tarqaladi + yorug' "aah" xor; 11.0 s da boom | — |
+| 0:11–0:16 | 2. Yechim | Telegram'da ADUZ bot: START → "/start" → "Xush kelibsiz!" kartasi → "Telegram orqali kirish" → **Kirildi**. Sekundomer 00:10 da to'xtaydi | G-major groove (G–Em–C–D), START va login kliklari, bot kartasi qo'ng'iroqchalari | ADUZ Telegramning ichida: bir bosishda kirasiz, ortiqcha hujjatlarsiz. |
+| 0:16–0:22 | 2. Yechim | "Salom! Hammasi bitta joyda": 6 ta imkoniyat kartasi (Kanallar bozori, Aniq auditoriya, Tekshirilgan, Avto kampaniya, Jonli statistika, Kafolatli to'lov) kaskad bo'lib chiqadi va navbat bilan yoritiladi. 18.5 s: **1 BOSISH — va siz ichkaridasiz**. "Xush kelibsiz!" oynasi | Kartalar pentatonik kaskadi, tur "ping"lari, boom + crash + qo'ng'iroqcha akkordi, chime | Bitta joyda: kanallar bozori, tekshiruv, kampaniya, statistika va kafolatli to'lov. |
+| 0:21.75–0:22.25 | O'tish | Zoom-through, oq chaqnash | Riser → whoosh → boom | — |
+| 0:22–0:27 | 3. Natija | "Birinchi kundayoq": yo'l xaritasi — Ro'yxatdan o'tish (10 soniya) → Kanallarni tanlash (1 daqiqa) → Kampaniya (3 daqiqa) → **Birinchi mijoz (1-kun)**. Oltin nishonlar: Oson · Tez · Xavfsiz | C–G–Am–F, ko'tariluvchi "yo'l" tovushi, har bosqichda qo'ng'iroqcha, boom + uchqunlar | Ro'yxatdan o'tishdan birinchi mijozgacha — bir kun ichida. |
+| 0:27–0:32 | Yakun | ADUZ logotipi, shior, CTA | Baraban o'chadi, "ting" | ADUZ — biznesingiz himoyachisi! |
+
+Vaqtlar (10 soniya, 1 daqiqa, 1-kun) va "ortiqcha hujjatlarsiz" da'vosi namuna — haqiqiy jarayonga moslab tekshiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 
