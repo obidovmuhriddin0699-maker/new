@@ -41,7 +41,7 @@ VOICE = {
            "Viloyatlar bo‘yicha kanallar alohida ko‘rinadi.", 0.97),
     "n5": ("narr", "[neutral]Har bir kanal auditoriyasi qayerda ekani oldindan ko'rinadi.",
            "Har bir kanal auditoriyasi qayerda ekani oldindan ko‘rinadi.", 0.97),
-    "r6": ("rus8", "[ironic]Toshkent bozori?[p=150]Yo'q, rahmat!", "Toshkent bozori? Yo‘q, rahmat!", 1.0),
+    "r6": ("rus8", "[ironic]Toshkent bozori?[p=120]Yo'q, rahmat!", "Toshkent bozori? Yo‘q, rahmat!", 1.15),
     "r7": ("rus8", "[excited]Mana, Farg'ona kanali —[p=100]menga shu kerak!", "Mana, Farg‘ona kanali — menga shu kerak!", 1.0),
     "n8": ("narr", "[happy]Mahalliy biznes egasi do'stingizga yuboring!", "Mahalliy biznes egasi do‘stingizga yuboring!", 0.97),
     "n9": ("narr", "[excited]Bot: Target reklama bot.[p=150]Ertaga narxlarni solishtiramiz!",
@@ -194,7 +194,7 @@ def subtitle(img, s, who):
     lines = wrap(d, s, f, 900)[:3]
     lh = 60
     box_h = len(lines) * lh + 44
-    y0 = 1430 - box_h
+    y0 = 1800 - box_h            # bottom of the frame, below the page's working area
     d.rounded_rectangle((60, y0, W - 60, y0 + box_h), radius=36, fill=(23, 24, 31, 228))
     col = (255, 255, 255) if who == "narr" else (255, 196, 160)
     y = y0 + 22
