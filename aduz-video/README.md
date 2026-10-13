@@ -1,29 +1,43 @@
-# ADUZ — 1-qism: "Reklama bozoridagi xaos"
+# ADUZ — promo roliklar seriyasi
 
-`ADUZ_1-qism.mp4` — 32 soniyalik vertikal (9:16, 1080×1920, 30 fps) motion-grafika rolik,
+Har bir qism — 32 soniyalik vertikal (9:16, 1080×1920, 30 fps) motion-grafika rolik,
 musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
+
+| Qism | Rolik | Mavzu |
+|---|---|---|
+| 1 | `ADUZ_1-qism.mp4` | Reklama bozoridagi xaos |
+| 2 | `ADUZ_2-qism.mp4` | Auditoriyani topish muammosi |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
+>
+> Roliklardagi kanal nomlari, narxlar va natija ko'rsatkichlari (×3, ×32 va h.k.)
+> namuna uchun qo'yilgan. Efirga chiqarishdan oldin ularni haqiqiy ma'lumotlar bilan almashtiring.
 
 ## Fayllar
 
 | Fayl | Nima |
 |---|---|
-| `ADUZ_1-qism.mp4` | Tayyor rolik |
-| `episode1.html` | Animatsiya manbasi. Brauzerda ochsangiz takrorlanib o'ynaydi |
+| `episodeN.html` | Qism sahnalari. Brauzerda ochsangiz takrorlanib o'ynaydi |
+| `lib.js` | Umumiy qismlar: telefon, logotip, subtitr, kursor, natija foni, yakuniy kadr, sahnalar tartibi |
 | `render.mjs` | HTML → MP4 render (Playwright + ffmpeg) |
-| `audio.py` | Musiqa va SFX sintezi (numpy) |
+| `audio.py` | Musiqa va SFX sintezi (numpy). Musiqa foni umumiy, effektlar har qismga alohida |
 
-Qayta yig'ish:
+Har bir qism bir xil tuzilmada: Muammo 0–11 s, Yechim 11–22 s, Natija 22–32 s.
+Yangi qism qo'shish uchun `episodeN.html` faylida uchta sahna va subtitrlarni yozib,
+`audio.py` ga `cues_N()` qo'shish kifoya.
+
+Qayta yig'ish (masalan, 2-qism):
 
 ```bash
-python3 audio.py build/audio.wav
-node render.mjs build/video_silent.mp4
-ffmpeg -y -i build/video_silent.mp4 -i build/audio.wav -c:v copy -c:a aac -b:a 192k -shortest -movflags +faststart ADUZ_1-qism.mp4
+python3 audio.py 2 build/episode2.wav
+node render.mjs episode2.html            # → build/episode2_silent.mp4
+ffmpeg -y -i build/episode2_silent.mp4 -i build/episode2.wav -c:v copy -c:a aac -b:a 192k -shortest -movflags +faststart ADUZ_2-qism.mp4
 ```
 
-## Ssenariy (taymkodlar bilan)
+Tekshirish uchun alohida kadrlar: `node render.mjs episode2.html --stills=3,8.5,15` → `build/episode2/`.
+
+## 1-qism: "Reklama bozoridagi xaos"
 
 | Vaqt | Kadr | Ekranda | Audio / SFX | Diktor |
 |---|---|---|---|---|
@@ -35,8 +49,18 @@ ffmpeg -y -i build/video_silent.mp4 -i build/audio.wav -c:v copy -c:a aac -b:a 1
 | 0:22–0:27 | 3. Natija | "Reklama ishladi": buyurtmalar grafigi o'sadi, **×3.0**, oltin nishonlar, konfetti | G'alaba musiqasi, kassa "cha-ching" | Natija: aniq auditoriya, o'sayotgan savdo va xotirjamlik. |
 | 0:27–0:32 | Yakun | ADUZ logotipi + yaltirash. "Biznesingiz himoyachisi!", "Farg'ona vodiysi uchun Telegram reklama ekotizimi", CTA: **Hoziroq sinab ko'ring** | "Ting" | ADUZ — biznesingiz himoyachisi! |
 
-Rolikdagi kanal nomlari, narxlar va "×3" ko'rsatkichi namuna uchun qo'yilgan.
-Efirga chiqarishdan oldin ularni haqiqiy ma'lumotlar bilan almashtiring.
+
+## 2-qism: "Auditoriyani topish muammosi"
+
+| Vaqt | Kadr | Ekranda | Audio / SFX | Diktor |
+|---|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "2-QISM · Auditoriyani topish muammosi". Tadbirkor katta kanalda ("Toshkent Memlar", 128 ming) Farg'onadagi ayollar ko'ylaklari reklamasini berdi. Ko'rishlar o'sadi, izohlar esa boshqa auditoriyadan: "Toshkentga yetkazib berasizmi?", "Erkaklar uchun yo'qmi?". Fonda nishon: tomoshabinlar (qizil nuqtalar) nishonga tegmaydi | Tarang dron, yurak urishi, nuqtalar "pop"lari | Katta kanalga reklama berdingiz: ko'rishlar ko'p, mijoz yo'q. |
+| 0:05–0:11 | 1. Muammo | Post statistikasi: Toshkent 64%, erkaklar 81%, 14–18 yosh 58%; Farg'ona vodiysi atigi **7%**. Hisoblagich: 38 000 ko'rish → **2 mijoz**, 1,2 mln so'm sarflangan. Qizil belgilar: *Boshqa shahar · Boshqa yosh · Boshqa qiziqish · Pul havoga* | Buzzerlar, riser | Chunki o'quvchilar boshqa shahar, boshqa yosh, boshqa qiziqishda. |
+| 0:11 | O'tish | Yashil doira | Whoosh | — |
+| 0:11–0:16 | 2. Yechim | ADUZ "Kimga reklama beramiz?" ekrani. Barmoq tanlaydi: hudud (Farg'ona, Marg'ilon, Qo'qon), jins (Ayollar), yoshni 20–40 ga suradi, qiziqish (Moda, Kiyim-kechak). "Mos kanallar" soni 214 → **12** ga tushadi | Kliklar, slider, pad + arpedjio | ADUZ'da auditoriyani oldindan tanlaysiz: hudud, jins, yosh, qiziqish. |
+| 0:16–0:22 | 2. Yechim | "Eng mos kanallar": Ayollar Klubi · Farg'ona — moslik **94%** (Farg'ona vodiysi 88%, ayollar 91%, 20–40 yosh 76%), 290 000 so'm. "Buyurtma berish" → "Reklama aniq manzilga yetadi!" | Gauge ovozi, click, chime | Algoritm faqat sizning mijozlaringiz o'qiydigan kanallarni topadi. |
+| 0:22–0:27 | 3. Natija | "To'g'ri auditoriya": endi tomoshabinlar nishon markaziga tushadi (1-kadrga ishora). Oldin / ADUZ bilan: ko'rishlar 38 000 → 9 500, mijozlar 2 → **64**, 1 mijoz narxi 600 000 → 4 500 so'm. **×32 ko'p mijoz** | G'alaba musiqasi, cha-ching | Ko'rishlar kamroq — mijozlar esa 32 barobar ko'p. |
+| 0:27–0:32 | Yakun | ADUZ logotipi, "Biznesingiz himoyachisi!", CTA "Hoziroq sinab ko'ring" | "Ting" | ADUZ — biznesingiz himoyachisi! |
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

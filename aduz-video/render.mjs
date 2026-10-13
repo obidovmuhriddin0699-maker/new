@@ -1,5 +1,5 @@
-// Renders episode1.html to MP4 (1080x1920, 30 fps).
-// Usage: node render.mjs [out.mp4] [--stills]
+// Renders an episode page (episodeN.html) to MP4 (1080x1920, 30 fps).
+// Usage: node render.mjs <episodeN.html> [out.mp4] [--stills[=t1,t2,…]]
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -11,20 +11,27 @@ let chromium;
 try { ({ chromium } = require('playwright')); } catch { ({ chromium } = require('/opt/node22/lib/node_modules/playwright')); }
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const out = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : path.join(dir, 'build/video_silent.mp4');
-const stills = process.argv.includes('--stills');
+const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
+const html = args[0] || 'episode1.html';
+const name = path.basename(html, '.html');
+const out = args[1] || path.join(dir, `build/${name}_silent.mp4`);
+// --stills or --stills=3,8.5,… writes JPEG stills to build/<episode>/ instead of a video.
+const stillsArg = process.argv.find(a => a.startsWith('--stills'));
+const stills = stillsArg && (stillsArg.includes('=') ? stillsArg.split('=')[1].split(',').map(Number) : [3, 8.5, 12.8, 15.2, 17.2, 20.5, 25.5, 30]);
 const FPS = 30;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 540, height: 960 } });
-await page.goto('file://' + path.join(dir, 'episode1.html') + '?render');
+await page.goto('file://' + path.resolve(dir, html) + '?render');
 await page.evaluate(() => document.fonts.ready);
 const duration = await page.evaluate(() => window.DURATION);
 const grab = t => page.evaluate(t => { window.renderFrame(t); return document.getElementById('c').toDataURL('image/jpeg', 0.93).split(',')[1]; }, t);
 
 fs.mkdirSync(path.dirname(out), { recursive: true });
 if (stills) {
-  for (const t of [3, 8.5, 12.8, 15.2, 17.2, 20.5, 25.5, 30]) fs.writeFileSync(path.join(dir, `build/still_${t}.jpg`), Buffer.from(await grab(t), 'base64'));
+  const sdir = path.join(dir, 'build', name);
+  fs.mkdirSync(sdir, { recursive: true });
+  for (const t of stills) fs.writeFileSync(path.join(sdir, `still_${t}.jpg`), Buffer.from(await grab(t), 'base64'));
 } else {
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FPS), '-i', '-',
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '20', '-preset', 'medium', out], { stdio: ['pipe', 'inherit', 'inherit'] });
