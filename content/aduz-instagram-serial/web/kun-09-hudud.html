@@ -1,0 +1,405 @@
+<title>Hudud bo‘yicha kanal tanlash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a "motion pack" page — numbered pattern panels (text left, live UI demo right), warm paper ground, white cards. */
+:root {
+  --page: #EBE9E5;
+  --inner: #EEECEA;
+  --card: #FCFCFB;
+  --ink: #17181F;
+  --muted: #6F6A66;
+  --line: #DEDAD5;
+  --accent: #E07E57;      /* terracotta from the reference pack */
+  --sky: #72AFD4;
+  --navy: #234B9F;
+  --good: #3A9A66;
+  --bad: #C9493E;
+  --accent-soft: #F7DFD3;
+  --shadow: 0 1px 2px rgba(40, 30, 20, .06), 0 12px 32px rgba(40, 30, 20, .09);
+  --display: "Onest", "Segoe UI", system-ui, sans-serif;
+  --body: "Onest", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #16161A; --inner: #1C1C21; --card: #24242A; --ink: #F1EEEA; --muted: #A39D97; --line: #33323A;
+    --accent: #EE9068; --sky: #86BFE0; --navy: #8EA9F0; --good: #5DBB86; --bad: #E86B5F; --accent-soft: #3A2A23;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #16161A; --inner: #1C1C21; --card: #24242A; --ink: #F1EEEA; --muted: #A39D97; --line: #33323A;
+  --accent: #EE9068; --sky: #86BFE0; --navy: #8EA9F0; --good: #5DBB86; --bad: #E86B5F; --accent-soft: #3A2A23;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--page); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.55;
+  padding-inline: 20px; padding-block: 28px 56px;
+}
+.wrap { max-width: 1080px; margin-inline: auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -.01em; }
+p { margin: 0; }
+.mono { font-family: var(--mono); font-size: 13px; letter-spacing: .04em; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+.series { font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.brand { display: inline-flex; gap: 10px; align-items: center; font-weight: 700; }
+.brand b { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: var(--card); font-size: 14px; }
+.hero { display: grid; gap: 14px; padding-block: 8px 4px; }
+.hero h1 { font-size: clamp(34px, 6vw, 60px); font-weight: 800; line-height: 1.05; }
+.hero p { max-width: 62ch; color: var(--muted); font-size: 18px; }
+.quote { display: flex; gap: 14px; align-items: flex-start; max-width: 62ch; }
+.quote span.av { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--accent-soft); display: grid; place-items: center; font-weight: 800; color: var(--accent); }
+.quote q { font-weight: 600; }
+
+/* pattern panel */
+.panel { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 28px; align-items: start;
+  background: transparent; padding-block: 24px; border-top: 1px solid var(--line); }
+.panel .copy { display: grid; gap: 10px; min-width: 0; }
+.num { font-family: var(--mono); color: var(--accent); font-size: 14px; font-weight: 700; }
+.panel h2 { font-size: clamp(26px, 3.4vw, 36px); font-weight: 800; }
+.panel .copy p { color: var(--muted); max-width: 46ch; }
+.use { font-size: 14px; }
+.use b { color: var(--accent); }
+.stage { background: var(--inner); border: 1px solid var(--line); border-radius: 28px; padding: 22px; min-width: 0; }
+@media (max-width: 760px) { .panel { grid-template-columns: 1fr; gap: 16px; } .stage { padding: 14px; border-radius: 22px; } }
+
+.card { background: var(--card); border-radius: 20px; box-shadow: var(--shadow); }
+.chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 700;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+.chip.on { background: var(--accent); color: var(--card); border-color: transparent; }
+.cond { font-family: var(--mono); font-size: 11px; color: var(--muted); background: var(--inner); border-radius: 8px; padding: 3px 8px; letter-spacing: .03em; }
+
+/* 01 map */
+.map { width: 100%; height: auto; display: block; }
+.map text { font-family: var(--body); fill: var(--ink); }
+.map .muted { fill: var(--muted); }
+.map .path { stroke: var(--muted); stroke-width: 3; fill: none; stroke-dasharray: 9 9; animation: flow 1.2s linear infinite; }
+.map .x { stroke: var(--bad); stroke-width: 9; stroke-linecap: round; }
+@keyframes flow { to { stroke-dashoffset: -18; } }
+
+/* 02 search */
+.search { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 999px; }
+.search svg { flex: none; }
+.search input { all: unset; flex: 1; min-width: 0; font-size: 19px; font-weight: 600; color: var(--ink); }
+.search input::placeholder { color: var(--muted); }
+.search:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+.results { display: grid; gap: 10px; margin-top: 14px; }
+.res { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px;
+  border: 0; width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.res .sw { width: 52px; height: 52px; border-radius: 14px; }
+.res h3 { font-size: 18px; font-weight: 800; }
+.res small { color: var(--muted); font-size: 14px; }
+.res .subs { font-variant-numeric: tabular-nums; font-weight: 700; background: var(--inner); border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+.res[aria-pressed="true"] { outline: 3px solid var(--accent); }
+.res:focus-visible { outline: 3px solid var(--navy); }
+.enter { animation: rise .45s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes rise { from { transform: translateY(16px); opacity: .0; } }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.empty { padding: 18px; color: var(--muted); }
+
+/* 03 tabs */
+.tabs { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); padding: 6px; border-radius: 999px; }
+.tabs button { all: unset; position: relative; z-index: 1; text-align: center; padding: 12px 6px; font-weight: 700; color: var(--muted); cursor: pointer; border-radius: 999px; }
+.tabs button[aria-selected="true"] { color: var(--card); }
+.tabs button:focus-visible { outline: 3px solid var(--accent); }
+.tabs .pill { position: absolute; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 12px) / 3); border-radius: 999px; background: var(--ink);
+  transition: transform .45s cubic-bezier(.34, 1.56, .64, 1); }
+.list { margin-top: 14px; padding: 16px 18px; display: grid; gap: 12px; }
+.list header { display: flex; justify-content: space-between; align-items: center; }
+.list h3 { font-size: 20px; font-weight: 800; }
+.badge { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 14px; }
+.row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.row i { width: 40px; height: 40px; border-radius: 10px; display: block; }
+.row span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 700; }
+
+/* 04 zoom */
+.ch-head { display: flex; gap: 14px; align-items: center; padding: 18px; }
+.ch-head i { width: 64px; height: 64px; border-radius: 16px; display: block; flex: none; }
+.ch-head h3 { font-size: 24px; font-weight: 800; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 18px 18px; }
+.tile { background: var(--inner); border-radius: 14px; padding: 12px; min-width: 0; }
+.tile small { color: var(--muted); font-size: 13px; display: block; }
+.tile b { font-size: 20px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tile.focus { outline: 3px solid var(--accent); }
+.geo { margin-top: 14px; padding: 18px; display: grid; gap: 12px; }
+.geo header { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+.bar { display: grid; grid-template-columns: 96px minmax(0, 1fr) 52px; gap: 10px; align-items: center; font-weight: 700; font-size: 15px; }
+.bar .track { height: 18px; background: var(--inner); border-radius: 999px; overflow: hidden; }
+.bar .fill { height: 100%; border-radius: 999px; width: 0; transition: width .8s cubic-bezier(.34, 1.3, .64, 1); }
+.bar span:last-child { font-variant-numeric: tabular-nums; text-align: right; }
+.verdict { font-weight: 700; }
+.verdict.ok { color: var(--good); } .verdict.no { color: var(--bad); }
+
+/* 05 share */
+.share { padding: 22px; display: grid; gap: 16px; justify-items: center; text-align: center; }
+.share h3 { font-size: 26px; font-weight: 800; max-width: 20ch; }
+.handle { font-family: var(--mono); font-size: 18px; font-weight: 700; background: var(--inner); border-radius: 12px; padding: 10px 14px; user-select: all; }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.btn { all: unset; cursor: pointer; border-radius: 999px; padding: 14px 24px; font-weight: 800; background: var(--card); color: var(--ink);
+  border: 2px solid var(--ink); position: relative; }
+.btn.primary { background: var(--navy); color: var(--card); border-color: var(--navy); }
+.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.btn.burst::after { content: ""; position: absolute; inset: -10px; border-radius: 999px; border: 3px solid var(--accent); animation: burst .6s ease-out forwards; }
+@keyframes burst { from { opacity: 1; transform: scale(.9); } to { opacity: 0; transform: scale(1.35); } }
+.msg { font-size: 15px; color: var(--muted); min-height: 1.5em; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 18px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <span class="series">Reklama degani shumi?! · 9-qism</span>
+    <span class="brand"><b>A</b> ADUZ</span>
+  </div>
+
+  <section class="hero">
+    <h1>Hudud bo‘yicha kanal tanlash</h1>
+    <p>Mahalliy biznes uchun eng katta xato — reklamani boshqa shaharga berish. Pastdagi har bir blokni bosib ko‘ring: ADUZ'da kanal hudud va mavzu bo‘yicha qanday topilishini sinab ko‘rasiz.</p>
+    <div class="quote"><span class="av" aria-hidden="true">R</span><p><q>Farg‘onadagi do‘konim uchun Toshkent kanaliga reklama berdim... Toshkentdan divan olgani kim keladi?!</q><br><small class="mono">Rustam aka, mebel do‘koni egasi</small></p></div>
+  </section>
+
+  <!-- 01 -->
+  <section class="panel" id="hudud">
+    <div class="copy">
+      <span class="num">01</span>
+      <h2>Noto‘g‘ri hudud</h2>
+      <p>Kanal katta, reklama chiqdi, lekin auditoriya 300 km narida. Do‘konga mijoz kelmaydi.</p>
+      <p class="use"><b>Kimga foydali:</b> do‘kon, kafe, xizmat egalari.</p>
+    </div>
+    <div class="stage">
+      <svg class="map" viewBox="0 0 600 360" role="img" aria-label="Toshkent kanali va Farg‘onadagi do‘kon orasidagi masofa">
+        <rect x="20" y="40" width="250" height="120" rx="20" fill="var(--card)" />
+        <circle cx="62" cy="88" r="16" fill="var(--navy)" /><circle cx="62" cy="88" r="6" fill="var(--card)" />
+        <text x="92" y="84" font-size="24" font-weight="800">Toshkent</text>
+        <text x="92" y="112" font-size="15" class="muted">kanal · 120 ming obunachi</text>
+        <text x="92" y="136" font-size="15" fill="var(--navy)">auditoriya: Toshkent</text>
+        <rect x="330" y="200" width="250" height="120" rx="20" fill="var(--card)" />
+        <circle cx="372" cy="248" r="16" fill="var(--accent)" /><circle cx="372" cy="248" r="6" fill="var(--card)" />
+        <text x="402" y="244" font-size="24" font-weight="800">Farg‘ona</text>
+        <text x="402" y="272" font-size="15" class="muted">Rustam Mebel</text>
+        <text x="402" y="296" font-size="15" fill="var(--accent)">do‘kon shu yerda</text>
+        <path class="path" d="M270 100 C 420 40, 470 120, 455 200" />
+        <rect x="372" y="54" width="104" height="34" rx="17" fill="var(--card)" />
+        <text x="390" y="77" font-size="16" font-weight="700">≈ 300 km</text>
+        <g transform="translate(395 140)"><line class="x" x1="-22" y1="-22" x2="22" y2="22" /><line class="x" x1="-22" y1="22" x2="22" y2="-22" /></g>
+        <g fill="var(--sky)">
+          <circle cx="50" cy="200" r="11" /><circle cx="86" cy="206" r="11" /><circle cx="122" cy="200" r="11" /><circle cx="158" cy="206" r="11" /><circle cx="194" cy="200" r="11" />
+          <rect x="38" y="214" width="24" height="18" rx="9" /><rect x="74" y="220" width="24" height="18" rx="9" /><rect x="110" y="214" width="24" height="18" rx="9" /><rect x="146" y="220" width="24" height="18" rx="9" /><rect x="182" y="214" width="24" height="18" rx="9" />
+        </g>
+        <text x="40" y="262" font-size="14" class="muted">kanal auditoriyasi — Toshkentda</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section class="panel" id="qidiruv">
+    <div class="copy">
+      <span class="num">02</span>
+      <h2>Qidiruv → natijalar</h2>
+      <p>Hudud va mavzuni yozing: mos kanallar darhol chiqadi. Masalan, “Andijon”, “mebel” yoki “e’lon” deb sinab ko‘ring. Natijani bossangiz, 04-blokda batafsil ko‘rinadi.</p>
+      <p class="use"><b>Kimga foydali:</b> mos kanalni tez topish.</p>
+    </div>
+    <div class="stage">
+      <label class="search card" for="q">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="var(--ink)" stroke-width="2.6"/><path d="M15.5 15.5 21 21" stroke="var(--ink)" stroke-width="2.8" stroke-linecap="round"/></svg>
+        <input id="q" type="search" value="Farg‘ona mebel" placeholder="Hudud yoki mavzu" autocomplete="off" aria-label="Kanal qidirish">
+      </label>
+      <div class="filters" id="regionChips" aria-label="Hudud"></div>
+      <div class="results" id="results" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section class="panel" id="viloyat">
+    <div class="copy">
+      <span class="num">03</span>
+      <h2>Viloyat → kanallar</h2>
+      <p>Viloyatni almashtiring: ro‘yxat shu hudud kanallariga yangilanadi. Bir nechta viloyatda ishlasangiz, har biri uchun alohida tanlaysiz.</p>
+      <p class="use"><b>Kimga foydali:</b> bir nechta viloyatda ishlaydiganlar.</p>
+    </div>
+    <div class="stage">
+      <div class="tabs card" role="tablist" aria-label="Viloyat">
+        <span class="pill" id="pill" aria-hidden="true"></span>
+      </div>
+      <div class="list card" id="tabPanel" role="tabpanel"></div>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section class="panel" id="kanal">
+    <div class="copy">
+      <span class="num">04</span>
+      <h2>Kanal → hudud</h2>
+      <p>Har bir kanal qaysi hududga mo‘ljallangani oldindan ko‘rinadi. Do‘koningiz qayerda bo‘lsa, auditoriyasi o‘sha yerda bo‘lgan kanalni tanlang.</p>
+      <p class="use"><b>Kimga foydali:</b> byudjetni to‘g‘ri sarflash.</p>
+    </div>
+    <div class="stage">
+      <div class="card">
+        <div class="ch-head"><i id="chColor"></i><div><h3 id="chName"></h3><small id="chTopic" style="color:var(--muted)"></small></div></div>
+        <div class="tiles">
+          <div class="tile"><small>Obunachi</small><b id="chSubs"></b></div>
+          <div class="tile"><small>O‘rt. ko‘rish</small><b id="chViews"></b></div>
+          <div class="tile focus"><small>Hudud</small><b id="chRegion"></b></div>
+        </div>
+      </div>
+      <div class="geo card">
+        <header><h3 style="font-size:20px;font-weight:800">Auditoriya qayerda?</h3><span class="cond">shartli misol</span></header>
+        <div id="bars"></div>
+        <p class="verdict" id="verdict"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section class="panel" id="yuboring">
+    <div class="copy">
+      <span class="num">05</span>
+      <h2>Yuboring</h2>
+      <p>Mahalliy biznes egasi do‘stingiz bormi? Unga ADUZ botini yuboring — ertaga narxlarni solishtirishni ko‘rsatamiz.</p>
+      <p class="use"><b>Kimga foydali:</b> mahalliy tadbirkorlar.</p>
+    </div>
+    <div class="stage">
+      <div class="share card">
+        <h3>Mahalliy biznes egasi do‘stingizga yuboring</h3>
+        <span class="handle" id="handle">@Targetreklammabot</span>
+        <div class="btns">
+          <button class="btn primary" id="copyMsg" type="button">Xabarni nusxalash</button>
+          <a class="btn" href="https://t.me/Targetreklammabot" target="_blank" rel="noopener">Botni ochish</a>
+        </div>
+        <p class="msg" id="msg" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>ADUZ · Telegram reklama marketpleysi</span>
+    <span>Kanal nomlari va raqamlar — shartli misol.</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  // Example channels (conditional example data, not real channels)
+  const CH = [
+    { n: "Farg‘ona Bugun", r: "Farg‘ona", t: "yangiliklar · e’lonlar · uy-ro‘zg‘or mebel", s: 30000, v: 7000, c: "var(--accent)", g: [78, 12, 10] },
+    { n: "Vodiy e’lonlari", r: "Farg‘ona", t: "e’lonlar · mebel · uy", s: 18000, v: 5500, c: "var(--sky)", g: [70, 18, 12] },
+    { n: "Marg‘ilon uylari", r: "Farg‘ona", t: "uy-ro‘zg‘or · mebel · ta’mir", s: 12000, v: 3900, c: "var(--ink)", g: [83, 7, 10] },
+    { n: "Qo‘qon savdo", r: "Farg‘ona", t: "savdo · e’lonlar", s: 22000, v: 4800, c: "var(--navy)", g: [74, 11, 15] },
+    { n: "Andijon 24", r: "Andijon", t: "yangiliklar", s: 41000, v: 9200, c: "var(--accent)", g: [10, 80, 10] },
+    { n: "Asaka e’lonlari", r: "Andijon", t: "e’lonlar · avto · mebel", s: 9000, v: 2600, c: "var(--sky)", g: [6, 84, 10] },
+    { n: "Andijon bozori", r: "Andijon", t: "savdo · uy-ro‘zg‘or mebel", s: 15000, v: 3700, c: "var(--ink)", g: [8, 79, 13] },
+    { n: "Namangan tongi", r: "Namangan", t: "yangiliklar", s: 27000, v: 6100, c: "var(--accent)", g: [9, 6, 85] },
+    { n: "Chust yangiliklari", r: "Namangan", t: "yangiliklar · e’lonlar", s: 8000, v: 2300, c: "var(--sky)", g: [5, 4, 91] },
+    { n: "Namangan uylari", r: "Namangan", t: "uy-ro‘zg‘or · mebel", s: 11000, v: 3100, c: "var(--ink)", g: [7, 8, 85] },
+    { n: "Toshkent bozori", r: "Toshkent", t: "savdo · mebel · avto", s: 120000, v: 9000, c: "var(--navy)", g: [4, 3, 3] },
+  ];
+  const REGIONS = ["Farg‘ona", "Andijon", "Namangan"];
+  const fmt = n => n.toLocaleString("ru-RU").replace(/ /g, " ");
+  const norm = s => s.toLowerCase().replace(/[‘’ʻ`']/g, "'").replace(/[·,]/g, " ");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let selected = CH[0];
+
+  // ---------- 02 search
+  const q = document.getElementById("q"), res = document.getElementById("results"), chipsBox = document.getElementById("regionChips");
+  let regionFilter = null;
+  ["Hammasi", ...REGIONS, "Toshkent"].forEach(r => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip" + (r === "Hammasi" ? " on" : ""); b.textContent = r;
+    b.addEventListener("click", () => {
+      regionFilter = r === "Hammasi" ? null : r;
+      chipsBox.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === b));
+      renderResults();
+    });
+    chipsBox.appendChild(b);
+  });
+  function renderResults() {
+    const words = norm(q.value).split(/\s+/).filter(Boolean);
+    const list = CH.filter(c => (!regionFilter || c.r === regionFilter) &&
+      words.every(w => norm(c.n + " " + c.r + " " + c.t).includes(w)));
+    res.innerHTML = "";
+    if (!list.length) {
+      res.innerHTML = '<p class="empty card">Bu so‘rov bo‘yicha kanal topilmadi. Hududni yoki mavzuni boshqacha yozib ko‘ring.</p>';
+      return;
+    }
+    list.slice(0, 5).forEach((c, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "res card enter"; b.style.animationDelay = (i * 90) + "ms";
+      b.setAttribute("aria-pressed", String(c === selected));
+      b.innerHTML = `<span class="sw" style="background:${c.c}"></span><span style="min-width:0"><h3>${c.n}</h3><small>${c.r} · ${c.t.split(" · ")[0]}</small></span><span class="subs">${fmt(c.s)}</span>`;
+      b.addEventListener("click", () => { select(c); renderResults(); });
+      res.appendChild(b);
+    });
+  }
+  q.addEventListener("input", renderResults);
+
+  // ---------- 03 tabs
+  const tabs = document.querySelector(".tabs"), pill = document.getElementById("pill"), panel = document.getElementById("tabPanel");
+  let active = 0;
+  REGIONS.forEach((r, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("role", "tab"); b.id = "tab-" + i; b.textContent = r;
+    b.addEventListener("click", () => setTab(i));
+    b.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight") { setTab((active + 1) % 3); tabs.querySelectorAll("button")[active].focus(); }
+      if (e.key === "ArrowLeft") { setTab((active + 2) % 3); tabs.querySelectorAll("button")[active].focus(); }
+    });
+    tabs.appendChild(b);
+  });
+  function setTab(i) {
+    active = i;
+    tabs.querySelectorAll("button").forEach((b, j) => { b.setAttribute("aria-selected", String(j === i)); b.tabIndex = j === i ? 0 : -1; });
+    pill.style.transform = `translateX(${i * 100}%)`;
+    const rows = CH.filter(c => c.r === REGIONS[i]);
+    panel.setAttribute("aria-labelledby", "tab-" + i);
+    panel.innerHTML = `<header><h3>${REGIONS[i]} kanallari</h3><span class="badge">${rows.length}</span></header>` +
+      rows.map((c, j) => `<div class="row enter" style="animation-delay:${j * 80}ms"><i style="background:${c.c}"></i><span>${c.n}</span><span>${fmt(c.s)}</span></div>`).join("");
+  }
+
+  // ---------- 04 channel -> region
+  function select(c) {
+    selected = c;
+    document.getElementById("chColor").style.background = c.c;
+    document.getElementById("chName").textContent = c.n;
+    document.getElementById("chTopic").textContent = c.t;
+    document.getElementById("chSubs").textContent = fmt(c.s);
+    document.getElementById("chViews").textContent = fmt(c.v);
+    document.getElementById("chRegion").textContent = c.r;
+    const names = c.r === "Toshkent" ? ["Toshkent", "Vodiy", "Boshqa"] : ["Farg‘ona", "Andijon", "Namangan"];
+    const vals = c.r === "Toshkent" ? [90, 4, 6] : c.g;
+    const cols = ["var(--accent)", "var(--sky)", "var(--muted)"];
+    const bars = document.getElementById("bars");
+    bars.innerHTML = names.map((n, i) => `<div class="bar"><span>${n}</span><span class="track"><span class="fill" style="background:${cols[i]}"></span></span><span>${vals[i]}%</span></div>`).join("");
+    requestAnimationFrame(() => bars.querySelectorAll(".fill").forEach((f, i) => f.style.width = vals[i] + "%"));
+    const shopIn = c.r === "Farg‘ona";
+    const v = document.getElementById("verdict");
+    v.className = "verdict " + (shopIn ? "ok" : "no");
+    v.textContent = shopIn ? "Rustam akaning Farg‘onadagi do‘koni uchun mos kanal." : `Auditoriya asosan ${c.r === "Toshkent" ? "Toshkentda" : c.r + "da"} — Farg‘onadagi do‘kon uchun mos emas.`;
+  }
+
+  // ---------- 05 share
+  const copyBtn = document.getElementById("copyMsg"), msg = document.getElementById("msg");
+  const text = "Reklama uchun kanalni hudud bo‘yicha topish mumkin ekan — ADUZ boti: @Targetreklammabot (https://t.me/Targetreklammabot)";
+  copyBtn.addEventListener("click", () => {
+    copyBtn.classList.remove("burst"); void copyBtn.offsetWidth; if (!reduce) copyBtn.classList.add("burst");
+    const ok = () => { msg.textContent = "Nusxalandi. Endi do‘stingizga Telegramda yuboring."; copyBtn.textContent = "Nusxalandi!"; };
+    const fallback = () => {
+      const r = document.createRange(); r.selectNodeContents(document.getElementById("handle"));
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      msg.textContent = "Nusxalash bloklandi — bot nomi belgilandi, uni o‘zingiz nusxalang.";
+    };
+    try { navigator.clipboard.writeText(text).then(ok, fallback); } catch (e) { fallback(); }
+  });
+
+  renderResults(); setTab(0); select(selected);
+})();
+</script>
