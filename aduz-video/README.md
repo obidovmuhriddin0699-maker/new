@@ -14,6 +14,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 7 | `ADUZ_7-qism.mp4` | Platforma interfeysi bilan tanishuv |
 | 8 | `ADUZ_8-qism.mp4` | Yagona Marketplace yechimi |
 | 9 | `ADUZ_9-qism.mp4` | Aqlli kampaniya yaratish |
+| 10 | `ADUZ_10-qism.mp4` | Matching algoritmi ishda |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -226,6 +227,33 @@ Qoralama g'ijimlanganda ovoz vakuumi: faqat qog'oz chirsillashi va to'pning tush
 | 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
 
 Sozlama nomlari, tavsiya qiymatlari va vaqtlar namuna — ADUZ'dagi haqiqiy avto-sozlash bilan solishtiring.
+
+## 10-qism: "Matching algoritmi ishda"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: piksel-dissolve ("ma'lumot" mavzusi) va whip-pan.
+
+**G'oya:** muammo — kanal **omad g'ildiragi**da tanlanadi; yechim — o'sha kanallarni Matching skaneri baholaydi, ro'yxat moslik
+bo'yicha qayta tartiblanadi va eng mos kanal **radar (o'rgimchak to'ri) diagramma**sida ochiladi: sizning auditoriyangiz (uzuq chiziq)
+va kanal auditoriyasi (yashil) 5 o'q bo'yicha ustma-ust.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_10.md`](SOUND_ARCHITECTURE_10.md). G'ildirak fizikasi (chiziqli sekinlashish) JS va Python'da bir xil
+formula bilan hisoblanadi — 68 ta qoziq "chiq"i aynan qoziq ko'rsatkichdan o'tgan kadrga tushadi (boshida ~30/s "trrr", oxirida sekin).
+G'ildirak 9.5 s da to'xtaydi — musiqa kesiladi, sukunatda yakuniy "tak" va yurak urishi: "Moslik: 12%". Skaner baholaganda har bir kanal
+o'z notasida eshitiladi: yuqori moslik — baland nota, past moslik — past nota (C-pentatonik). Radar sonar "ping"i bilan ochiladi.
+Musiqa — 7-qism aranjirovkasi 2 yarim ton pastda (D-minor → C-major). Sonic logo C tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "10-QISM · Matching algoritmi". Kanallar katalogi: 8 kanal, faqat obunachi soni, har birida "moslik: ?". Kursor ikkilanib kanaldan kanalga o'tadi → "Tasodifiy tanlash" | Yuzlab kanal — qaysi biri sizning mijozingizga mos? Hech kim bilmaydi. |
+| 0:05–0:10.5 | 1. Muammo | Katta omad g'ildiragi aylanadi (12 kanal). *TAXMIN? · OMAD? · TAVAKKAL!*. 8.5 s: **50 / 50 — omadga ishonib reklama**. 9.5 s: g'ildirak "Toshkent Memlar"da to'xtaydi, sukunatda: **Moslik: 12%** | Shuning uchun tanlov taxminga, omadga qoladi... natija: 12% moslik. |
+| 0:10.5–0:11 | O'tish | Piksel-dissolve | — |
+| 0:11–0:16 | 2. Yechim | "Matching": auditoriyangiz (Farg'ona · Ayollar 20–40 · Moda). Skaner nuri ro'yxatni kezadi, har kanalda moslik halqasi to'ladi (12, 94, 23, 91, 31, 88, 18, 76). Ro'yxat moslik bo'yicha qayta tartiblanadi, top-3 ga oltin/kumush/bronza medal | ADUZ'ning Matching algoritmi har bir kanalni auditoriyangiz bilan solishtiradi. |
+| 0:16–0:22 | 2. Yechim | "Ayollar Klubi — Nega mos?": radar diagramma (Hudud 96, Yosh 92, Jins 97, Qiziqish 94, Faollik 91) → "Tanlash". 18.5 s: **94% MOSLIK — taxmin emas, hisob**. "Eng mos kanallar tanlandi!" | Eng mos kanallar tepada — har biri uchun aniq moslik foizi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Aniq tanlov — aniq natija": Taxmin bilan (g'ildirak, 12%, 6 mijoz, pul havoga) chizib o'chiriladi ↔ ADUZ Matching (Matching Score, 94%, 41 mijoz, har so'm hisobda). Nishonlar: Aniq · Hisob-kitob · Tez | Taxmin emas — hisob. Natija ham shunga yarasha. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Kanal nomlari, moslik foizlari va mijozlar soni namuna (radar o'qlari o'rtachasi = 94%). Matching mezonlarini mahsulotdagi haqiqiy algoritm bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

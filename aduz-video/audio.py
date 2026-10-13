@@ -1743,7 +1743,136 @@ def render_9():
     return out
 
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9}
+# ---------- 10-qism: Matching algoritmi ishda ----------
+def fx_peg():
+    return layer(fx_detent(64) * 0.9, filt(rng.standard_normal(int(0.03 * SR)), "bandpass", [600, 2500]) * np.exp(-seconds(0.03) / 0.005) * 0.5)
+
+
+def fx_clack():
+    return layer(fx_peg() * 1.2, tone(80, 0.3, "sine", 0.001, 0.08) * 0.9, np.concatenate([np.zeros(int(0.06 * SR)), fx_peg() * 0.5]))
+
+
+def fx_scan(dur=1.6):
+    x = seconds(dur)
+    f = 900 * 2 ** (x / dur)
+    s = np.sin(2 * np.pi * np.cumsum(f) / SR) * (0.6 + 0.4 * np.sin(2 * np.pi * 12 * x))
+    return (s * 0.35 + sweep_filter(rng.standard_normal(len(x)), 2000, 7000) * 0.2) * np.sin(np.pi * x / dur)
+
+
+def fx_score(note=72):
+    return layer(bell(m(note), 0.4, 1.0, 0.14) * 0.8, tick(True) * 0.3)
+
+
+def fx_radar():
+    x = seconds(1.2)
+    return np.sin(2 * np.pi * 1180 * x) * np.exp(-x / 0.25) * np.minimum(1, x / 0.004) * 0.6
+
+
+SOUNDS.update({
+    "fx.peg": ("L3", lambda a=None: fx_peg(), "Omad g'ildiragi qozig'i ko'rsatkichdan o'tishi"),
+    "fx.clack": ("L5", lambda a=None: fx_clack(), "G'ildirak to'xtadi: oxirgi 'tak' + thud"),
+    "fx.scan": ("L3", lambda a=None: fx_scan(a or 1.6), "Matching skaneri: ko'tariluvchi tremolo ton"),
+    "fx.score": ("L3", lambda a=None: fx_score(a or 72), "Kanal bahosi: yuqori moslik — yuqori nota, past moslik — past nota"),
+    "fx.radar": ("L3", lambda a=None: fx_radar(), "Radar diagramma ochilishi: sonar 'ping'"),
+})
+FRONT.update({"fx.clack"})
+
+# Fortune wheel — same physics as episode10.html (linear deceleration from WHEEL_T0 over WHEEL_T seconds).
+WHEEL_T0, WHEEL_T, WHEEL_LAND = 5.0, 4.5, 0
+WHEEL_FINAL = -np.pi / 2 - (WHEEL_LAND + 0.5) * np.pi / 6 + 2 * np.pi * 6
+WHEEL_TICKS = [WHEEL_T0 + WHEEL_T * (1 - np.sqrt(1 - k * (np.pi / 6) / WHEEL_FINAL)) for k in range(1, int(WHEEL_FINAL / (np.pi / 6)) + 1)]
+_SCORES10 = [12, 94, 23, 91, 31, 88, 18, 76]
+_SCAN10 = [12.2 + (k + 0.5) / 8 * 1.6 for k in range(8)]
+_C_PENTA = [48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84]
+_note10 = lambda sc: _C_PENTA[min(len(_C_PENTA) - 1, int(sc / 100 * len(_C_PENTA)))] + 12
+
+CUES_10 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    *[(0.6 + k * 0.12, "ui.popup", 0.07, 0.2, 0.15, 0, f"Katalog qatori #{k + 1} — 'moslik: ?'", [60, 62, 64, 67, 69, 72, 74, 76][k]) for k in range(8)],
+    *[(at, "ui.tap", 0.05, 0.3, 0, 0, "Ikkilanayotgan kursor", None) for at in (1.7, 2.1, 2.5, 2.9, 3.3)],
+    (3.4, "ui.popup", 0.16, 0, 0.2, 0, "'Tasodifiy tanlash' tugmasi", 64),
+    (4.3, "ui.tap", 0.35, 0.2, 0, 0, "Tasodifiy tanlash bosildi", None),
+    (4.5, "tr.whoosh", 0.22, 0, 0.3, 0, "Omad g'ildiragi chiqadi", None),
+    *[(at, "fx.peg", 0.16 + 0.12 * (at - WHEEL_T0) / WHEEL_T, 0.1, 0.1, 0, f"Qoziq #{k + 1}" if k % 10 == 0 else "Qoziq", None) for k, at in enumerate(WHEEL_TICKS)],
+    (5.6, "imp.glitch", 0.36, -0.4, 0.25, 0, "Slam: TAXMIN?", None),
+    (6.6, "imp.glitch", 0.36, 0.4, 0.25, 0, "Slam: OMAD?", None),
+    (7.6, "imp.glitch", 0.36, -0.4, 0.25, 0, "Slam: TAVAKKAL!", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [50, 53, 57, 62]),
+    (8.5, "imp.boom", 0.7, 0, 0.4, 0, "50 / 50 — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.36, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.28, 0, 0, 0, "Zarba qatlami", None),
+    (WHEEL_T0 + WHEEL_T, "fx.clack", 0.5, 0.1, 0, 0, "OVOZ VAKUUMI: g'ildirak to'xtadi — Toshkent Memlar", None),
+    (9.75, "fx.heartbeat", 0.4, 0, 0, 0, "Hukm: Moslik 12%", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (C-major)", [60, 64, 67, 72]),
+    *[(10.55 + k / 32, "ui.slider", 0.06, (-1) ** k * 0.6, 0.2, 0, "Piksel-dissolve uchqunlari" if k == 0 else "Piksel-dissolve", [72, 74, 76, 79, 81, 84, 86, 88][k % 8]) for k in range(14)],
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    *[(11.7 + k * 0.06, "fx.snap", 0.07, -0.3 + 0.08 * k, 0.1, 0, "Kanal qatori", None) for k in range(8)],
+    (12.2, "fx.scan", 0.16, 0, 0.3, 0.2, "Matching skaneri ro'yxatni kezadi", 1.6),
+    *[(at, "fx.score", 0.15 + 0.08 * (sc > 70), -0.4 + 0.1 * k, 0.3, 0.2, f"Baho: {sc}%", _note10(sc)) for k, (at, sc) in enumerate(zip(_SCAN10, _SCORES10))],
+    (14.1, "tr.slide", 0.18, 0, 0.15, 0, "Ro'yxat moslik bo'yicha qayta tartiblanadi", None),
+    (14.7, "fx.snap", 0.2, 0, 0.2, 0, "Tartib joyiga tushdi", None),
+    *[(14.8 + i * 0.12, "ui.select", 0.16, -0.3 + 0.3 * i, 0.3, 0.2, f"Medal #{i + 1}", [84, 79, 76][i]) for i in range(3)],
+    (15.6, "ui.tap", 0.3, 0, 0, 0, "Eng mos kanal bosildi", None),
+    (15.8, "tr.slide", 0.16, 0, 0.15, 0, "'Nega mos?' oynasi", None),
+    (16.0, "fx.radar", 0.22, 0, 0.4, 0.45, "Radar diagramma 'ping'i", None),
+    (16.05, "ui.launch", 0.12, 0, 0.3, 0, "Diagramma o'sadi", None),
+    (17.6, "ui.tap", 0.35, 0.1, 0, 0, "Tanlash bosildi", None),
+    (17.85, "ui.next", 0.22, 0, 0.3, 0.2, "Tanlandi", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: 94% MOSLIK oldidan", [64, 67, 72, 76]),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "94% MOSLIK — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 19),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Eng mos kanallar tanlandi oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    *[(22.8 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Taxmin' qatori #{i + 1} chizildi", None) for i in range(4)],
+    *[(23.0 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"Matching qatori #{i + 1}", [72, 76, 79, 84][i]) for i in range(4)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [67, 72, 76, 79]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 21),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [79, 84, 88][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (C tonikada)", 60),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 91),
+]
+
+SCORE_10 = [
+    ("0:00–0:09.5", "Muammo · D-minor, tashvishli minimal", "7-qism aranjirovkasi 2 yarim ton pastda. Ustida omad g'ildiragi qoziqlari: boshida tez 'trrr' (soniyasiga ~30), keyin fizika bo'yicha sekinlashadi — har bir 'chiq' qoziq ko'rsatkichdan o'tgan kadrga tushadi."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "G'ildirak to'xtashi bilan musiqa kesiladi (gate). Sukunatda oxirgi 'tak' va yurak urishi: 'Moslik: 12%'. Keyin J-cut swell C-major'da."),
+    ("0:11–0:21.75", "Yechim · C-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Skaner har bir kanalni baholaganda baho notasi: yuqori moslik — baland nota, past moslik — past nota (C-pentatonik). Radar diagramma sonar 'ping'i bilan ochiladi."),
+    ("0:22–0:27", "Natija · C-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (C tonikada), so'nish."),
+]
+
+
+def score_10(M):
+    """7-qism partiturasi, 2 yarim ton pastda."""
+    global KEY_SHIFT
+    KEY_SHIFT = -2
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_10():
+    """10-qism: Matching algoritmi ishda. Score + cue-sheet (CUES_10)."""
+    M = MixerPro(120)
+    M.gates.append((WHEEL_T0 + WHEEL_T, 10.15, 0.03))  # the wheel stops: sound vacuum
+    M.width = [(0, 0.9), (32, 0.9)]
+    score_10(M)
+    render_cues(M, CUES_10)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -1751,7 +1880,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
