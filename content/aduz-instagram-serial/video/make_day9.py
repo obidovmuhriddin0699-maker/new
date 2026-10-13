@@ -298,6 +298,19 @@ def block5(img, t, envs):
 BLOCK_FN = [block1, block2, block3, block4, block5]
 
 
+def camera(img, t, a, b):
+    """Continuous gentle camera (push-in per block + drift) — the picture never stands still."""
+    k = clamp((t - a) / max(b - a, 0.1))
+    z = 1.015 + 0.04 * ease(k) + 0.006 * math.sin(t * 1.7)
+    dx = 14 * math.sin(t * 0.8)
+    dy = 10 * math.cos(t * 0.65)
+    nw, nh = int(W * z), int(H * z)
+    big = img.resize((nw, nh), Image.BICUBIC)
+    x0 = int((nw - W) / 2 + dx)
+    y0 = int((nh - H) / 2 + dy)
+    return big.crop((x0, y0, x0 + W, y0 + H))
+
+
 def frame(t, envs, timings):
     bi = min(4, int(t // 8))
     lt = t - bi * 8
@@ -308,6 +321,7 @@ def frame(t, envs, timings):
     if lt < 0.35 and bi > 0:
         a = 1 - lt / 0.35
         img.alpha_composite(Image.new("RGBA", (W, H), (235, 233, 229, int(255 * a))))
+    img = camera(img, t, bi * 8, bi * 8 + 8)
     for (a, b, who, s) in timings:
         if a - 0.05 <= t <= b + 0.25:
             subtitle(img, s, INK if who == "narr" else (150, 70, 40))
