@@ -13,6 +13,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 6 | `ADUZ_6-qism.mp4` | ADUZ kashfiyoti |
 | 7 | `ADUZ_7-qism.mp4` | Platforma interfeysi bilan tanishuv |
 | 8 | `ADUZ_8-qism.mp4` | Yagona Marketplace yechimi |
+| 9 | `ADUZ_9-qism.mp4` | Aqlli kampaniya yaratish |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -200,6 +201,34 @@ joyidan eshitiladi, plucklar beat'ga bo'ysunmaydi (3:4) — keng va tarqoq; magn
 | 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
 
 Narxlar yig'indisi: 320 000 + 280 000 + 410 000 + 250 000 + 380 000 = 1 640 000 so'm. Kanal nomlari namuna.
+
+## 9-qism: "Aqlli kampaniya yaratish"
+
+**Yangi ko'rinish:** muammo — butun kadrni egallagan "boshqaruv pulti": 8 murvat, 10 slayder, 12 tumbler, 6 tugma (jami 36),
+miltillovchi chiroqlar va "XATO" yozuvli LCD. Qo'l murvatni buradi, tumblerni yoqadi — displeyda xato chiqadi. O'tish — eski televizor
+o'chishi (`crtOff`): pult chiziqqa, so'ng nuqtaga aylanadi va undan ADUZ "yonadi". Yechim — "AI paneli": foydalanuvchi bitta gap yozadi,
+gapdagi so'zlar rangli belgilanib kampaniya rejasiga "uchib" tushadi, AI vaqt va kanallarni o'zi qo'shadi, reklama matnini yozadi;
+orqada neyron tarmoq "o'ylaydi" (o'ylash paytida yorqinroq). Natija — siljiydigan ajratuvchi chiziqli split-screen "Oldin | ADUZ".
+Ikkinchi o'tish — digital glitch (`sliceGlitch`).
+
+**Ovoz:** [`SOUND_ARCHITECTURE_9.md`](SOUND_ARCHITECTURE_9.md) — 14 ta yangi tovush. Muammoda pult tovushlari musiqaning o'zi:
+hi-hat o'rnida rele chiqillashi, murvat "ratchet"i, tumbler, slayder ishqalanishi, C-minor tonallikdagi signal. Televizor o'chganda gate:
+hamma narsa kesiladi, faqat CRT tovushi qoladi, keyin ADUZ Eb-major arpedjio bilan yonadi. Yechimda "aqlli" palitra:
+har bir ajratilgan so'z o'z notasidagi shisha shimmer, AI o'ylaganda mayda uchqunlar, future-garage groove (shuffle hat, sinkopali kick).
+Stereo kenglik monoga mos holda tekshirildi (mono'da yo'qotish ≤ 1,3 dB). Sonic logo Eb tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "9-QISM · Aqlli kampaniya". Pult elementlari kaskad bo'lib paydo bo'ladi (hisoblagich 0 → 36 tugma). LCD: "OPTIMIZATSIYA: ??? PIKSEL: yo'q". Qo'l CPM murvatini buradi, AUTO-BID tumblerini yoqadi → "XATO: AUTO-BID va BID zid!", sozlandi 3% → 1% | Kampaniya sozlash: o'nlab murvat, slayder va tugmalar... |
+| 0:05–0:10.4 | 1. Muammo | Chiroqlar tezlashib miltillaydi. *QAYSI BIRINI? · XATO = PUL YO'Q · O'RGANISH — 1 HAFTA*. 8.5 s: **36 TA TUGMA — va hammasi sizga bog'liq** | Bittasini noto'g'ri qo'ysangiz — pul behuda ketadi. |
+| 0:10.4–0:11 | O'tish | Eski televizor o'chadi: chiziq → nuqta → yashil ekran yonadi | — |
+| 0:11–0:16 | 2. Yechim | AI paneli: "Reklamangiz haqida bitta gap yozing" → "Farg'onada ayollar kiyimi do'konim uchun 500 ming so'mlik reklama". AI tahlil qiladi: so'zlar rangli belgilanadi va "Kampaniya rejasi"ga uchadi: Hudud · Auditoriya · Soha · Byudjet | ADUZ'da bitta gap yozasiz — AI uni kampaniya rejasiga aylantiradi. |
+| 0:16–0:22 | 2. Yechim | AI o'zi qo'shadi: Vaqt 19:00–21:00, 6 ta mos kanal. "Reklama matni — AI yozdi". "Ishga tushirish" → Ishga tushdi. 18.5 s: **1 GAP — qolganini ADUZ qiladi**. Oyna: "Kampaniya ishga tushdi!" | Kanallar, vaqt va reklama matni tayyor. Siz faqat tasdiqlaysiz. |
+| 0:21.75–0:22.15 | O'tish | Digital glitch: kadr gorizontal bo'laklarga yirtiladi | — |
+| 0:22–0:27 | 3. Natija | "Aqlli — demak tez": split-screen, ajratuvchi chiziq siljib "ADUZ" tomonini ochadi. Oldin: 36 ta tugma, 2 soat sozlash, xato xavfi ✗ / ADUZ: 1 ta gap, 30 soniya, AI tekshirgan ✓. **240 barobar tezroq** | 2 soatlik sozlash o'rniga — 30 soniya. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+"240 barobar" = 2 soat (7 200 s) / 30 s. AI funksiyalari va vaqtlar ssenariy asosidagi namuna — mahsulotdagi haqiqiy imkoniyatlar bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

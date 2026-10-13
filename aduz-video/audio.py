@@ -1507,7 +1507,260 @@ def render_8():
     return out
 
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8}
+# ---------- 9-qism uchun yangi tovushlar ----------
+def fx_detent(note=60):
+    x = seconds(0.03)
+    return layer(filt(rng.standard_normal(len(x)), "bandpass", [2500, 8000]) * np.exp(-x / 0.003) * 0.7, np.sin(2 * np.pi * m(note) * 4 * x) * np.exp(-x / 0.006) * 0.4)
+
+
+def fx_knob(dur=0.55):
+    out = np.zeros(int(dur * SR))
+    k, at = 0, 0.0
+    while at < dur - 0.03:
+        c = fx_detent(60 + (k % 3))
+        i = int(at * SR)
+        out[i : i + len(c)] += c[: len(out) - i] * (0.7 + 0.3 * np.sin(k))
+        at += 0.025 + 0.02 * abs(np.sin(k * 0.7))
+        k += 1
+    return out
+
+
+def fx_switch():
+    x = seconds(0.18)
+    return layer(filt(rng.standard_normal(len(x)), "bandpass", [1500, 6000]) * np.exp(-x / 0.004), tone(110, 0.18, "sine", 0.001, 0.04) * 0.9, np.concatenate([np.zeros(int(0.012 * SR)), fx_detent(72) * 0.8]))
+
+
+def fx_slider(dur=0.6):
+    x = seconds(dur)
+    fr = filt(rng.standard_normal(len(x)), "bandpass", [600, 2400]) * (0.5 + 0.5 * np.abs(np.sin(2 * np.pi * 7 * x)))
+    return fr * np.sin(np.pi * x / dur) * 0.6
+
+
+def fx_lcd():
+    return layer(tone(1975, 0.08, "square", 0.002, 0.03) * 0.3, filt(rng.standard_normal(int(0.25 * SR)), "bandpass", [80, 400]) * np.exp(-seconds(0.25) / 0.1) * 0.6)
+
+
+def fx_alarm(note=79, n=3):
+    out = np.zeros(int((0.16 * n + 0.1) * SR))
+    for k in range(n):
+        b = tone(m(note), 0.09, "square", 0.002, 0.03) * 0.5
+        i = int(k * 0.16 * SR)
+        out[i : i + len(b)] += filt(b, "lowpass", 3000)
+    return out
+
+
+def fx_relay():
+    x = seconds(0.02)
+    return filt(rng.standard_normal(len(x)), "bandpass", [3000, 9000]) * np.exp(-x / 0.002)
+
+
+def crt_off():
+    x = seconds(0.6)
+    whine = np.sin(2 * np.pi * 7800 * x) * np.exp(-x / 0.12) * 0.25
+    thoomp = np.sin(2 * np.pi * np.cumsum(90 * 2 ** (-3 * x)) / SR) * np.exp(-x / 0.15) * 0.9
+    crackle = filt(rng.standard_normal(len(x)), "highpass", 3000) * (rng.random(len(x)) < 0.02) * np.exp(-x / 0.2) * 1.0
+    return whine + thoomp + crackle
+
+
+def boot(tonic=63):
+    out = np.zeros(int(1.0 * SR))
+    for k, iv in enumerate((0, 7, 12, 16, 19)):
+        b = bell(m(tonic + iv + 12), 0.6, 1.0, 0.18)
+        i = int(k * 0.045 * SR)
+        out[i : i + len(b)] += b[: len(out) - i] * 0.5
+    return out
+
+
+def fx_token(note=75):
+    x = seconds(0.9)
+    glass = sum(np.sin(2 * np.pi * m(note) * r * x) * np.exp(-x / (0.5 / r)) / r for r in (1, 2.76, 5.4))
+    return glass * np.minimum(1, x / 0.003) * 0.6
+
+
+def fx_think(dur=1.6):
+    out = np.zeros(int(dur * SR))
+    gg = np.random.default_rng(17)
+    for _ in range(int(dur * 22)):
+        b = bell(m(int(gg.choice([87, 89, 91, 94, 96, 99]))), 0.12, 0.5, 0.03) * gg.uniform(0.2, 0.6)
+        i = int(gg.uniform(0, dur - 0.13) * SR)
+        out[i : i + len(b)] += b
+    return out * np.sin(np.pi * seconds(dur) / dur)
+
+
+def fx_type():
+    x = seconds(0.035)
+    return filt(rng.standard_normal(len(x)), "bandpass", [1500, 5000]) * np.exp(-x / 0.005) * 0.8
+
+
+def tr_glitch():
+    out = np.zeros(int(0.42 * SR))
+    gg = np.random.default_rng(23)
+    for k in range(10):
+        f = gg.choice([220, 440, 880, 1760, 3520])
+        seg = np.sign(np.sin(2 * np.pi * f * seconds(0.03))) * 0.4 + filt(rng.standard_normal(int(0.03 * SR)), "highpass", 2000) * 0.5
+        i = int(k * 0.04 * SR)
+        out[i : i + len(seg)] += seg * (1 - k / 12)
+    return out
+
+
+def fx_nope():
+    return layer(tone(m(48), 0.12, "sine", 0.002, 0.05) * 0.8, np.concatenate([np.zeros(int(0.08 * SR)), tone(m(46), 0.2, "sine", 0.002, 0.08) * 0.8]), fx_detent(48) * 0.5)
+
+
+SOUNDS.update({
+    "fx.knob": ("L3", lambda a=None: fx_knob(a or 0.55), "Murvat aylantirish: zinali 'chiq-chiq' (ratchet)"),
+    "fx.detent": ("L3", lambda a=None: fx_detent(a or 60), "Bitta murvat qadami — pult elementi paydo bo'lishi"),
+    "fx.switch": ("L3", lambda a=None: fx_switch(), "Tumbler: metall 'chiq' + past thunk"),
+    "fx.slider": ("L3", lambda a=None: fx_slider(a or 0.6), "Slayder ishqalanishi"),
+    "fx.lcd": ("L3", lambda a=None: fx_lcd(), "LCD yonishi: qisqa beep + elektr g'uvullash"),
+    "fx.alarm": ("L5", lambda a=None: fx_alarm(*(a or (79, 3))), "Ogohlantirish signali (C-minor tonallikda)"),
+    "fx.relay": ("L1", lambda a=None: fx_relay(), "Rele chiqillashi — muammo sahnasining 'hi-hat'i"),
+    "tr.crt_off": ("L4", lambda a=None: crt_off(), "Eski televizor o'chishi: chiyillash + thoomp + chirsillash"),
+    "tr.boot": ("L4", lambda a=None: boot(a or 63), "ADUZ yonishi: Eb-major arpedjio"),
+    "fx.token": ("L3", lambda a=None: fx_token(a or 75), "AI so'zni ajratdi: shisha shimmer (balandligi sozlanadi)"),
+    "fx.think": ("L3", lambda a=None: fx_think(a or 1.6), "AI 'o'ylayapti': mayda qo'ng'iroqcha uchqunlari"),
+    "fx.type": ("L3", lambda a=None: fx_type(), "Yumshoq klaviatura bosishi"),
+    "tr.glitch": ("L4", lambda a=None: tr_glitch(), "Digital glitch o'tishi: bit-stutter"),
+    "fx.nope": ("L3", lambda a=None: fx_nope(), "'Oldin' qatori: past ikki nota (rad)"),
+})
+FRONT.add("tr.crt_off")
+
+CUES_9 = [
+    (0.0, "amb.office", 0.08, 0, 0, 0, "Xona: pult g'uvullashi", 10.4),
+    *[(0.5 + i * 0.1, "fx.detent", 0.22, -0.75 + 0.5 * (i % 4), 0.15, 0, f"Murvat #{i + 1} paydo bo'ldi", 60 + i) for i in range(8)],
+    *[(1.3 + i * 0.07, "fx.detent", 0.14, -0.8 + 0.18 * i, 0.1, 0, f"Slayder #{i + 1}", 67 + i) for i in range(10)],
+    (2.0, "fx.lcd", 0.25, -0.3, 0.2, 0, "LCD displey yondi", None),
+    *[(2.1 + i * 0.05, "fx.detent", 0.12, 0.4 + 0.08 * i, 0.1, 0, f"F{i + 1} tugmasi", 72 + i) for i in range(6)],
+    *[(2.4 + i * 0.06, "fx.switch", 0.12, -0.75 + 0.3 * (i % 6), 0.1, 0, f"Tumbler #{i + 1}", None) for i in range(12)],
+    (3.6, "fx.knob", 0.35, -0.3, 0.15, 0, "Qo'l CPM murvatini aylantiradi", 0.55),
+    (4.6, "fx.switch", 0.4, 0.1, 0.2, 0, "AUTO-BID yoqildi", None),
+    (4.68, "fx.alarm", 0.22, -0.3, 0.3, 0.2, "LCD: XATO — sozlamalar zid", (79, 3)),
+    (5.2, "fx.slider", 0.3, -0.7, 0.15, 0, "YOSH slayderi suriladi", 0.6),
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: QAYSI BIRINI?", None),
+    (6.2, "fx.alarm", 0.1, 0.6, 0.3, 0.3, "Chiroqlar miltillaydi", (75, 2)),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: XATO = PUL YO'Q", None),
+    (7.2, "fx.alarm", 0.12, -0.6, 0.3, 0.3, "Signallar tezlashadi", (79, 4)),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: O'RGANISH — 1 HAFTA", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [60, 63, 67, 72]),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "36 TA TUGMA — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.28, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — televizor o'chishi bilan uziladi", 1.8),
+    (10.4, "tr.crt_off", 0.6, 0, 0, 0, "ESKI TV O'CHADI — musiqa gate bilan kesiladi", None),
+    (10.7, "tr.boot", 0.35, 0, 0.4, 0.3, "ADUZ yonadi (Eb-major)", 63),
+    (11.0, "imp.boom", 0.45, 0, 0.35, 0, "Yechim boshlanishi", 0.7),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit", 10.7),
+    (11.3, "tr.whoosh", 0.18, 0, 0.2, 0, "Prompt kartasi", None),
+    *[(11.8 + k * 0.0625, "fx.type", 0.1, 0.15 * np.sin(k), 0.05, 0, "Gap yozilmoqda", None) for k in range(24)],
+    (13.4, "fx.think", 0.22, 0, 0.4, 0.3, "AI tahlil qilmoqda", 1.6),
+    *[(at, "fx.token", 0.22, [-0.4, -0.1, 0.2, 0.5][i], 0.35, 0.3, f"So'z ajratildi: {['Hudud', 'Auditoriya', 'Soha', 'Byudjet'][i]}", [75, 77, 79, 82][i]) for i, at in enumerate([13.6, 13.9, 14.2, 14.5])],
+    *[(at - 0.45, "tr.slide", 0.08, [-0.4, -0.1, 0.2, 0.5][i], 0.1, 0, "Chip kartaga uchadi", None) for i, at in enumerate([14.75, 14.95, 15.15, 15.35])],
+    *[(at, "fx.snap", 0.18, [-0.5, 0, 0.5, -0.5][i], 0.2, 0, "Chip rejaga joylashdi", None) for i, at in enumerate([14.75, 14.95, 15.15, 15.35])],
+    (15.6, "fx.think", 0.2, 0, 0.4, 0.3, "AI qo'shimcha taklif qilmoqda", 1.8),
+    (15.8, "fx.token", 0.25, 0, 0.4, 0.4, "AI qo'shdi: VAQT", 87),
+    (16.1, "fx.token", 0.25, 0.5, 0.4, 0.4, "AI qo'shdi: KANALLAR", 89),
+    *[(16.4 + k * 0.06, "fx.type", 0.08, 0.2 * np.sin(k * 1.3), 0.05, 0, "AI matn yozmoqda", None) for k in range(18)],
+    (17.5, "ui.popup", 0.2, 0, 0.2, 0, "Ishga tushirish tugmasi", 75),
+    (17.9, "ui.tap", 0.35, 0.2, 0, 0, "Bosildi", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: 1 GAP oldidan", [63, 67, 70, 75]),
+    (18.15, "ui.success", 0.26, 0, 0.4, 0.3, "Ishga tushdi", None),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "1 GAP — zarba", 0.9),
+    (18.5, "imp.crash", 0.25, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.38, 0, 0.5, 0, "Uchqunlar", 11),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Kampaniya ishga tushdi oynasi", None),
+    (21.2, "tr.riser", 0.24, 0, 0, 0, "J-cut: glitch oldidan", 0.55),
+    (21.75, "tr.glitch", 0.4, 0, 0.15, 0, "Digital glitch o'tishi", None),
+    (22.0, "imp.boom", 0.5, 0, 0.45, 0, "Natija boshlanishi", 0.8),
+    (22.6, "fx.slider", 0.25, 0.6, 0.2, 0, "Ajratuvchi chiziq suriladi", 0.9),
+    *[(at, "fx.nope", 0.22, -0.5, 0.2, 0, f"Oldin: {s}", None) for at, s in [(22.9, "36 ta tugma"), (23.2, "2 soat"), (23.5, "xato xavfi")]],
+    *[(at, "ui.select", 0.18, 0.5, 0.3, 0.2, f"ADUZ: {s}", n) for (at, s), n in zip([(23.9, "1 ta gap"), (24.2, "30 soniya"), (24.5, "AI tekshirgan")], [75, 79, 82])],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: pill oldidan", [68, 72, 75, 80]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "240 barobar tezroq", 0.6),
+    (25.0, "imp.sparkle", 0.42, 0, 0.5, 0, "Uchqunlar", 13),
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (Eb tonallikda)", 51),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 87),
+]
+
+SCORE_9 = [
+    ("0:00–0:10.4", "Muammo · C-minor, mexanik", "Hi-hat o'rnida rele chiqillashi (16-lik), filtrlangan bas pulsi, Cm pad; 5.5 s dan kick. Pult tovushlari musiqaning bir qismi bo'lib eshitiladi."),
+    ("0:10.4–0:10.8", "Televizor o'chishi", "Gate: musiqa va dumlar keskin kesiladi, faqat TV o'chish tovushi qoladi; keyin ADUZ Eb-major arpedjio bilan 'yonadi'."),
+    ("0:11–0:21.75", "Yechim · Eb-major, future-garage", "Siljigan (shuffle) hat'lar, sinkopali kick, reverb'li snare 2 va 4 da, Rhodes Eb–Cm–Ab–Bb, sub, delay'li pluck arpedjio. AI 'o'ylaganda' shimmer qatlami."),
+    ("0:22–0:27", "Natija · Ab-major, ko'tarilish", "Ab–Eb–Fm–Db: to'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi."),
+    ("0:27–0:32", "Yakun · brend", "Db → Eb, ADUZ sonic logo (Eb tonikada), so'nish."),
+]
+
+
+def score_9(M):
+    g = np.random.default_rng(99)
+    # Scene 1: C minor, mechanical
+    M.put("music", 0.0, pad([m(48), m(51), m(55), m(60)], 10.4, cutoff=700, attack=1.2, release=0.05), 0.26, verb=0.3)
+    for k, at in enumerate(np.arange(0.5, 10.4, 0.125)):
+        M.put("drums", at, fx_relay(), (0.05 if k % 2 else 0.09) * (0.5 + prog_np(at, 3, 9)), g.uniform(-0.5, 0.5))
+    for i, at in enumerate(np.arange(1.0, 10.4, 0.25)):
+        x = seconds(0.2)
+        cut = 250 + 1600 * ((at - 1) / 9.4) ** 1.5
+        M.put("music", at, filt(saw(m(36) if i % 8 not in (5, 6) else m(39), x) * np.exp(-x / 0.1), "lowpass", cut), 0.2)
+    for at in np.arange(5.5, 8.5, 0.5):
+        M.put("drums", at, soft_kick(), 0.5)
+        M.kicks.append(at)
+    # Scene 2: Eb major future-garage
+    prog2 = [(11, [63, 67, 70, 74], 39), (13, [60, 63, 67, 70], 36), (15, [56, 60, 63, 67], 32), (17, [58, 62, 65, 69], 34), (19, [63, 67, 70, 74], 39), (21, [60, 63, 67, 70], 36)]
+    for start, notes, root in prog2:
+        dur = min(2.0, 21.75 - start)
+        M.put("music", start, chord_ep(notes, dur, 0.65), 0.36, verb=0.35)
+        M.put("music", start, pad([m(n + 12) for n in notes[:3]], dur, cutoff=2600, attack=0.3), 0.1, verb=0.4)
+        for b in (0.0, 0.75, 1.25):
+            if b < dur:
+                M.put("music", start + b, sub(m(root + 12), 0.3), 0.26)
+        for j, b in enumerate(np.arange(0, dur - 0.01, 0.25)):
+            M.put("music", start + b, bell(m(notes[(j * 3) % 4] + 12), 0.3, 0.8, 0.12), 0.05, 0.4 * np.sin(j * 1.7), echo=0.45)
+    for at in np.arange(11.0, 21.75, 1.0):  # 2-step: kick on 1 and the 'and' of 2, snare on 2 and 4
+        for off in (0.0, 0.75):
+            if at + off < 21.75:
+                M.put("drums", at + off, soft_kick(), 0.55)
+                M.kicks.append(at + off)
+        M.put("drums", at + 0.5, snare(), 0.26, verb=0.35)
+    for k, at in enumerate(np.arange(11.0, 21.75, 0.125)):
+        M.put("drums", at + (0.035 if k % 2 else 0), hat(k % 8 == 6), (0.08 if k % 2 == 0 else 0.04) * g.uniform(0.7, 1), 0.35)
+    # Scene 3: Ab major lift, Db -> Eb at the end
+    prog3 = [(22, [56, 60, 63], 44), (24, [51, 55, 58], 39), (26, [53, 56, 60], 41), (28, [49, 53, 56], 37), (30, [51, 55, 58, 63], 39)]
+    for start, notes, root in prog3:
+        full = start < 27
+        M.put("music", start, chord_ep(notes + [notes[0] + 12], 2.0 + (1.5 if start == 30 else 0), 0.85), 0.42, verb=0.4, echo=0.2)
+        M.put("music", start, supersaw([m(n) for n in notes], 2.0, cutoff=3000 if full else 1500), 0.15 if full else 0.08, verb=0.3)
+        for b in np.arange(0, 1.99, 0.5):
+            M.put("music", start + b, sub(m(root), 0.45), 0.3 if full else 0.18)
+    melody = [(22, 75), (22.5, 80), (23, 84), (23.5, 82), (24, 79), (24.5, 75), (25, 79), (25.5, 82), (26, 80), (26.5, 77), (28, 77), (29, 75), (29.5, 73), (30, 75)]
+    for at, n in melody:
+        M.put("music", at, epiano(m(n), 0.9, 0.9), 0.28, 0.15, verb=0.45, echo=0.35)
+        M.put("music", at, bell(m(n + 12), 0.8, 1.2, 0.3), 0.05, -0.15, verb=0.4)
+    for at in np.arange(22.0, 26.75, 0.5):
+        M.put("drums", at, soft_kick(), 0.65)
+        M.kicks.append(at)
+        if int(round(at * 2)) % 2 == 1:
+            M.put("drums", at, snare(), 0.3, verb=0.25)
+    for k, at in enumerate(np.arange(22.0, 26.75, 0.125)):
+        M.put("drums", at + (0.02 if k % 2 else 0), hat(k % 4 == 2), 0.08 if k % 2 == 0 else 0.045, 0.35)
+
+
+def prog_np(x, a, b):
+    return float(np.clip((x - a) / (b - a), 0, 1))
+
+
+def render_9():
+    """9-qism: Aqlli kampaniya yaratish. Score + cue-sheet (CUES_9)."""
+    M = MixerPro(120)
+    M.gates.append((10.42, 10.72, 0.03))  # TV switches off: everything but the CRT sound is cut
+    M.width = [(0, 1.0), (10.4, 1.0), (11.0, 0.8), (21.7, 0.8), (22.0, 0.8), (32, 0.8)]
+    score_9(M)
+    render_cues(M, CUES_9)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -1515,7 +1768,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)

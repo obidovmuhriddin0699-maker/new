@@ -446,6 +446,36 @@ function cardFlip(t, a, b, drawA, drawB) {
   withAlpha((1 - k) * .6, () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
   ctx.restore();
 }
+// Transition: old-TV power-off — drawA squashes to a glowing line, then a dot; drawB powers on from the line.
+function crtOff(t, a, b, drawA, drawB, color = '#ffffff') {
+  const p = prog(t, a, b);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  if (p < .4) {
+    const q = eIn(p / .4), sy = Math.max(.004, 1 - q);
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(1 + q * .05, sy); ctx.translate(-W / 2, -H / 2); drawA(t);
+    withAlpha(q, () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); }); ctx.restore();
+  } else if (p < .6) {
+    const q = (p - .4) / .2, w = W * (1 - eIn(q)) + 8;
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 40; ctx.fillStyle = '#fff';
+    ctx.fillRect(W / 2 - w / 2, H / 2 - 3, w, 6);
+    ctx.beginPath(); ctx.arc(W / 2, H / 2, 8 + 10 * q, 0, 7); ctx.fill(); ctx.restore();
+  } else {
+    const q = eOut((p - .6) / .4);
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(1, Math.max(.004, q)); ctx.translate(-W / 2, -H / 2); drawB(t);
+    withAlpha(1 - q, () => { ctx.fillStyle = color; ctx.fillRect(0, 0, W, H); }); ctx.restore();
+  }
+}
+// Transition: digital glitch — horizontal slices tear sideways with cyan/magenta scanlines; cut at the midpoint.
+const GLITCH_BANDS = (() => { const r = rnd(29); let y = 0; const out = []; while (y < H) { const h = 40 + r() * 160; out.push([y, h, (r() - .5) * 2]); y += h; } return out; })();
+function sliceGlitch(t, a, b, drawA, drawB) {
+  const p = prog(t, a, b), amp = Math.sin(Math.PI * p), fn = p < .5 ? drawA : drawB;
+  for (const [y, h, d] of GLITCH_BANDS) {
+    ctx.save(); ctx.beginPath(); ctx.rect(0, y, W, h); ctx.clip(); ctx.translate(d * 260 * amp, 0); fn(t); ctx.restore();
+  }
+  withAlpha(amp * .5, () => {
+    GLITCH_BANDS.forEach(([y, h, d], i) => { ctx.fillStyle = i % 2 ? '#00e5ff' : '#ff2bd6'; ctx.fillRect(0, y + h * (.5 + d * .3), W, 4); });
+  });
+}
 // Film grain + vignette, frame-stable for rendering.
 let GRAIN = null;
 function filmLook(t, grain = .07, vignette = .38) {

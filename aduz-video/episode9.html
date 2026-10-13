@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 9-qism</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// ADUZ — 9-qism: "Aqlli kampaniya yaratish"
+// Look of this episode: a full-frame control console (36 knobs, sliders, switches) for the problem;
+// an old-TV power-off into an AI prompt panel over a "thinking" neural network; a sliding split-screen
+// before/after for the result. Sound from the cue sheet in audio.py (CUES_9) — see SOUND_ARCHITECTURE_9.md.
+
+const CAPTIONS = [
+  [0.4, 5.0, 'Kampaniya sozlash: oʻnlab murvat, slayder va tugmalar...'],
+  [5.2, 10.2, 'Bittasini notoʻgʻri qoʻysangiz — pul behuda ketadi.'],
+  [11.4, 16.2, 'ADUZʼda bitta gap yozasiz — AI uni kampaniya rejasiga aylantiradi.'],
+  [16.4, 21.7, 'Kanallar, vaqt va reklama matni tayyor. Siz faqat tasdiqlaysiz.'],
+  [22.4, 27.0, '2 soatlik sozlash oʻrniga — 30 soniya.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+const MONO = '"DejaVu Sans Mono", monospace';
+function star(x, y, r, col, rot = 0) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath();
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rad = i % 2 ? r * .38 : r; ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad); }
+  ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.restore();
+}
+
+// ---------- SCENE 1 — Muammo: the console ----------
+const KNOBS = ['BYUDJET', 'CPM', 'CHASTOTA', 'VAQT', 'TIL', 'FORMAT', 'BID', 'ROAS'].map((l, i) => ({ l, x: 165 + (i % 4) * 250, y: 470 + Math.floor(i / 4) * 200, at: .5 + i * .1, ph: i * 1.7 }));
+const SLIDERS = ['YOSH', 'JINS', 'HUDUD', 'QIZIQ.', 'QURIL.', 'OS', 'CTR', 'CPC', 'KUN', 'SOAT'].map((l, i) => ({ l, x: 99 + i * 98, at: 1.3 + i * .07, ph: i * 2.3 }));
+const TOGGLES = ['A/B', 'RETARGET', 'LOOKALIKE', 'AUTO-BID', 'PIKSEL', 'UTM', 'CAP', 'DAYPART', 'GEO+', 'BRAND', 'VIDEO', 'STORY'].map((l, i) => ({ l, x: 125 + (i % 6) * 166, y: 1300 + Math.floor(i / 6) * 160, at: 2.4 + i * .06 }));
+const BUTTONS = [0, 1, 2, 3, 4, 5].map(i => ({ x: 742 + (i % 3) * 92, y: 1112 + Math.floor(i / 3) * 60, at: 2.1 + i * .05 }));
+const IMPACTS1 = [[4.6, 8], [5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46]];
+const TURN = [3.6, 4.15], FLIP = 4.6, DRAG = [5.2, 5.8];
+function knob(k, t, stress) {
+  const p = eBack(prog(t, k.at, k.at + .35)); if (p <= 0) return;
+  let ang = -1 + Math.sin(t * (.8 + stress * 3) + k.ph) * (.25 + stress * .6);
+  if (k.l === 'CPM') ang += Math.sin(clamp((t - TURN[0]) / (TURN[1] - TURN[0])) * Math.PI * 3) * 2.2 * (t > TURN[0] ? 1 : 0);
+  scaled(k.x, k.y, p, () => {
+    for (let i = 0; i <= 10; i++) { const a = -2.36 + i * .472; ctx.beginPath(); ctx.arc(k.x + Math.cos(a - 1.57) * 82, k.y + Math.sin(a - 1.57) * 82, 3.5, 0, 7); ctx.fillStyle = '#4b5563'; ctx.fill(); }
+    ctx.beginPath(); ctx.arc(k.x, k.y, 64, 0, 7); ctx.fillStyle = '#0b0d12'; ctx.fill();
+    for (let i = 0; i < 28; i++) { const a = i / 28 * 6.28 + ang; ctx.beginPath(); ctx.moveTo(k.x + Math.cos(a) * 52, k.y + Math.sin(a) * 52); ctx.lineTo(k.x + Math.cos(a) * 62, k.y + Math.sin(a) * 62); ctx.lineWidth = 3; ctx.strokeStyle = '#374151'; ctx.stroke(); }
+    const g = ctx.createRadialGradient(k.x - 15, k.y - 15, 5, k.x, k.y, 52); g.addColorStop(0, '#6b7280'); g.addColorStop(1, '#1f2937');
+    ctx.beginPath(); ctx.arc(k.x, k.y, 50, 0, 7); ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(k.x + Math.cos(ang - 1.57) * 14, k.y + Math.sin(ang - 1.57) * 14); ctx.lineTo(k.x + Math.cos(ang - 1.57) * 44, k.y + Math.sin(ang - 1.57) * 44);
+    ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.strokeStyle = '#fbbf24'; ctx.stroke();
+    text(k.l, k.x, k.y + 112, 22, '#9ca3af', 800, 'center');
+  });
+}
+function slider(s, t, stress) {
+  const p = eOut(prog(t, s.at, s.at + .35)); if (p <= 0) return;
+  const top = 820, h = 200;
+  let v = .5 + Math.sin(t * (.6 + stress * 2.5) + s.ph) * (.15 + stress * .3);
+  if (s.l === 'YOSH' && t > DRAG[0]) v = lerp(.5, .9, eInOut(prog(t, DRAG[0], DRAG[1])));
+  withAlpha(p, () => {
+    for (let i = 0; i <= 8; i++) { ctx.fillStyle = '#374151'; ctx.fillRect(s.x - 26, top + i * h / 8, 12, 2); }
+    rr(s.x - 5, top, 10, h, 5); ctx.fillStyle = '#05060a'; ctx.fill();
+    const hy = top + h * (1 - v);
+    const g = ctx.createLinearGradient(0, hy - 18, 0, hy + 18); g.addColorStop(0, '#9ca3af'); g.addColorStop(1, '#374151');
+    rr(s.x - 30, hy - 16, 60, 32, 6); ctx.fillStyle = g; ctx.fill(); ctx.fillStyle = '#111'; ctx.fillRect(s.x - 24, hy - 1, 48, 3);
+    text(s.l, s.x, top + h + 44, 18, '#9ca3af', 800, 'center');
+  });
+}
+function toggleSw(s, t, stress, i) {
+  const p = eBack(prog(t, s.at, s.at + .3)); if (p <= 0) return;
+  const on = s.l === 'AUTO-BID' ? t > FLIP : (i % 3 === 0);
+  const blink = Math.floor(t * (2 + stress * 10) + i * .37) % 3 === 0;
+  const led = s.l === 'AUTO-BID' && t > FLIP ? C.red : blink && stress > .2 ? (i % 2 ? '#f59e0b' : C.red) : on ? '#22c55e' : '#1f2937';
+  scaled(s.x, s.y, p, () => {
+    ctx.save(); ctx.shadowColor = led; ctx.shadowBlur = led === '#1f2937' ? 0 : 18;
+    ctx.beginPath(); ctx.arc(s.x, s.y - 52, 10, 0, 7); ctx.fillStyle = led; ctx.fill(); ctx.restore();
+    rr(s.x - 28, s.y - 30, 56, 70, 10); ctx.fillStyle = '#0b0d12'; ctx.fill();
+    const lean = on ? -1 : 1;
+    ctx.beginPath(); ctx.moveTo(s.x, s.y + 5); ctx.lineTo(s.x + lean * 6, s.y + 5 + lean * 34); ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.strokeStyle = '#d1d5db'; ctx.stroke();
+    text(s.l, s.x, s.y + 80, 17, '#9ca3af', 800, 'center');
+  });
+}
+function consoleBg(t, stress) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1c1f26'); g.addColorStop(1, '#0d0f13');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  rr(40, 360, W - 80, 1220, 30); ctx.fillStyle = '#15181f'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#2a2f3a'; ctx.stroke();
+  for (const [x, y] of [[70, 390], [W - 70, 390], [70, 1550], [W - 70, 1550]]) { ctx.beginPath(); ctx.arc(x, y, 10, 0, 7); ctx.fillStyle = '#374151'; ctx.fill(); ctx.fillStyle = '#111'; ctx.fillRect(x - 6, y - 1, 12, 3); }
+  ctx.fillStyle = '#2a2f3a'; ctx.fillRect(60, 770, W - 120, 3); ctx.fillRect(60, 1080, W - 120, 3);
+  const v = ctx.createRadialGradient(W / 2, H / 2, 500, W / 2, H / 2, 1300);
+  v.addColorStop(0, 'rgba(255,40,60,0)'); v.addColorStop(1, `rgba(255,40,60,${stress * (.25 + .2 * Math.sin(t * 9))})`);
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+function lcd(t) {
+  const p = eOut(prog(t, 2.0, 2.4)); if (p <= 0) return;
+  withAlpha(p, () => {
+    rr(70, 1100, 640, 130, 14); ctx.fillStyle = '#0a1a0f'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#1f2937'; ctx.stroke();
+    ctx.save(); rr(70, 1100, 640, 130, 14); ctx.clip();
+    const err = t > FLIP;
+    const line1 = err ? 'XATO: AUTO-BID va BID zid!' : 'OPTIMIZATSIYA: ???  PIKSEL: yoʻq';
+    const line2 = `SOZLANDI: ${err ? '1' : '3'}%   AUDITORIYA: 0   CPM: ${8000 + Math.floor(t * 731) % 9000}`;
+    ctx.font = `700 26px ${MONO}`; ctx.fillStyle = err && Math.floor(t * 6) % 2 ? '#ff4d5e' : '#fbbf24'; ctx.fillText(line1, 96, 1150);
+    ctx.font = `600 21px ${MONO}`; ctx.fillStyle = '#86efac'; ctx.fillText(line2, 96 - ((t * 60) % 200), 1200);
+    for (let y = 1100; y < 1230; y += 4) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(70, y, 640, 2); }
+    ctx.restore();
+  });
+  BUTTONS.forEach((b, i) => {
+    const q = eBack(prog(t, b.at, b.at + .3)); if (q <= 0) return;
+    scaled(b.x + 40, b.y + 24, q, () => { rr(b.x, b.y, 80, 48, 8); ctx.fillStyle = ['#7f1d1d', '#1e3a8a', '#14532d', '#78350f', '#3b0764', '#164e63'][i]; ctx.fill(); text(['F1', 'F2', 'F3', 'F4', 'F5', 'F6'][i], b.x + 40, b.y + 32, 20, '#e5e7eb', 800, 'center'); });
+  });
+}
+function scene1(t) {
+  const stress = prog(t, 4.5, 9.5);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  camera(1 + .06 * eInOut(prog(t, 0, 10.4)), sr - .008 * stress * Math.sin(t * 1.4), sx, sy, () => {
+    consoleBg(t, stress);
+    KNOBS.forEach(k => knob(k, t, stress));
+    SLIDERS.forEach(s => slider(s, t, stress));
+    lcd(t);
+    TOGGLES.forEach((s, i) => toggleSw(s, t, stress, i));
+    const hud = ctx.createLinearGradient(0, 0, 0, 360); hud.addColorStop(0, 'rgba(8,10,20,.95)'); hud.addColorStop(1, 'rgba(8,10,20,.6)');
+    ctx.fillStyle = hud; ctx.fillRect(0, 0, W, 350);
+    episodeTitle(t, '9-QISM', 'Aqlli kampaniya', 64);
+    const n = KNOBS.filter(k => k.at <= t).length + SLIDERS.filter(k => k.at <= t).length + TOGGLES.filter(k => k.at <= t).length + BUTTONS.filter(k => k.at <= t).length;
+    counters(t, [[String(n), 'tugma', '#fff'], [t > FLIP ? '1%' : '3%', 'sozlandi', t > FLIP ? C.red : '#fff'], ['0', 'reklama', C.red]]);
+    // the user's hand tries: turns CPM, flips AUTO-BID, drags YOSH, then gives up
+    const cpm = KNOBS[1], ab = TOGGLES[3], ys = SLIDERS[0];
+    const keys = [[3.0, W - 40, 1650], [TURN[0], cpm.x + 30, cpm.y + 10], [TURN[1], cpm.x + 30, cpm.y + 10], [FLIP, ab.x + 20, ab.y], [DRAG[0], ys.x + 10, 920], [DRAG[1], ys.x + 10, 840], [7.0, 600, 700], [8.2, W - 40, 1650]];
+    if (t > 3.0 && t < 8.2) {
+      const [cx, cy] = pathAt(t, keys);
+      const press = Math.max(bump(t, FLIP, .2), (t > TURN[0] && t < TURN[1]) || (t > DRAG[0] && t < DRAG[1]) ? 1 : 0);
+      withAlpha(Math.min(prog(t, 3, 3.2), 1 - prog(t, 7.9, 8.2)), () => cursor(cx, cy, press));
+    }
+    slam(t, 5.6, 'QAYSI BIRINI?', 330, 600, 52, '#fff', { slab: C.red, rot: -.08, hold: 2.6 });
+    slam(t, 6.6, 'XATO = PUL YOʻQ', 760, 930, 48, '#fff', { slab: C.red, rot: .07, hold: 1.6 });
+    slam(t, 7.6, 'OʻRGANISH — 1 HAFTA', 420, 1380, 44, '#fff', { slab: C.red, rot: .05, hold: .7 });
+  });
+  const dim = prog(t, 8.45, 8.6) * (1 - prog(t, 10.2, 10.4));
+  if (dim > 0) withAlpha(dim * .6, () => { ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, 8.5, W / 2, 900, C.red, 1100);
+  sparks(t, 8.5, W / 2, 900, 91, [C.red, '#fbbf24', '#ffffff'], 36, 1200);
+  slam(t, 8.5, '36 TA TUGMA', W / 2, 880, 160, '#fff', { hold: 1.6, glow: 'rgba(255,40,60,.9)' });
+  slam(t, 8.8, 'va hammasi sizga bogʻliq', W / 2, 1040, 52, '#ffb4bc', { hold: 1.3 });
+  flash(t, 8.5, C.red, .4, .45);
+}
+
+// ---------- SCENE 2 — Yechim: AI prompt over a thinking network ----------
+const NET = (() => {
+  const r = rnd(91), nodes = Array.from({ length: 46 }, () => [r() * W, 330 + r() * 1300]), edges = [];
+  nodes.forEach((a, i) => {
+    const near = nodes.map((b, j) => [Math.hypot(a[0] - b[0], a[1] - b[1]), j]).filter(([d, j]) => j !== i).sort((x, y) => x[0] - y[0]).slice(0, 2);
+    near.forEach(([, j]) => { if (i < j) edges.push([i, j]); });
+  });
+  return { nodes, edges };
+})();
+const think = t => .25 + .75 * Math.max(clamp(Math.min((t - 13.4) / .3, (15.1 - t) / .3)), clamp(Math.min((t - 15.6) / .3, (17.6 - t) / .3)));
+const SENT = 'Fargʻonada ayollar kiyimi doʻkonim uchun 500 ming soʻmlik reklama';
+const TOKENS = [{ w: [0], col: '#3b82f6', at: 13.6 }, { w: [1], col: '#ec4899', at: 13.9 }, { w: [2, 3], col: '#f59e0b', at: 14.2 }, { w: [5, 6, 7], col: '#16c784', at: 14.5 }];
+const TILES = [
+  ['HUDUD', 'Fargʻona vodiysi', '#3b82f6', 14.75, 0], ['AUDITORIYA', 'Ayollar, 20–40', '#ec4899', 14.95, 1], ['SOHA', 'Moda / kiyim', '#f59e0b', 15.15, 2],
+  ['BYUDJET', '500 000 soʻm', '#16c784', 15.35, 3], ['VAQT', '19:00–21:00', '#a855f7', 15.8, -1], ['KANALLAR', '6 ta mos kanal', '#06b6d4', 16.1, -1],
+];
+const tileRect = i => ({ x: 100 + (i % 3) * 305, y: 770 + Math.floor(i / 3) * 145, w: 290, h: 130 });
+const AD = 'Yangi kolleksiya keldi! Fargʻonadagi doʻkonimizda ayollar kiyimlari — 30% chegirma bilan. Shoshiling!';
+const T9 = { type: [11.8, 13.3], ad: [16.4, 17.5], btn: 17.5, launch: 17.9, live: 18.15, slam: 18.5, sheet: 19.7 };
+const BTN9 = { x: 140, y: 1435, w: 800, h: 100 };
+const IMPACTS2 = [[11.0, 24], [T9.launch, 8], [T9.slam, 34]];
+function wordLayout(size) {
+  ctx.font = `800 ${size}px ${F}`;
+  const words = SENT.split(' '), out = []; let x = 110, y = 545;
+  const space = ctx.measureText(' ').width, start = [];
+  let c = 0;
+  words.forEach(w => { const ww = ctx.measureText(w).width; if (x + ww > 970) { x = 110; y += 56; } out.push({ w, x, y, ww, c0: c }); x += ww + space; c += w.length + 1; });
+  return out;
+}
+function neural(t) {
+  const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#03201b'); g.addColorStop(1, '#073d33');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const k = think(t);
+  ctx.lineWidth = 2;
+  NET.edges.forEach(([a, b], i) => {
+    const [x1, y1] = NET.nodes[a], [x2, y2] = NET.nodes[b];
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.strokeStyle = `rgba(34,227,154,${.06 + .1 * k})`; ctx.stroke();
+    const ph = (t * (.4 + .9 * k) + i * .137) % 1;
+    withAlpha(k, () => { ctx.beginPath(); ctx.arc(lerp(x1, x2, ph), lerp(y1, y2, ph), 4, 0, 7); ctx.fillStyle = '#a7f3d0'; ctx.fill(); });
+  });
+  NET.nodes.forEach(([x, y], i) => { ctx.beginPath(); ctx.arc(x, y, 5 + 3 * k * (.5 + .5 * Math.sin(t * 5 + i)), 0, 7); ctx.fillStyle = `rgba(34,227,154,${.25 + .5 * k})`; ctx.fill(); });
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  camera(1 + .02 * eInOut(prog(t, 11, 21.8)), sr, sx, sy, () => {
+    neural(t);
+    const lp = eBack(prog(t, 11.2, 11.9));
+    withAlpha(prog(t, 11.2, 11.6), () => scaled(W / 2, 200, lp, () => logo(W / 2 - 205, 150, 1)));
+    withAlpha(prog(t, 11.8, 12.3), () => text('Aqlli kampaniya', W / 2, 310, 34, '#a7f3d0', 600, 'center'));
+    // prompt card
+    const cp = eBack(prog(t, 11.3, 11.8));
+    scaled(W / 2, 510, cp, () => {
+      ctx.save(); ctx.shadowColor = 'rgba(34,227,154,.5)'; ctx.shadowBlur = 50 * think(t);
+      rr(70, 380, 940, 300, 32); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+      text('Reklamangiz haqida bitta gap yozing', 110, 445, 28, C.grey, 700);
+      star(965, 432, 22, '#0ea371', t * 1.5); star(935, 462, 10, '#22e39a', -t * 2);
+      const lay = wordLayout(42), n = Math.round(SENT.length * prog(t, T9.type[0], T9.type[1]));
+      TOKENS.forEach(tok => {
+        const a = prog(t, tok.at, tok.at + .25); if (a <= 0) return;
+        const ws = tok.w.map(i => lay[i]), x0 = ws[0].x - 8, x1 = ws[ws.length - 1].x + ws[ws.length - 1].ww + 8;
+        withAlpha(a * .25, () => { rr(x0, ws[0].y - 40, (x1 - x0) * eOut(a), 54, 12); ctx.fillStyle = tok.col; ctx.fill(); });
+        withAlpha(a, () => { ctx.fillStyle = tok.col; ctx.fillRect(x0, ws[0].y + 12, (x1 - x0) * eOut(a), 5); });
+      });
+      lay.forEach(w => { const vis = clamp(n - w.c0, 0, w.w.length); if (vis > 0) text(w.w.slice(0, vis), w.x, w.y, 42, C.ink, 800); });
+      if (n < SENT.length && Math.floor(t * 3) % 2 === 0) { const last = lay.filter(w => w.c0 <= n).pop(); ctx.font = `800 42px ${F}`; ctx.fillStyle = '#0ea371'; ctx.fillRect(last.x + ctx.measureText(last.w.slice(0, n - last.c0)).width + 4, last.y - 36, 4, 46); }
+      const an = prog(t, 13.4, 13.6) * (1 - prog(t, 15.0, 15.3));
+      if (an > 0) withAlpha(an, () => {
+        rr(110, 638, 860, 10, 5); ctx.fillStyle = '#e2e8f0'; ctx.fill();
+        const sh = ((t - 13.4) * .9) % 1; const g = ctx.createLinearGradient(110 + sh * 860 - 200, 0, 110 + sh * 860 + 200, 0);
+        g.addColorStop(0, 'rgba(14,163,113,0)'); g.addColorStop(.5, '#0ea371'); g.addColorStop(1, 'rgba(14,163,113,0)');
+        rr(110, 638, 860, 10, 5); ctx.fillStyle = g; ctx.fill();
+        text('AI tahlil qilmoqda...', 970, 625, 22, '#0ea371', 800, 'right');
+      });
+    });
+    // campaign blueprint
+    const bp = eOut(prog(t, 14.4, 14.8));
+    if (bp > 0) withAlpha(bp, () => {
+      rr(70, 700, 940, 380, 32); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill();
+      text('Kampaniya rejasi', 100, 750, 30, C.ink, 900);
+      rr(350, 722, 70, 36, 18); ctx.fillStyle = '#0ea371'; ctx.fill(); text('AI', 385, 748, 22, '#fff', 900, 'center');
+      TILES.forEach(([lab, val, col, at, from], i) => {
+        const p = eBack(prog(t, at, at + .3)); if (p <= 0) return;
+        const r = tileRect(i);
+        scaled(r.x + r.w / 2, r.y + r.h / 2, p, () => {
+          rr(r.x, r.y, r.w, r.h, 18); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#eef2f1'; ctx.stroke();
+          rr(r.x, r.y, 10, r.h, 5); ctx.fillStyle = col; ctx.fill();
+          text(lab, r.x + 28, r.y + 44, 19, C.grey, 800); text(val, r.x + 28, r.y + 96, val.length > 13 ? 26 : 30, C.ink, 900);
+          if (from < 0) { star(r.x + r.w - 30, r.y + 32, 14, col, t * 2); }
+        });
+        if (from < 0) sparks(t, at, r.x + r.w / 2, r.y + r.h / 2, 100 + i, [col, '#fff'], 14, 500);
+      });
+    });
+    // chips fly from the highlighted words to their tiles
+    const lay = wordLayout(42);
+    TILES.forEach(([lab, val, col, at, from], i) => {
+      if (from < 0) return;
+      const p = prog(t, at - .45, at); if (p <= 0 || p >= 1) return;
+      const w0 = lay[TOKENS[from].w[0]], r = tileRect(i), e = eInOut(p);
+      const x = lerp(w0.x + 40, r.x + r.w / 2, e), y = lerp(w0.y - 10, r.y + r.h / 2, e) - Math.sin(e * Math.PI) * 80;
+      rr(x - 70, y - 22, 140, 44, 22); ctx.fillStyle = col; ctx.fill(); text(lab, x, y + 8, 18, '#fff', 900, 'center');
+    });
+    // AI-written ad text
+    const ap = eOut(prog(t, 16.2, 16.5));
+    if (ap > 0) withAlpha(ap, () => {
+      rr(70, 1100, 940, 310, 32); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill();
+      text('Reklama matni', 100, 1152, 28, C.ink, 900);
+      rr(330, 1124, 130, 36, 18); ctx.fillStyle = '#d1fae5'; ctx.fill(); text('AI yozdi', 395, 1150, 20, '#065f46', 900, 'center');
+      const n = Math.round(AD.length * prog(t, T9.ad[0], T9.ad[1]));
+      wrap(AD.slice(0, n), 860, 31, 600).forEach((l, i) => text(l, 100, 1210 + i * 46, 31, '#334155', 600));
+    });
+    const bb = eBack(prog(t, T9.btn, T9.btn + .4));
+    if (bb > 0) scaled(BTN9.x + BTN9.w / 2, BTN9.y + BTN9.h / 2, bb * (1 - .05 * bump(t, T9.launch, .25)), () => {
+      ctx.save(); ctx.shadowColor = 'rgba(34,227,154,.7)'; ctx.shadowBlur = 40;
+      rr(BTN9.x, BTN9.y, BTN9.w, BTN9.h, 50); ctx.fillStyle = t > T9.live ? '#065f46' : '#0ea371'; ctx.fill(); ctx.restore();
+      if (t > T9.live) check(BTN9.x + 230, BTN9.y + 50, 30, '#fff', 8, prog(t, T9.live, T9.live + .3));
+      text(t > T9.live ? 'Ishga tushdi' : 'Ishga tushirish', BTN9.x + BTN9.w / 2 + (t > T9.live ? 30 : 0), BTN9.y + 63, 40, '#fff', 900, 'center');
+    });
+    if (t > 17.2 && t < 18.3) {
+      const [cx, cy] = pathAt(t, [[17.2, W - 40, 1700], [T9.launch, BTN9.x + BTN9.w / 2 + 120, BTN9.y + 55]]);
+      withAlpha(Math.min(prog(t, 17.2, 17.4), 1 - prog(t, 18.05, 18.3)), () => cursor(cx, cy, bump(t, T9.launch, .22)));
+    }
+    ripple(BTN9.x + BTN9.w / 2 + 120, BTN9.y + 55, prog(t, T9.launch, T9.launch + .6), '#ffffff');
+  });
+  const dim = prog(t, T9.slam - .05, T9.slam + .1) * (1 - prog(t, T9.sheet - .2, T9.sheet));
+  if (dim > 0) withAlpha(dim * .6, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, T9.slam, W / 2, 880, C.gold, 1100);
+  sparks(t, T9.slam, W / 2, 880, 93, [C.gold, '#fff3c4', '#22e39a'], 40, 1250);
+  slam(t, T9.slam, '1 GAP', W / 2, 840, 240, C.gold, { hold: 1.0, glow: 'rgba(255,200,61,.8)' });
+  slam(t, T9.slam + .15, 'qolganini ADUZ qiladi', W / 2, 1040, 64, '#fff', { hold: .85, glow: 'rgba(255,200,61,.6)' });
+  flash(t, T9.slam, '#fff3c4', .35, .5);
+  // launched modal
+  const mp = eOut(prog(t, T9.sheet, T9.sheet + .45));
+  if (mp > 0) {
+    withAlpha(mp * .55, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+    scaled(W / 2, 950, lerp(.85, 1, eBack(mp)), () => withAlpha(mp, () => {
+      rr(120, 640, 840, 620, 44); ctx.fillStyle = '#fff'; ctx.fill();
+      const c = eBack(prog(t, T9.sheet + .2, T9.sheet + .6));
+      ctx.beginPath(); ctx.arc(W / 2, 790, 80 * c, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+      if (c > .5) check(W / 2, 792, 70, '#fff', 13, prog(t, T9.sheet + .45, T9.sheet + .8));
+      text('Kampaniya ishga tushdi!', W / 2, 950, 44, C.ink, 900, 'center');
+      ['AI 6 ta mos kanal tanladi', 'Eng yaxshi vaqt: 19:00–21:00', 'Matn tayyor — tahrirlash mumkin'].forEach((s, i) =>
+        withAlpha(prog(t, T9.sheet + .9 + i * .25, T9.sheet + 1.15 + i * .25), () => {
+          check(200, 1030 + i * 70, 26, '#16c784', 6); text(s, 240, 1041 + i * 70, 30, '#334155', 600);
+        }));
+    }));
+  }
+}
+
+// ---------- SCENE 3 — Natija: sliding split screen ----------
+const IMPACTS3 = [[22.1, 20], [25.0, 16]];
+function scene3(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera(1 + .03 * eInOut(prog(t, 22, 27)), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.3));
+    withAlpha(1 - out, () => {
+      withAlpha(prog(t, 22.2, 22.6), () => {
+        text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
+        text('Aqlli — demak tez', W / 2, 260, 60, '#fff', 800, 'center');
+      });
+      const x = 60, y = 340, w = 960, h = 820, mid = x + w / 2;
+      const div = lerp(x + w, mid, eInOut(prog(t, 22.6, 23.5))) + Math.sin(t * 2.4) * 6 * prog(t, 23.5, 24);
+      const cp = eOut(prog(t, 22.2, 22.7));
+      withAlpha(cp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; rr(x, y, w, h, 40); ctx.fillStyle = '#1f2937'; ctx.fill(); ctx.restore();
+        // left: the old way
+        ctx.save(); rr(x, y, w, h, 40); ctx.clip();
+        ctx.fillStyle = '#1f2937'; ctx.fillRect(x, y, w, h);
+        text('Oldin', x + 50, y + 80, 34, '#9ca3af', 900);
+        for (let i = 0; i < 9; i++) { const kx = x + 90 + (i % 3) * 110, ky = y + 170 + Math.floor(i / 3) * 100; ctx.beginPath(); ctx.arc(kx, ky, 32, 0, 7); ctx.fillStyle = '#374151'; ctx.fill(); const a = i * 1.3 + t; ctx.beginPath(); ctx.moveTo(kx, ky); ctx.lineTo(kx + Math.cos(a) * 24, ky + Math.sin(a) * 24); ctx.lineWidth = 5; ctx.strokeStyle = '#fbbf24'; ctx.stroke(); }
+        [['36 ta tugma', 22.9], ['2 soat sozlash', 23.2], ['Xato xavfi: yuqori', 23.5]].forEach(([s, at], i) =>
+          withAlpha(prog(t, at, at + .3), () => { cross(x + 70, y + 520 + i * 90, 12, C.red, 6); text(s, x + 100, y + 532 + i * 90, 32, '#e5e7eb', 700); }));
+        // right: ADUZ, revealed by the divider
+        ctx.beginPath(); ctx.rect(div, y, x + w - div, h); ctx.clip();
+        const g = ctx.createLinearGradient(mid, y, x + w, y + h); g.addColorStop(0, '#ecfdf5'); g.addColorStop(1, '#ffffff');
+        ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+        text('ADUZ', mid + 50, y + 80, 34, '#065f46', 900);
+        rr(mid + 50, y + 150, 380, 220, 26); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#a7f3d0'; ctx.stroke();
+        star(mid + 100, y + 210, 26, '#0ea371', t * 1.5);
+        text('“Fargʻonada ayollar', mid + 140, y + 220, 24, C.ink, 700);
+        text('kiyimi doʻkonim...”', mid + 140, y + 256, 24, C.ink, 700);
+        rr(mid + 140, y + 290, 160, 40, 20); ctx.fillStyle = '#0ea371'; ctx.fill(); text('Tayyor', mid + 220, y + 318, 22, '#fff', 900, 'center');
+        [['1 ta gap', 23.9], ['30 soniya', 24.2], ['AI tekshirgan', 24.5]].forEach(([s, at], i) => {
+          const p = eBack(prog(t, at, at + .3)); if (p <= 0) return;
+          scaled(mid + 70, y + 520 + i * 90, p, () => { ctx.beginPath(); ctx.arc(mid + 70, y + 520 + i * 90, 20, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill(); check(mid + 70, y + 521 + i * 90, 18, '#fff', 5); });
+          withAlpha(p, () => text(s, mid + 102, y + 532 + i * 90, 32, '#065f46', 900));
+        });
+        ctx.restore();
+        // divider handle
+        if (div < x + w - 2) {
+          ctx.save(); ctx.shadowColor = '#fff'; ctx.shadowBlur = 30; ctx.fillStyle = '#fff'; ctx.fillRect(div - 3, y, 6, h);
+          ctx.beginPath(); ctx.arc(div, y + h / 2, 38, 0, 7); ctx.fill(); ctx.restore();
+          ctx.fillStyle = C.ink; ctx.beginPath(); ctx.moveTo(div - 22, y + h / 2); ctx.lineTo(div - 8, y + h / 2 - 12); ctx.lineTo(div - 8, y + h / 2 + 12); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(div + 22, y + h / 2); ctx.lineTo(div + 8, y + h / 2 - 12); ctx.lineTo(div + 8, y + h / 2 + 12); ctx.fill();
+        }
+      });
+      const pp = eBack(prog(t, 25.0, 25.4));
+      if (pp > 0) scaled(W / 2, 1260, pp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 40;
+        rr(W / 2 - 340, 1205, 680, 110, 55); const gg = ctx.createLinearGradient(W / 2 - 340, 0, W / 2 + 340, 0);
+        gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+        text('240 barobar tezroq', W / 2, 1278, 52, C.ink, 900, 'center');
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 1260, C.gold, 900);
+  sparks(t, 25.0, W / 2, 1260, 95, [C.gold, '#fff', '#22e39a'], 34, 1100);
+  confetti(t, 25.0);
+  endCard(t, 27.0);
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.4, b: 11.0, fn: (t, a, b, A, B) => crtOff(t, a, b, A, B, '#22e39a') },
+    { a: 21.75, b: 22.15, fn: sliceGlitch },
+  ],
+  overlay: t => { filmLook(t); },
+});
+</script>
+</body>
+</html>
