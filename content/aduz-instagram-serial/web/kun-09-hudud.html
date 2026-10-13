@@ -244,6 +244,7 @@ p { margin: 0; }
       <p class="use"><b>Kimga foydali:</b> byudjetni to‘g‘ri sarflash.</p>
     </div>
     <div class="stage">
+      <div class="filters" id="pick" aria-label="Kanalni tanlang" style="margin:0 0 14px"></div>
       <div class="card">
         <div class="ch-head"><i id="chColor"></i><div><h3 id="chName"></h3><small id="chTopic" style="color:var(--muted)"></small></div></div>
         <div class="tiles">
@@ -366,8 +367,17 @@ p { margin: 0; }
   }
 
   // ---------- 04 channel -> region
+  const pick = document.getElementById("pick");
+  ["Farg‘ona Bugun", "Andijon 24", "Toshkent bozori"].forEach(name => {
+    const c = CH.find(x => x.n === name);
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = name; b.dataset.n = name;
+    b.addEventListener("click", () => { select(c); renderResults(); });
+    pick.appendChild(b);
+  });
   function select(c) {
     selected = c;
+    pick.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x.dataset.n === c.n));
     document.getElementById("chColor").style.background = c.c;
     document.getElementById("chName").textContent = c.n;
     document.getElementById("chTopic").textContent = c.t;
