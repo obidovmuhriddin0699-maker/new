@@ -9,6 +9,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 2 | `ADUZ_2-qism.mp4` | Auditoriyani topish muammosi |
 | 3 | `ADUZ_3-qism.mp4` | Soxta obunachilar va ishonchsizlik |
 | 4 | `ADUZ_4-qism.mp4` | Vaqtni o'g'irlaydigan jarayonlar |
+| 5 | `ADUZ_5-qism.mp4` | Hisobotlarning yo'qligi |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -37,7 +38,7 @@ node render.mjs episode2.html            # → build/episode2_silent.mp4
 ffmpeg -y -i build/episode2_silent.mp4 -i build/episode2.wav -c:v copy -c:a aac -b:a 192k -shortest -movflags +faststart ADUZ_2-qism.mp4
 ```
 
-4-qismdan boshlab ovoz −14 LUFS ga normallashtiriladi (`pip install scipy` kerak):
+4-qismdan boshlab ovoz −14 LUFS ga normallashtiriladi (`pip install scipy` kerak; 5-qism uchun raqamlarni almashtiring):
 
 ```bash
 python3 audio.py 4 build/episode4.wav
@@ -103,6 +104,30 @@ Musiqa 120 BPM: har bir kesim va zarba beat'ga tushadi.
 | 0:27–0:32 | Yakun | ADUZ logotipi, "Biznesingiz himoyachisi!", CTA "Hoziroq sinab ko'ring" | Baraban o'chadi, pad + melodiya, "ting", yakuniy C akkord | ADUZ — biznesingiz himoyachisi! |
 
 "5 500 barobar" = 3 kun (259 200 s) / 47 s. Kanal nomlari, narxlar va vaqtlar namuna uchun qo'yilgan.
+
+## 5-qism: "Hisobotlarning yo'qligi"
+
+Ovoz rejissurasi (`audio.py` → `render_5`, `MixerPro`): har bir qism o'z tonalligida —
+muammo A-minor (sirli, half-time), yechim C-major (iliq groove, 9-li akkordlar), natija F ga "ko'tariladi"
+va plagal kadensiya (F → C) bilan tugaydi. UI tovushlari ham shu tonallikka sozlangan, shuning uchun musiqa bilan
+"urishmaydi". Asboblar: Rhodes uslubidagi FM elektro-pianino, sub-bas, swing'li 16-lik hi-hat'lar, yumshoq kick va snare,
+qo'ng'iroqchalar. Ishlov: ping-pong delay (nuqtali 8-lik), reverb, kick'dan sidechain, katta zarbalar oldidan teskari
+"swell", musiqa o'rta chastotasida (2,2–4,2 kHz) diktor uchun joy, 300 Hz dan yuqorida stereo kengaytirish (pastki
+chastotalar mono), bus-kompressor (2:1), iliqlik va "havo" EQ, yumshoq saturatsiya, −14 LUFS.
+
+| Vaqt | Kadr | Ekranda | Audio / SFX | Diktor |
+|---|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "5-QISM · Hisobotlarning yo'qligi". Orqada "qora tuynuk": pul kupyuralari spiral bo'ylab so'rilib yo'qoladi. "Eslatmalar": 5 ta kanal xarajati, har birida qizil "natija: ?". "Jami: 1 970 000 so'm · Natija: ???" | Sirli A-minor pad, Rhodes akkordlari (delay bilan), half-time "yurak" kick, kupyuralar shitirlashi, aylanuvchi shamol | Besh kanalga reklama berdingiz — 2 million so'm sarflandi. |
+| 0:05–0:10.5 | 1. Muammo | Admin bilan chat: statistika so'raladi → xira, piksellangan skrinshot "Mana" → "Aniq raqam yo'q. Taxminan ko'p bo'ldi". Qizil so'zlar: *HISOBOT YO'Q · TAXMIN · PUL QAYERDA?*. 8.5 s: **NOMA'LUM** zarbasi | Shaker kiradi, glitch-zarbalar, teskari swell → boom + snare + crash, riser | Hisobot yo'q, raqamlar taxminiy. Qaysi kanal ishladi — noma'lum. |
+| 0:10.5–0:11 | O'tish | Piksel-dissolve: kadr kvadratlarga bo'linib yashil sahnaga aylanadi | C-pentatonik "raqamli uchqunlar" (32-liklarda), swell → boom | — |
+| 0:11–0:16 | 2. Yechim | ADUZ "Statistika · JONLI": ko'rishlar 48 200, kliklar 3 140, mijozlar 126, 1 mijoz narxi 15 600 so'm. Soatlik grafik jonli chiziladi. "Kanallar samaradorligi" ro'yxati qayta tartiblanadi | Iliq groove: kick, snare, swing hi-hat, C–Am–F–G (9-li) Rhodes, sub-bas, delay'li qo'ng'iroqcha arpedjio; raqamlar sanalayotgandagi "tik"lar | ADUZ'da har bir kanal natijasi real vaqtda: ko'rish, klik, mijoz. |
+| 0:16–0:22 | 2. Yechim | "Eng samarali" — Farg'ona 24 (42 mijoz). "Samarasiz" — Qo'qon TV (6). Barmoq uni o'chiradi, tangalar pulni eng samarali kanalga "ko'chiradi". 18.5 s: **HAR BIR SO'M — KO'RINADI**. "Hisobot tayyor!" | Toj akkordi, past "flag" tovushi, toggle "klik-tuk", tanga jiringlashi, swell → boom + akkord, chime | Samarasiz kanalni bir bosishda to'xtatib, pulni ishlayotganiga o'tkazasiz. |
+| 0:21.75–0:22.25 | O'tish | Zoom-through, oq chaqnash | Riser → whoosh → boom | — |
+| 0:22–0:27 | 3. Natija | "Har bir so'm hisobda": donut-diagramma 126 mijozni kanallar bo'yicha ko'rsatadi. 1 mijoz narxi 15 600 so'm (oldin: ?), tejalgan byudjet 400 000 so'm. **Har bir so'm ishlaydi** | F ga ko'tarilish, Rhodes + qo'ng'iroqcha melodiyasi, donut "sweep", tanga va uchqunlar | Endi har bir so'm qayerga ketgani va nima olib kelgani aniq. |
+| 0:27–0:32 | Yakun | ADUZ logotipi, shior, CTA | Baraban o'chadi, F → C plagal kadensiya, "ting" | ADUZ — biznesingiz himoyachisi! |
+
+Raqamlar bir-biriga mos: 5 ta kanal xarajati jami 1 970 000 so'm, mijozlar 42+9+38+31+6 = 126, 1 970 000 / 126 ≈ 15 600 so'm.
+Kanal nomlari va raqamlar namuna uchun.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

@@ -364,6 +364,28 @@ function zoomThrough(t, a, b, drawA, drawB) {
   else camera(lerp(1.35, 1, eOut((p - .5) * 2)), 0, 0, 0, () => drawB(t));
   withAlpha(Math.pow(1 - Math.abs(p - .5) * 2, 2), () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); });
 }
+// Transition: the frame breaks into square cells that flip to drawB, rippling out from (ox, oy).
+const PIXEL_CELLS = (() => {
+  const r = rnd(17), cells = [], size = 90;
+  for (let y = 0; y < H; y += size) for (let x = 0; x < W; x += size) cells.push({ x, y, size, j: r() * .25 });
+  return cells;
+})();
+function pixelDissolve(t, a, b, drawA, drawB, color, ox = W / 2, oy = H / 2) {
+  const p = prog(t, a, b), maxD = Math.hypot(W, H) * .62;
+  drawA(t);
+  const live = [];
+  ctx.save(); ctx.beginPath();
+  for (const c of PIXEL_CELLS) {
+    const d = Math.hypot(c.x + c.size / 2 - ox, c.y + c.size / 2 - oy) / maxD;
+    const q = clamp((p * 1.35 - d * .9 - c.j * .4) / .25);
+    if (q <= 0) continue;
+    const s = c.size * eOut(q), cx = c.x + c.size / 2, cy = c.y + c.size / 2;
+    ctx.rect(cx - s / 2, cy - s / 2, s, s);
+    if (q < 1) live.push([cx, cy, s, q]);
+  }
+  ctx.clip(); drawB(t); ctx.restore();
+  for (const [cx, cy, s, q] of live) withAlpha(1 - q, () => { ctx.fillStyle = color; ctx.fillRect(cx - s / 2, cy - s / 2, s, s); });
+}
 // Film grain + vignette, frame-stable for rendering.
 let GRAIN = null;
 function filmLook(t, grain = .07, vignette = .38) {

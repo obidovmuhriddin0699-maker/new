@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 5-qism</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// ADUZ — 5-qism: "Hisobotlarning yoʻqligi"
+// Scenes for this episode; shared helpers live in lib.js (incl. the motion toolkit).
+// Music is 120 BPM: every cut and impact lands on the 0.5 s grid (see render_5 in audio.py).
+
+const CAPTIONS = [
+  [0.4, 5.0, 'Besh kanalga reklama berdingiz — 2 million soʻm sarflandi.'],
+  [5.2, 10.5, 'Hisobot yoʻq, raqamlar taxminiy. Qaysi kanal ishladi — nomaʼlum.'],
+  [11.4, 16.2, 'ADUZʼda har bir kanal natijasi real vaqtda: koʻrish, klik, mijoz.'],
+  [16.4, 21.7, 'Samarasiz kanalni bir bosishda toʻxtatib, pulni ishlayotganiga oʻtkazasiz.'],
+  [22.5, 27.0, 'Endi har bir soʻm qayerga ketgani va nima olib kelgani aniq.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+
+const CH = [
+  { name: 'Fargʻona 24', init: 'F2', col: '#f59e0b', spend: 350000, clients: 42 },
+  { name: 'Vodiy News', init: 'VN', col: '#3b82f6', spend: 280000, clients: 9 },
+  { name: 'Andijon Bozor', init: 'AB', col: '#ec4899', spend: 520000, clients: 38 },
+  { name: 'Namangan Live', init: 'NL', col: '#a855f7', spend: 420000, clients: 31 },
+  { name: 'Qoʻqon TV', init: 'QT', col: '#06b6d4', spend: 400000, clients: 6 },
+];
+const dots = (x, y, t) => { for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(x + k * 22, y - Math.max(0, Math.sin(t * 10 - k * .8)) * 8, 7, 0, 7); ctx.fillStyle = '#7f91a4'; ctx.fill(); } };
+function bill(x, y, rot, s, alpha) {
+  withAlpha(alpha, () => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+    rr(-62, -30, 124, 60, 8); ctx.fillStyle = '#2f9e5b'; ctx.fill();
+    rr(-54, -22, 108, 44, 6); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, 13, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+    text('soʻm', -40, 18, 13, 'rgba(255,255,255,.8)', 800);
+    ctx.restore();
+  });
+}
+
+// ---------- SCENE 1 — Muammo ----------
+// Money spiralling into a black hole behind the phone.
+const BILLS = (() => { const r = rnd(8); return Array.from({ length: 52 }, (_, i) => ({ at: .8 + i * .18, a0: r() * 6.28, rot: r() * 6, vr: (r() - .5) * 8, life: 2.6 + r() * .8 })); })();
+function blackHole(t, stress) {
+  const cx = W / 2, cy = 960, spin = t * (.25 + .5 * stress);
+  for (let arm = 0; arm < 5; arm++) {
+    ctx.beginPath();
+    for (let r = 60; r < 1150; r += 20) {
+      const a = arm * 1.2566 + spin + r * .0055, x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 1.2;
+      r === 60 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.lineWidth = 34; ctx.strokeStyle = `rgba(150,160,255,${.06 + .05 * stress})`; ctx.stroke();
+  }
+  for (const b of BILLS) {
+    const p = prog(t, b.at, b.at + b.life);
+    if (p <= 0 || p >= 1) continue;
+    const r = lerp(1050, 140, eIn(p) * .6 + p * .4), a = b.a0 + p * 4.5;
+    bill(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 1.2, b.rot + b.vr * p, lerp(1.2, .3, p), Math.min(1, (1 - p) * 3));
+  }
+}
+const IMPACTS1 = [[5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46]];
+const MSG = [
+  [5.2, 'out', 'Reklamadan keyin statistika bera olasizmi?'],
+  [5.9, 'in', 'IMG'],
+  [6.6, 'out', 'Bu nima? Hech narsa koʻrinmayapti'],
+  [7.25, 'in', 'Aniq raqam yoʻq. Taxminan koʻp boʻldi'],
+  [7.9, 'out', 'Nechta mijoz keldi?'],
+];
+function notesScreen(t) {
+  ctx.fillStyle = '#17212b'; ctx.fillRect(SX, SY, SW, 150);
+  text('Eslatmalar', SX + 50, SY + 96, 40, '#fff', 800);
+  text('Reklama xarajatlari · oktyabr', SX + 50, SY + 132, 24, '#7f91a4', 500);
+  CH.forEach((c, i) => {
+    const p = eOut(prog(t, .9 + i * .4, 1.3 + i * .4));
+    if (p <= 0) return;
+    const y = SY + 180 + i * 108;
+    withAlpha(p, () => {
+      ctx.save(); ctx.translate(lerp(60, 0, p), 0);
+      rr(SX + 30, y, SW - 60, 96, 20); ctx.fillStyle = '#182533'; ctx.fill();
+      text(c.name, SX + 60, y + 44, 29, '#e9eef3', 700);
+      text(`${fmt(c.spend)} soʻm`, SX + 60, y + 80, 24, '#8a9aab', 500);
+      text('natija:', SX + SW - 120, y + 60, 24, '#7f91a4', 500, 'right');
+      const q = .6 + .4 * Math.sin(t * 6 + i);
+      text('?', SX + SW - 75, y + 66, 46, `rgba(255,59,78,${q})`, 900, 'center');
+      ctx.restore();
+    });
+  });
+  const tp = eBack(prog(t, 3.1, 3.5));
+  if (tp > 0) scaled(SX + SW / 2, SY + 800, tp, () => {
+    rr(SX + 30, SY + 735, SW - 60, 150, 24); ctx.fillStyle = 'rgba(255,59,78,.16)'; ctx.fill();
+    text('Jami: 1 970 000 soʻm', SX + 60, SY + 795, 34, '#fff', 800);
+    text('Natija:', SX + 60, SY + 852, 32, '#b6c2cf', 600);
+    text('???', SX + 190, SY + 856, 44, C.red, 900);
+  });
+}
+function chatScreen(t) {
+  ctx.fillStyle = '#17212b'; ctx.fillRect(SX, SY, SW, 150);
+  ctx.beginPath(); ctx.arc(SX + 80, SY + 95, 36, 0, 7); ctx.fillStyle = '#3b82f6'; ctx.fill();
+  text('VN', SX + 80, SY + 97, 26, '#fff', 800, 'center', 'middle');
+  text('Vodiy News · admin', SX + 135, SY + 88, 32, '#fff', 700);
+  const typing = MSG.some(([at, k]) => k === 'in' && t > at - .45 && t < at);
+  text(typing ? 'yozmoqda...' : 'yaqinda onlayn edi', SX + 135, SY + 126, 24, typing ? '#4fa3ff' : '#7f91a4', 500);
+  let y = SY + 180;
+  for (const [at, kind, s] of MSG) {
+    if (kind === 'in' && t > at - .45 && t < at) { rr(SX + 30, y, 130, 64, 26); ctx.fillStyle = '#182533'; ctx.fill(); dots(SX + 73, y + 34, t); }
+    const p = prog(t, at, at + .3);
+    if (p <= 0) break;
+    if (s === 'IMG') { // blurry, useless screenshot
+      const x = SX + 30, w = 400, h = 290;
+      withAlpha(p, () => scaled(x, y + h, lerp(.5, 1, eBack(p)), () => {
+        rr(x, y, w, h, 24); ctx.fillStyle = '#182533'; ctx.fill();
+        ctx.save(); rr(x + 12, y + 12, w - 24, h - 70, 16); ctx.clip();
+        const r = rnd(4);
+        for (let gy = 0; gy < 9; gy++) for (let gx = 0; gx < 13; gx++) {
+          const v = 70 + r() * 90; ctx.fillStyle = `rgb(${v},${v + 8},${v + 16})`;
+          ctx.fillRect(x + 12 + gx * 30, y + 12 + gy * 25, 30, 25);
+        }
+        ctx.restore();
+        text('Mana', x + 28, y + h - 24, 29, '#e9eef3', 500);
+      }));
+      y += h + 22; continue;
+    }
+    const size = 31, lines = wrap(s, 470, size, 500), lh = 42;
+    const bw = Math.min(520, Math.max(...lines.map(l => ctx.measureText(l).width)) + 56), bh = lines.length * lh + 40;
+    const x = kind === 'out' ? SX + SW - 30 - bw : SX + 30;
+    withAlpha(p, () => scaled(kind === 'out' ? x + bw : x, y + bh, lerp(.5, 1, eBack(p)), () => {
+      rr(x, y, bw, bh, 26); ctx.fillStyle = kind === 'out' ? '#2b5278' : '#182533'; ctx.fill();
+      lines.forEach((l, i) => text(l, x + 28, y + 20 + lh * i + 31, size, '#e9eef3', 500));
+    }));
+    y += bh + 22;
+  }
+}
+function scene1(t) {
+  const stress = prog(t, 5, 10);
+  problemBg(t, stress);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  camera(1 + .06 * eInOut(prog(t, 0, 10.6)), sr, sx, sy, () => {
+    blackHole(t, stress);
+    episodeTitle(t, '5-QISM', 'Hisobotlarning yoʻqligi', 58);
+    const spent = 1970000 * eInOut(prog(t, 1, 3.4));
+    counters(t, [[fmt(spent), 'soʻm sarflandi', C.red], [`${Math.min(5, Math.floor(prog(t, .9, 2.9) * 5 + .001))} ta`, 'kanal', '#fff'], ['0 ta', 'hisobot', C.red]]);
+    const enter = eOut(prog(t, 0, .7)), open = eInOut(prog(t, 4.55, 5.0));
+    phone('#0e1621', 0, lerp(160, 0, enter), 0, () => {
+      if (open < 1) { ctx.save(); ctx.translate(-SW * open, 0); notesScreen(t); ctx.restore(); }
+      if (open > 0) { ctx.save(); ctx.translate(SW * (1 - open), 0); ctx.fillStyle = '#0e1621'; ctx.fillRect(SX, SY, SW, SH); chatScreen(t); ctx.restore(); }
+      ctx.fillStyle = `rgba(255,40,60,${.12 * stress})`; ctx.fillRect(SX, SY, SW, SH);
+    });
+    slam(t, 5.6, 'HISOBOT YOʻQ', 320, 560, 50, '#fff', { slab: C.red, rot: -.08, hold: 2.9 });
+    slam(t, 6.6, 'TAXMIN', 820, 840, 56, '#fff', { slab: C.red, rot: .07, hold: 1.9 });
+    slam(t, 7.6, 'PUL QAYERDA?', 330, 1420, 50, '#fff', { slab: C.red, rot: .05, hold: .9 });
+  });
+  const dim = prog(t, 8.45, 8.6) * (1 - prog(t, 10.4, 10.6));
+  if (dim > 0) withAlpha(dim * .6, () => { ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, 8.5, W / 2, 900, C.red, 1100);
+  sparks(t, 8.5, W / 2, 900, 13, [C.red, '#ffb4bc', '#ffffff'], 36, 1200);
+  slam(t, 8.5, 'NOMAʼLUM', W / 2, 880, 170, '#fff', { hold: 1.75, glow: 'rgba(255,40,60,.9)' });
+  slam(t, 8.8, '2 mln soʻm qayerga ketdi?', W / 2, 1050, 52, '#ffb4bc', { hold: 1.45 });
+  flash(t, 8.5, C.red, .4, .45);
+}
+
+// ---------- SCENE 2 — Yechim ----------
+const T5 = { kpi: 11.5, chart: 12.3, rank: 14.2, sort: 15.4, crown: 16.2, flag: 16.8, toggle: 17.5, coins: 17.7, slam: 18.5, sheet: 19.7 };
+const IMPACTS2 = [[11.0, 30], [T5.toggle, 8], [T5.slam, 34]];
+const SORTED = [...CH.keys()].sort((a, b) => CH[b].clients - CH[a].clients);
+const RANK0 = SY + 770, RH = 70;
+const rankOf = (i, t) => { const before = i, after = SORTED.indexOf(i); return lerp(before, after, eInOut(prog(t, T5.sort, T5.sort + .6))); };
+const HOURLY = [.12, .15, .1, .2, .26, .22, .34, .41, .38, .5, .57, .52, .63, .7, .66, .74, .8, .77, .85, .9];
+const TOGGLE = () => ({ x: SX + SW - 92, y: RANK0 + SORTED.indexOf(4) * RH + 30 });
+function dashboard(t) {
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 150);
+  text('Statistika', SX + 50, SY + 112, 40, '#fff', 800);
+  rr(SX + SW - 200, SY + 70, 160, 54, 27); ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(SX + SW - 172, SY + 97, 9 + 3 * Math.sin(t * 8), 0, 7); ctx.fillStyle = '#ff5a6b'; ctx.fill();
+  text('JONLI', SX + SW - 150, SY + 106, 26, '#fff', 800);
+  // KPI tiles
+  const cnt = eOut(prog(t, 11.8, 14.0)), tw = (SW - 90) / 2;
+  const kpis = [['Koʻrishlar', fmt(48200 * cnt)], ['Kliklar', fmt(3140 * cnt)], ['Mijozlar', fmt(126 * cnt)], ['1 mijoz narxi', cnt > .2 ? `${fmt(Math.round(1970000 / Math.max(1, 126 * cnt) / 100) * 100)} soʻm` : '—']];
+  kpis.forEach(([l, v], i) => {
+    const p = eBack(prog(t, T5.kpi + i * .12, T5.kpi + .4 + i * .12));
+    if (p <= 0) return;
+    const x = SX + 30 + (i % 2) * (tw + 30), y = SY + 175 + Math.floor(i / 2) * 140;
+    scaled(x + tw / 2, y + 62, p, () => {
+      rr(x, y, tw, 125, 22); ctx.fillStyle = '#fff'; ctx.fill();
+      text(l, x + 26, y + 44, 23, C.grey, 700);
+      text(v, x + 26, y + 98, i === 3 ? 34 : 44, i === 3 ? '#059669' : C.ink, 900);
+    });
+  });
+  // live line chart
+  const cx0 = SX + 30, cy0 = SY + 465, cw = SW - 60, ch = 270;
+  withAlpha(prog(t, T5.chart - .2, T5.chart + .2), () => {
+    rr(cx0, cy0, cw, ch, 22); ctx.fillStyle = '#fff'; ctx.fill();
+    text('Koʻrishlar · soatlik', cx0 + 26, cy0 + 42, 23, C.grey, 700);
+    const lp = eInOut(prog(t, T5.chart, T5.chart + 1.4)), n = HOURLY.length - 1;
+    const wig = i => i === n ? .03 * Math.sin(t * 5) : 0;
+    const gx = i => cx0 + 30 + i * (cw - 60) / n, gy = v => cy0 + ch - 30 - v * (ch - 90);
+    const last = lp * n, k = Math.floor(last), f = last - k;
+    const pts = HOURLY.slice(0, k + 1).map((v, i) => [gx(i), gy(v + wig(i))]);
+    if (k < n) pts.push([lerp(gx(k), gx(k + 1), f), gy(lerp(HOURLY[k], HOURLY[k + 1], f))]);
+    const ar = ctx.createLinearGradient(0, cy0 + 60, 0, cy0 + ch);
+    ar.addColorStop(0, 'rgba(22,199,132,.3)'); ar.addColorStop(1, 'rgba(22,199,132,0)');
+    ctx.beginPath(); ctx.moveTo(pts[0][0], cy0 + ch - 30); pts.forEach(p => ctx.lineTo(...p)); ctx.lineTo(pts[pts.length - 1][0], cy0 + ch - 30); ctx.closePath(); ctx.fillStyle = ar; ctx.fill();
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p));
+    ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.strokeStyle = '#16c784'; ctx.stroke();
+    const e = pts[pts.length - 1];
+    ctx.beginPath(); ctx.arc(e[0], e[1], 12 + 6 * (.5 + .5 * Math.sin(t * 7)), 0, 7); ctx.fillStyle = 'rgba(22,199,132,.25)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(e[0], e[1], 9, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+  });
+  // channel ranking
+  withAlpha(prog(t, T5.rank - .2, T5.rank + .2), () => text('Kanallar samaradorligi', SX + 30, RANK0 - 20, 26, C.ink, 800));
+  const maxC = 42, off = prog(t, T5.toggle, T5.toggle + .2);
+  CH.forEach((c, i) => {
+    const p = eOut(prog(t, T5.rank + i * .1, T5.rank + .45 + i * .1));
+    if (p <= 0) return;
+    const y = RANK0 + rankOf(i, t) * RH, x = SX + 30 + lerp(SW, 0, p), w = SW - 60;
+    const best = i === SORTED[0] && t > T5.crown, bad = i === 4 && t > T5.flag;
+    rr(x, y, w, RH - 8, 18); ctx.fillStyle = best ? '#fff7db' : bad ? '#fef2f2' : '#fff'; ctx.fill();
+    if (best) { rr(x, y, w, RH - 8, 18); ctx.lineWidth = 4; ctx.strokeStyle = C.gold; ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(x + 38, y + 31, 22, 0, 7); ctx.fillStyle = c.col; ctx.fill();
+    text(c.init, x + 38, y + 32, 17, '#fff', 800, 'center', 'middle');
+    withAlpha(bad ? 1 - .5 * off : 1, () => text(c.name, x + 72, y + 40, 25, C.ink, 700));
+    const bp = eOut(prog(t, T5.rank + .3 + i * .1, T5.rank + 1.2 + i * .1)), bx = x + 260, bw = 170;
+    rr(bx, y + 24, bw, 14, 7); ctx.fillStyle = '#eef2f1'; ctx.fill();
+    rr(bx, y + 24, Math.max(14, bw * c.clients / maxC * bp), 14, 7); ctx.fillStyle = bad ? C.red : best ? '#f5a524' : '#16c784'; ctx.fill();
+    if (!bad) text(`${Math.round(c.clients * bp)} mijoz`, x + w - 24, y + 40, 24, best ? '#b45309' : '#059669', 800, 'right');
+    else { // toggle switch
+      const tx = TOGGLE().x - (x - (SX + 30)), on = 1 - off;
+      text(`${c.clients}`, tx - 60, y + 40, 24, C.red, 800, 'right');
+      rr(tx - 34, y + 13, 68, 36, 18); ctx.fillStyle = on > .5 ? '#16c784' : '#cbd5e1'; ctx.fill();
+      ctx.beginPath(); ctx.arc(tx - 16 + 32 * on, y + 31, 15, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+    }
+    if (best) { const cp = eBack(prog(t, T5.crown, T5.crown + .35)); scaled(bx + 85, y - 2, cp, () => {
+      rr(bx, y - 18, 170, 32, 16); ctx.fillStyle = C.gold; ctx.fill();
+      text('Eng samarali', bx + 85, y + 4, 19, C.ink, 900, 'center'); }); }
+    if (bad) { const fp = eBack(prog(t, T5.flag, T5.flag + .35)); scaled(bx + 70, y - 2, fp, () => {
+      rr(bx, y - 18, 140, 32, 16); ctx.fillStyle = C.red; ctx.fill();
+      text('Samarasiz', bx + 70, y + 4, 19, '#fff', 900, 'center'); }); }
+  });
+  // coins move budget from the bad channel to the best one
+  const yBad = RANK0 + SORTED.indexOf(4) * RH + 30, yBest = RANK0 + 30;
+  for (let k = 0; k < 7; k++) {
+    const p = prog(t, T5.coins + k * .06, T5.coins + .5 + k * .06);
+    if (p <= 0 || p >= 1) continue;
+    const e = eInOut(p), x = lerp(SX + SW - 120, SX + SW - 300, e) + Math.sin(e * Math.PI) * -120, y = lerp(yBad, yBest, e);
+    ctx.beginPath(); ctx.arc(x, y, 16, 0, 7); ctx.fillStyle = C.gold; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#b45309'; ctx.stroke();
+    text('S', x, y + 1, 16, '#b45309', 900, 'center', 'middle');
+  }
+  // report sheet
+  const mp = eOut(prog(t, T5.sheet, T5.sheet + .45));
+  if (mp > 0) {
+    ctx.fillStyle = `rgba(4,20,16,${.55 * mp})`; ctx.fillRect(SX, SY, SW, SH);
+    const sy = lerp(SY + SH, SY + SH - 640, mp);
+    rr(SX, sy, SW, 700, 50); ctx.fillStyle = '#fff'; ctx.fill();
+    const cp = eBack(prog(t, T5.sheet + .2, T5.sheet + .6));
+    ctx.beginPath(); ctx.arc(SX + SW / 2, sy + 150, 80 * cp, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+    if (cp > .5) check(SX + SW / 2, sy + 152, 70, '#fff', 13, prog(t, T5.sheet + .45, T5.sheet + .8));
+    withAlpha(prog(t, T5.sheet + .6, T5.sheet + .9), () => {
+      text('Hisobot tayyor!', SX + SW / 2, sy + 300, 42, C.ink, 800, 'center');
+      ['Har bir kanal boʻyicha natija', '1 mijoz narxi — 15 600 soʻm', 'Haftalik hisobot Telegramga keladi'].forEach((s, i) =>
+        withAlpha(prog(t, T5.sheet + .9 + i * .25, T5.sheet + 1.15 + i * .25), () => {
+          check(SX + 90, sy + 380 + i * 70, 26, '#16c784', 6);
+          text(s, SX + 125, sy + 391 + i * 70, 29, '#334155', 600);
+        }));
+    });
+  }
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  camera(1.04 - .04 * eOut(prog(t, 11, 12)) + .025 * eInOut(prog(t, 12, 21.8)), sr, sx, sy, () => {
+    solutionBg(t, 'Shaffof statistika paneli');
+    const enter = eBack(prog(t, 11.1, 11.75));
+    scaled(W / 2, PY + PH / 2, lerp(.8, 1, enter), () => withAlpha(prog(t, 11.1, 11.35), () =>
+      phone('#f4f7f6', 0, lerp(180, 0, enter), 0, () => dashboard(t))));
+    const tg = TOGGLE();
+    if (t > 16.9 && t < 18.1) {
+      const [cx, cy] = pathAt(t, [[16.9, W - 40, 1600], [T5.toggle, tg.x, tg.y]]);
+      withAlpha(Math.min(prog(t, 16.9, 17.1), 1 - prog(t, 17.8, 18.1)), () => cursor(cx, cy, bump(t, T5.toggle, .22)));
+    }
+    ripple(tg.x, tg.y, prog(t, T5.toggle, T5.toggle + .6), C.red);
+  });
+  const dim = prog(t, T5.slam - .05, T5.slam + .1) * (1 - prog(t, T5.sheet - .2, T5.sheet));
+  if (dim > 0) withAlpha(dim * .55, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, T5.slam, W / 2, 900, C.gold, 1100);
+  sparks(t, T5.slam, W / 2, 900, 51, [C.gold, '#fff3c4', '#22e39a'], 40, 1250);
+  slam(t, T5.slam, 'HAR BIR SOʻM', W / 2, 830, 120, '#fff', { hold: 1.0, glow: 'rgba(255,200,61,.7)' });
+  slam(t, T5.slam + .15, 'KOʻRINADI', W / 2, 1000, 140, C.gold, { hold: .85, glow: 'rgba(255,200,61,.8)' });
+  flash(t, T5.slam, '#fff3c4', .35, .5);
+}
+
+// ---------- SCENE 3 — Natija ----------
+const IMPACTS3 = [[22.0, 26], [25.0, 16]];
+function scene3(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera(1 + .03 * eInOut(prog(t, 22, 27)), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.3));
+    withAlpha(1 - out, () => {
+      withAlpha(prog(t, 22.3, 22.8), () => {
+        text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
+        text('Har bir soʻm hisobda', W / 2, 260, 60, '#fff', 800, 'center');
+      });
+      // donut: where the clients came from
+      const dp = eInOut(prog(t, 22.6, 24.0)), cx = W / 2, cy = 640, R = 230;
+      withAlpha(prog(t, 22.4, 22.8), () => {
+        ctx.beginPath(); ctx.arc(cx, cy, R + 55, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.lineWidth = 70; ctx.strokeStyle = '#eef2f1'; ctx.stroke();
+        let a = -Math.PI / 2;
+        SORTED.forEach(i => {
+          const span = CH[i].clients / 126 * Math.PI * 2, end = -Math.PI / 2 + dp * Math.PI * 2;
+          const s = a, e = Math.min(a + span, end);
+          if (e > s) { ctx.beginPath(); ctx.arc(cx, cy, R, s + .015, e - .015); ctx.lineWidth = 70; ctx.lineCap = 'butt'; ctx.strokeStyle = CH[i].col; ctx.stroke(); }
+          a += span;
+        });
+        text(String(Math.round(126 * dp)), cx, cy + 10, 110, C.ink, 900, 'center');
+        text('mijoz', cx, cy + 70, 34, C.grey, 700, 'center');
+      });
+      // stat tiles
+      [['1 mijoz narxi', 'Oldin: ?', '15 600 soʻm'], ['Tejalgan byudjet', 'Samarasiz kanaldan', '400 000 soʻm']].forEach(([l, sub, v], i) => {
+        const p = eBack(prog(t, 23.6 + i * .2, 24.0 + i * .2));
+        if (p <= 0) return;
+        const x = 90 + i * 460, y = 980;
+        scaled(x + 210, y + 110, p, () => {
+          rr(x, y, 440, 220, 32); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill();
+          text(l, x + 34, y + 58, 28, C.grey, 700);
+          text(v, x + 34, y + 135, 50, '#059669', 900);
+          text(sub, x + 34, y + 185, 24, i === 0 ? C.red : C.grey, 700);
+        });
+      });
+      const pp = eBack(prog(t, 25.0, 25.4));
+      if (pp > 0) scaled(W / 2, 1300, pp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 40;
+        rr(W / 2 - 330, 1250, 660, 100, 50);
+        const gg = ctx.createLinearGradient(W / 2 - 330, 0, W / 2 + 330, 0);
+        gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+        text('Har bir soʻm ishlaydi', W / 2, 1302, 46, C.ink, 900, 'center', 'middle');
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 1300, C.gold, 900);
+  sparks(t, 25.0, W / 2, 1300, 57, [C.gold, '#fff', '#22e39a'], 34, 1100);
+  confetti(t, 25.0);
+  endCard(t, 27.0);
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.55, b: 11.0, fn: (t, a, b, A, B) => pixelDissolve(t, a, b, A, B, '#22e39a') },
+    { a: 21.75, b: 22.25, fn: zoomThrough },
+  ],
+  overlay: t => { filmLook(t); flash(t, 11.0, '#ffffff', .3, .5); },
+});
+</script>
+</body>
+</html>

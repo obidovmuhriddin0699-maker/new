@@ -541,7 +541,271 @@ def render_4():
     return out
 
 
-V2 = {4: render_4}
+# ---------- v3 additions (5-qismdan): sound-director pass ----------
+from scipy.signal import lfilter  # noqa: E402
+
+
+class MixerPro(Mixer):
+    """Adds a tempo-synced ping-pong delay, a vocal-space EQ dip on music,
+    a bus compressor and a gentle master EQ (warmth + air) on top of Mixer."""
+
+    def __init__(self, bpm=120):
+        super().__init__()
+        self.delay = np.zeros((N, 2))
+        self.beat = 60 / bpm
+
+    def put(self, bus, start, sig, gain=1.0, pan=0.0, verb=0.0, echo=0.0):
+        super().put(bus, start, sig, gain, pan, verb)
+        if echo:
+            i = int(start * SR)
+            if i < N:
+                s = sig if sig.ndim == 2 else np.stack([sig, sig], axis=1) * np.sqrt(0.5)
+                s = s[: N - i] * gain * echo
+                self.delay[i : i + len(s)] += s
+
+    def render(self, duck_depth=0.5):
+        duck = np.ones(N)
+        for k in self.kicks:
+            i = int(k * SR)
+            n = min(int(0.32 * SR), N - i)
+            x = np.arange(n) / SR
+            duck[i : i + n] = np.minimum(duck[i : i + n], 1 - duck_depth * np.exp(-x / 0.1))
+        # ping-pong delay: dotted eighth, filtered repeats
+        d = int(self.beat * 0.75 * SR)
+        src = filt(filt(self.delay.mean(axis=1), "highpass", 400), "lowpass", 4500)
+        echo = np.zeros((N, 2))
+        for k in range(1, 7):
+            if k * d >= N:
+                break
+            echo[k * d :, k % 2] += src[: N - k * d] * 0.55**k
+        verb = np.stack([fftconvolve(self.send[:, c], rnd_ir(2.8, 0.7)[:, c])[:N] for c in range(2)], axis=1)
+        music = self.music * duck[:, None]
+        music -= filt(music, "bandpass", [2200, 4200]) * 0.35  # leave room for a voice-over
+        # widen: Haas-delay the right channel of everything above 300 Hz, keep the low end mono
+        hi = filt(music, "highpass", 300)
+        lo = music - hi
+        lag = int(0.009 * SR)
+        hi_w = hi.copy()
+        hi_w[lag:, 1] = hi[:-lag, 1]
+        mid, side = (hi_w[:, 0] + hi_w[:, 1]) / 2, (hi_w[:, 0] - hi_w[:, 1]) / 2 * 1.3
+        music = lo.mean(axis=1, keepdims=True) + np.stack([mid + side, mid - side], axis=1)
+        drums = self.drums.copy()
+        drums -= filt(drums, "highpass", 13000) * 0.6  # tame hat fizz
+        out = music + drums + self.sfx + verb * 0.5 + echo * 0.6
+        out = filt(out, "highpass", 30)
+        out -= filt(out, "bandpass", [180, 320]) * 0.15  # clear low-mid mud
+        out += filt(out, "lowpass", 110) * 0.06 + filt(out, "highpass", 10000) * 0.05  # warmth + air
+        # bus compressor: 2:1 above -14 dBFS RMS, 10 ms attack / 150 ms release
+        lvl = np.sqrt(np.convolve(np.mean(out**2, axis=1), np.ones(441) / 441, mode="same") + 1e-12)
+        over = np.maximum(0, 20 * np.log10(lvl) + 14)
+        gr = over * 0.5
+        a = np.exp(-1 / (0.15 * SR))
+        gr = lfilter([1 - a], [1, -a], gr)
+        out *= (10 ** (-gr / 20))[:, None]
+        return np.tanh(out * 1.25) / 1.25
+
+
+def epiano(f, dur, vel=1.0):
+    """Rhodes-like FM electric piano: soft bell attack, warm body, slow tremolo."""
+    x = seconds(dur)
+    idx = 1.6 * vel * np.exp(-x / 0.35) + 0.25
+    tone_ = np.sin(2 * np.pi * f * x + idx * np.sin(2 * np.pi * f * x))
+    tine = 0.25 * vel * np.sin(2 * np.pi * f * 14 * x) * np.exp(-x / 0.03)
+    env = np.minimum(1, x / 0.004) * np.exp(-x / 1.6) * np.minimum(1, np.clip(dur - x, 0, None) / 0.15)
+    s = (tone_ + tine) * env
+    trem = 1 + 0.12 * np.sin(2 * np.pi * 4.5 * x)
+    return np.stack([s * trem, s * (2 - trem)], axis=1) * 0.5
+
+
+def chord_ep(notes, dur, vel=0.8, strum=0.012):
+    out = np.zeros((int((dur + strum * len(notes)) * SR), 2))
+    for k, n in enumerate(notes):
+        s = epiano(m(n), dur, vel)
+        i = int(k * strum * SR)
+        out[i : i + len(s)] += s
+    return out / np.sqrt(len(notes))
+
+
+def soft_kick():
+    x = seconds(0.5)
+    f = 48 + 90 * np.exp(-x * 28)
+    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x / 0.2)
+    return np.tanh(body * 1.8) * 0.9
+
+
+def snare():
+    x = seconds(0.35)
+    body = np.sin(2 * np.pi * 190 * x) * np.exp(-x / 0.05)
+    n = filt(rng.standard_normal(len(x)), "bandpass", [1500, 7000]) * np.exp(-x / 0.09)
+    return np.tanh((body * 0.6 + n * 0.8 + clap()[: len(x)] * 0.5) * 1.2)
+
+
+def shaker():
+    x = seconds(0.09)
+    return filt(rng.standard_normal(len(x)), "bandpass", [5000, 11000]) * np.sin(np.pi * x / 0.09) ** 2 * 0.5
+
+
+def coin():
+    g = rng.uniform(0.95, 1.08)
+    return bell(m(96) * g, 0.6, 3.0, 0.12) * 0.6 + bell(m(103) * g, 0.6, 2.0, 0.08) * 0.4
+
+
+def reverse_swell(notes, dur=0.6):
+    """Reversed reverb-like swell of a chord, ending exactly on the hit."""
+    x = seconds(dur)
+    s = sum(np.sin(2 * np.pi * m(n) * x) for n in notes) / len(notes)
+    n = filt(rng.standard_normal(len(x)), "bandpass", [1500, 9000]) * 0.4
+    return (s + n) * (x / dur) ** 3
+
+
+def flutter():
+    """Paper bill flapping past."""
+    x = seconds(0.35)
+    am = (np.sin(2 * np.pi * 38 * x) > 0) * 0.7 + 0.3
+    return filt(rng.standard_normal(len(x)), "bandpass", [800, 3500]) * am * np.sin(np.pi * x / 0.35) * 0.5
+
+
+def data_blip(n):
+    return bell(m(n), 0.12, 0.6, 0.04)
+
+
+def render_5():
+    """5-qism: Hisobotlarning yo'qligi. 120 BPM; A minor (muammo) -> C major (yechim) -> F lift (natija)."""
+    M = MixerPro(120)
+    g = np.random.default_rng(55)
+    # ---------- Scene 1 (0-10.55): mysterious, half-time, money sucked into the void ----------
+    M.put("music", 0.0, pad([m(45), m(52), m(57), m(60)], 10.6, cutoff=650, attack=2.0), 0.36, verb=0.35)
+    for at, notes in ((0.5, [57, 60, 64]), (2.5, [53, 57, 60]), (4.5, [57, 60, 64]), (6.5, [52, 56, 59])):
+        M.put("music", at, chord_ep([n - 12 for n in notes] + [notes[0]], 1.9, 0.5), 0.35, verb=0.4, echo=0.25)
+    for k, at in enumerate(np.arange(1.0, 8.5, 0.5)):
+        n = [69, 72, 76, 72][k % 4]
+        M.put("music", at, filt(epiano(m(n), 0.4, 0.4), "lowpass", 1800), 0.16, -0.3 + 0.2 * (k % 4), echo=0.35)
+    for at in np.arange(2.0, 8.5, 1.0):  # half-time heartbeat kick + rim
+        M.put("drums", at, soft_kick(), 0.5)
+        M.kicks.append(at)
+        M.put("drums", at + 0.5, filt(snare(), "highpass", 900), 0.16, 0.1, verb=0.3)
+    for at in np.arange(5.5, 8.5, 0.25):
+        M.put("drums", at + (0.03 if int(at * 4) % 2 else 0), shaker(), 0.18 * g.uniform(0.6, 1), 0.4)
+    for b in np.arange(0.8, 10.0, 0.36):  # bills fluttering into the black hole
+        M.put("sfx", b + g.uniform(0, 0.1), flutter(), 0.08 * g.uniform(0.6, 1), g.uniform(-0.9, 0.9))
+    swirl = whoosh(9.5, 300, 900)
+    pan = np.sin(np.linspace(0, 9, len(swirl)))
+    M.put("sfx", 0.6, np.stack([swirl * (1 - pan) / 2, swirl * (1 + pan) / 2], axis=1), 0.12)
+    for i in range(5):  # expense rows + red "?"
+        M.put("sfx", 0.9 + i * 0.4, ui_click(), 0.12, 0.2)
+        M.put("sfx", 1.0 + i * 0.4, data_blip([57, 60, 64, 67, 69][i] + 12), 0.1, -0.2, verb=0.3)
+    M.put("sfx", 3.1, glitch_hit(), 0.3, verb=0.3)  # total ???
+    M.put("sfx", 4.55, whoosh(0.5, 600, 3000), 0.16, 0.4)
+    for at, kind in [(5.2, "out"), (5.9, "in"), (6.6, "out"), (7.25, "in"), (7.9, "out")]:
+        M.put("sfx", at, bell(1320 if kind == "out" else 990, 0.25, 0.8, 0.06), 0.11, 0.3 if kind == "out" else -0.3, verb=0.2)
+    for at, p in ((5.6, -0.4), (6.6, 0.4), (7.6, -0.4)):
+        M.put("sfx", at, glitch_hit(), 0.38, p, verb=0.25)
+    M.put("sfx", 7.9, reverse_swell([57, 60, 64, 69], 0.6), 0.3)
+    M.put("sfx", 8.5, boom(1.0), 0.75, verb=0.45)
+    M.put("sfx", 8.5, snare(), 0.35, verb=0.6)
+    M.put("sfx", 8.5, crash(), 0.3)
+    M.put("sfx", 8.6, riser(1.95), 0.28)
+    # pixel dissolve: quantised digital sparkle in C major pentatonic
+    for k, at in enumerate(np.arange(10.55, 11.0, 1 / 32)):
+        M.put("sfx", at, data_blip(int(g.choice([72, 74, 76, 79, 81, 84, 86, 88]))), 0.07, g.uniform(-0.9, 0.9), verb=0.2)
+    M.put("sfx", 10.5, reverse_swell([60, 64, 67, 72], 0.5), 0.35)
+
+    # ---------- Scene 2 (11-21.75): warm modern groove, C Am F G with 9ths ----------
+    M.put("sfx", 11.0, boom(0.8), 0.55, verb=0.35)
+    M.put("sfx", 11.0, crash(), 0.24)
+    prog2 = [(11, [48, 55, 64, 67, 74], 36), (13, [45, 55, 60, 64, 71], 33), (15, [41, 55, 60, 64, 69], 29), (17, [43, 55, 59, 62, 69], 31),
+             (19, [48, 55, 64, 67, 74], 36), (21, [45, 55, 60, 64, 71], 33)]
+    for start, notes, root in prog2:
+        dur = min(2.0, 21.75 - start)
+        for b in (0.0, 0.75, 1.5):  # syncopated e-piano comping
+            if b < dur:
+                M.put("music", start + b, chord_ep(notes[1:], min(0.7, dur - b), 0.7), 0.42, verb=0.25)
+        M.put("music", start, pad([m(n + 12) for n in notes[2:]], dur, cutoff=2400, attack=0.25), 0.1, verb=0.35)
+        for b in np.arange(0, dur - 0.01, 0.5):
+            M.put("music", start + b, sub(m(root + 12) / 2 if b % 1 else m(root + 12), 0.4), 0.24)
+    arp = [76, 79, 84, 79, 74, 79, 83, 79]
+    for k, at in enumerate(np.arange(11.0, 21.75, 0.25)):
+        if k % 2 == 0:
+            M.put("music", at, bell(m(arp[(k // 2) % 8] + 12), 0.3, 1.0, 0.12), 0.05, 0.3 * np.sin(k), echo=0.5)
+    for at in np.arange(11.0, 21.75, 0.5):
+        M.put("drums", at, soft_kick(), 0.62)
+        M.kicks.append(at)
+        if int(round(at * 2)) % 2 == 1:
+            M.put("drums", at, snare(), 0.3, verb=0.2)
+    for k, at in enumerate(np.arange(11.0, 21.75, 0.125)):  # swung 16th hats with velocity
+        sw = 0.02 if k % 2 else 0.0
+        M.put("drums", at + sw, hat(k % 8 == 4), (0.09 if k % 2 == 0 else 0.045) * g.uniform(0.75, 1.0), 0.35)
+    for i in range(4):  # KPI tiles pop in, then count up
+        M.put("sfx", T5_KPI + i * 0.12, data_blip([72, 76, 79, 84][i]), 0.16, -0.3 + 0.2 * i, verb=0.2)
+    for k, at in enumerate(np.arange(11.8, 14.0, 0.0625)):
+        M.put("sfx", at, tick(True), 0.03 * (1 - k / 36), 0.3)
+    data = seconds(1.4)
+    M.put("sfx", 12.3, np.sin(2 * np.pi * np.cumsum(500 * 2 ** (data / 1.4)) / SR) * np.sin(np.pi * data / 1.4) * 0.3, 0.12, echo=0.3)
+    for i in range(5):
+        M.put("sfx", 14.2 + i * 0.1, whoosh(0.25, 1500, 4000), 0.07, 0.5)
+    M.put("sfx", 15.4, whoosh(0.6, 800, 2500), 0.16)  # re-sort
+    M.put("sfx", 16.2, chord_ep([72, 76, 79, 84], 1.2, 1.0), 0.3, verb=0.4, echo=0.3)  # crown
+    M.put("sfx", 16.8, bell(m(58), 0.4, 2.0, 0.1), 0.2, verb=0.2)  # flagged
+    M.put("sfx", 17.5, ui_click(), 0.4)
+    M.put("sfx", 17.52, sub(m(43), 0.12), 0.25)  # toggle thunk
+    for k in range(7):
+        M.put("sfx", 17.7 + k * 0.06 + 0.45, coin(), 0.18, -0.4 + 0.12 * k, verb=0.2)
+    M.put("sfx", 18.0, reverse_swell([67, 72, 76, 79], 0.5), 0.35)
+    M.put("sfx", 18.5, boom(0.9), 0.62, verb=0.4)
+    M.put("sfx", 18.5, crash(), 0.26)
+    M.put("sfx", 18.5, chord_ep([60, 67, 72, 76, 79], 1.6, 1.0), 0.32, verb=0.5)
+    for k, f in enumerate((72, 76, 79, 84)):  # report-ready chime
+        M.put("sfx", 19.9 + k * 0.07, bell(m(f), 1.4, 1.2, 0.45), 0.09, -0.2 + k * 0.13, verb=0.5, echo=0.3)
+    M.put("sfx", 21.0, riser(1.0), 0.26)
+
+    # ---------- Scene 3 (22-32): lift to F, plagal ending F -> C ----------
+    M.put("sfx", 21.75, whoosh(0.5, 500, 8000), 0.28, verb=0.3)
+    M.put("sfx", 22.0, boom(0.9), 0.6, verb=0.45)
+    M.put("sfx", 22.0, crash(), 0.3)
+    prog3 = [(22, [41, 57, 60, 64, 69], 29), (24, [43, 55, 59, 62, 67], 31), (26, [40, 55, 59, 64, 67], 28), (28, [45, 57, 60, 64, 72], 33),
+             (29, [41, 57, 60, 65, 69], 29), (30, [36, 55, 60, 64, 67, 72], 24)]
+    for start, notes, root in prog3:
+        dur = 1.0 if start in (28, 29) else 2.0
+        M.put("music", start, chord_ep(notes[1:], dur + (1.6 if start == 30 else 0), 0.85), 0.45, verb=0.4, echo=0.2)
+        M.put("music", start, pad([m(n + 12) for n in notes[1:4]], dur + (1.2 if start == 30 else 0), cutoff=2600, attack=0.3), 0.14, verb=0.4)
+        M.put("music", start, supersaw([m(n) for n in notes[1:4]], dur, cutoff=2800 if start < 27 else 1500), 0.14 if start < 27 else 0.08, verb=0.3)
+        for b in np.arange(0, dur - 0.01, 0.5):
+            M.put("music", start + b, sub(m(root + 12), 0.45), 0.3 if start < 27 else 0.2)
+    melody = [(22, 81), (22.5, 79), (23, 77), (23.5, 76), (24, 74), (24.75, 76), (25.5, 79),
+              (26, 76), (26.5, 74), (27, 72), (28, 72), (28.5, 74), (29, 76), (29.5, 77), (30, 79)]
+    for at, n in melody:
+        M.put("music", at, epiano(m(n), 0.9, 0.9), 0.3, 0.15, verb=0.45, echo=0.35)
+        M.put("music", at, bell(m(n + 12), 0.8, 1.2, 0.3), 0.05, -0.15, verb=0.4)
+    for at in np.arange(22.0, 26.75, 0.5):
+        M.put("drums", at, soft_kick(), 0.66)
+        M.kicks.append(at)
+        if int(round(at * 2)) % 2 == 1:
+            M.put("drums", at, snare(), 0.32, verb=0.25)
+    for k, at in enumerate(np.arange(22.0, 26.75, 0.125)):
+        M.put("drums", at + (0.02 if k % 2 else 0), hat(k % 4 == 2), (0.09 if k % 2 == 0 else 0.05) * g.uniform(0.75, 1.0), 0.35)
+    donut = seconds(1.4)
+    M.put("sfx", 22.6, np.sin(2 * np.pi * np.cumsum(300 * 2 ** (1.5 * donut / 1.4)) / SR) * np.sin(np.pi * donut / 1.4), 0.08, echo=0.3)
+    for k, n in enumerate([65, 69, 72, 77, 81]):  # donut segments
+        M.put("sfx", 22.6 + k * 0.28, data_blip(n + 12), 0.1, -0.4 + 0.2 * k, verb=0.3)
+    for i in range(2):
+        M.put("sfx", 23.6 + i * 0.2, bell(m([77, 81][i]), 0.5, 1.2, 0.18), 0.14, -0.3 + 0.6 * i, verb=0.3)
+    M.put("sfx", 24.5, reverse_swell([65, 69, 72, 77], 0.5), 0.3)
+    M.put("sfx", 25.0, boom(0.6), 0.42, verb=0.4)
+    for k in range(16):
+        M.put("sfx", 25.0 + g.uniform(0, 0.9), coin() if k % 3 == 0 else bell(m(int(g.choice([84, 89, 93, 96, 101]))), 0.8, 1.5, 0.25), 0.05, g.uniform(-0.8, 0.8), verb=0.5)
+    M.put("sfx", 27.0, whoosh(0.6, 3000, 800), 0.16, verb=0.4)
+    M.put("sfx", 28.3, bell(1760, 3.0, 1.0, 0.9), 0.18, verb=0.6, echo=0.4)
+    M.put("sfx", 28.3, bell(2637, 3.0, 0.8, 0.7), 0.07, 0.3, verb=0.6)
+
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+
+T5_KPI = 11.5
+
+
+V2 = {4: render_4, 5: render_5}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
