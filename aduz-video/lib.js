@@ -259,15 +259,146 @@ function circleWipe(t, a, b, drawA, drawB, color) {
   if (color && p > 0 && p < 1) { ctx.beginPath(); ctx.arc(W / 2, H / 2, p * 1200, 0, 7); ctx.lineWidth = 24; ctx.strokeStyle = color; ctx.stroke(); }
 }
 
+
+// ---------- motion toolkit (4-qismdan boshlab) ----------
+const eIn = p => p * p * p;
+// Draws fn under a camera: zoom/rotation about (cx, cy) plus a screen offset.
+function camera(zoom, rot, dx, dy, fn, cx = W / 2, cy = H / 2) {
+  ctx.save(); ctx.translate(cx + dx, cy + dy); ctx.rotate(rot); ctx.scale(zoom, zoom); ctx.translate(-cx, -cy);
+  fn(); ctx.restore();
+}
+// Decaying camera shake from impacts [[time, amplitude px], …] → [dx, dy, rot].
+function shakeAt(t, impacts) {
+  let x = 0, y = 0, r = 0;
+  for (const [at, a] of impacts) {
+    const d = t - at; if (d < 0 || d > 1.2) continue;
+    const e = Math.exp(-d * 7) * a;
+    x += Math.sin(d * 61) * e; y += Math.cos(d * 47) * e * .8; r += Math.sin(d * 38) * e * .0009;
+  }
+  return [x, y, r];
+}
+function shockwave(t, at, x, y, color, maxR = 900) {
+  const p = prog(t, at, at + .7);
+  if (p <= 0 || p >= 1) return;
+  withAlpha(1 - p, () => {
+    ctx.beginPath(); ctx.arc(x, y, maxR * eOut(p), 0, 7);
+    ctx.lineWidth = 36 * (1 - p) + 2; ctx.strokeStyle = color; ctx.stroke();
+  });
+}
+function flash(t, at, color = '#ffffff', len = .35, peak = .8) {
+  const p = prog(t, at, at + len);
+  if (p <= 0 || p >= 1) return;
+  withAlpha(peak * (1 - eOut(p)), () => { ctx.fillStyle = color; ctx.fillRect(0, 0, W, H); });
+}
+// Burst of streaking sparks with gravity.
+function sparks(t, at, x, y, seed, colors, n = 28, speed = 950) {
+  const d = t - at; if (d < 0 || d > 1.3) return;
+  const r = rnd(seed);
+  ctx.lineCap = 'round';
+  for (let i = 0; i < n; i++) {
+    const ang = r() * Math.PI * 2, v = speed * (.35 + r() * .65), life = .55 + r() * .6;
+    if (d > life) continue;
+    const k = 1 - d / life, px = x + Math.cos(ang) * v * d, py = y + Math.sin(ang) * v * d + 600 * d * d;
+    const tx = px - Math.cos(ang) * v * .035, ty = py - (Math.sin(ang) * v + 1200 * d) * .035;
+    withAlpha(k, () => {
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(tx, ty);
+      ctx.lineWidth = 7 * k + 1; ctx.strokeStyle = colors[i % colors.length]; ctx.stroke();
+    });
+  }
+}
+// Kinetic "slam" word: drops in from 2.4x with overshoot and a scale motion trail, holds, then punches out.
+function slam(t, at, s, x, y, size, color, o = {}) {
+  const { hold = 1.2, rot = 0, slab = null, glow = 'rgba(0,0,0,.45)' } = o;
+  const p = prog(t, at, at + .3), q = prog(t, at + hold, at + hold + .25);
+  if (p <= 0 || q >= 1) return;
+  const a = clamp(p * 4) * (1 - q), base = ctx.globalAlpha;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.font = `900 ${size}px ${F}`; const w = ctx.measureText(s).width;
+  const draw = alpha => {
+    ctx.globalAlpha = base * alpha;
+    if (slab) { rr(-w / 2 - size * .45, -size * .68, w + size * .9, size * 1.36, size * .24); ctx.fillStyle = slab; ctx.fill(); }
+    text(s, 0, size * .04, size, color, 900, 'center', 'middle');
+  };
+  if (p < 1) for (let k = 3; k >= 1; k--) {
+    const sk = lerp(2.4, 1, eBack(clamp(p - k * .09)));
+    ctx.save(); ctx.scale(sk, sk); draw(a * .13 * (4 - k)); ctx.restore();
+  }
+  const sc = lerp(2.4, 1, eBack(p)) * (1 + .3 * eIn(q));
+  ctx.scale(sc, sc); ctx.shadowColor = glow; ctx.shadowBlur = 40; draw(a);
+  ctx.restore();
+}
+// Analog clock: minuteTurns = full turns of the minute hand; secTicks = second-hand position in ticks.
+function bigClock(cx, cy, R, minuteTurns, secTicks, color, alpha) {
+  withAlpha(alpha, () => {
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.lineWidth = 10; ctx.stroke();
+    for (let i = 0; i < 60; i++) {
+      const a = i / 60 * Math.PI * 2, l = i % 5 ? 22 : 54;
+      ctx.beginPath(); ctx.moveTo(cx + Math.sin(a) * (R - 26), cy - Math.cos(a) * (R - 26));
+      ctx.lineTo(cx + Math.sin(a) * (R - 26 - l), cy - Math.cos(a) * (R - 26 - l));
+      ctx.lineWidth = i % 5 ? 4 : 10; ctx.stroke();
+    }
+    const hand = (a, l, w) => { ctx.beginPath(); ctx.moveTo(cx - Math.sin(a) * 40, cy + Math.cos(a) * 40); ctx.lineTo(cx + Math.sin(a) * l, cy - Math.cos(a) * l); ctx.lineWidth = w; ctx.stroke(); };
+    hand(minuteTurns / 12 * Math.PI * 2, R * .5, 20);
+    hand(minuteTurns * Math.PI * 2, R * .78, 12);
+    ctx.strokeStyle = C.red; hand(secTicks / 60 * Math.PI * 2, R * .86, 5);
+    ctx.beginPath(); ctx.arc(cx, cy, 20, 0, 7); ctx.fill();
+  });
+}
+// Transition: a clock hand sweeps round, revealing drawB behind it.
+function clockWipe(t, a, b, drawA, drawB, color) {
+  const p = eInOut(prog(t, a, b)), ang = -Math.PI / 2 + p * Math.PI * 2, cx = W / 2, cy = H / 2;
+  drawA(t);
+  ctx.save(); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, 2400, -Math.PI / 2, ang); ctx.closePath(); ctx.clip(); drawB(t); ctx.restore();
+  if (p > 0 && p < 1) {
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 50;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * 2400, cy + Math.sin(ang) * 2400);
+    ctx.lineWidth = 18; ctx.strokeStyle = color; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, 34, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.restore();
+  }
+}
+// Transition: push into drawA, white flash, land on drawB.
+function zoomThrough(t, a, b, drawA, drawB) {
+  const p = prog(t, a, b);
+  if (p < .5) camera(1 + .7 * eIn(p * 2), 0, 0, 0, () => drawA(t));
+  else camera(lerp(1.35, 1, eOut((p - .5) * 2)), 0, 0, 0, () => drawB(t));
+  withAlpha(Math.pow(1 - Math.abs(p - .5) * 2, 2), () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); });
+}
+// Film grain + vignette, frame-stable for rendering.
+let GRAIN = null;
+function filmLook(t, grain = .07, vignette = .38) {
+  if (!GRAIN) {
+    GRAIN = document.createElement('canvas'); GRAIN.width = GRAIN.height = 256;
+    const g = GRAIN.getContext('2d'), img = g.createImageData(256, 256), r = rnd(3);
+    for (let i = 0; i < img.data.length; i += 4) { const v = 70 + r() * 115; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+    g.putImageData(img, 0, 0);
+  }
+  const f = Math.floor(t * 24), ox = (f * 7919) % 256, oy = (f * 104729) % 256;
+  ctx.save(); ctx.globalAlpha = grain; ctx.globalCompositeOperation = 'overlay';
+  ctx.translate(-ox, -oy); ctx.fillStyle = ctx.createPattern(GRAIN, 'repeat'); ctx.fillRect(0, 0, W + 256, H + 256);
+  ctx.restore();
+  const v = ctx.createRadialGradient(W / 2, H / 2, 600, W / 2, H / 2, 1250);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, `rgba(0,0,0,${vignette})`);
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
 // Every episode: scene1 0-11 s (Muammo), scene2 11-22 s (Yechim), scene3 22-32 s (Natija).
-function boot({ scene1, scene2, scene3, captions: caps, duration = 32 }) {
+// transitions: optional [{ a, b, fn(t, a, b, drawA, drawB) }, …] for the 1→2 and 2→3 cuts.
+// overlay: optional fn(t) drawn over the scenes, under the captions (grain, vignette…).
+const DEFAULT_TRANSITIONS = [
+  { a: 10.7, b: 11.3, fn: (t, a, b, A, B) => circleWipe(t, a, b, A, B, '#22e39a') },
+  { a: 21.9, b: 22.4, fn: (t, a, b, A, B) => circleWipe(t, a, b, A, B, '#ffc83d') },
+];
+function boot({ scene1, scene2, scene3, captions: caps, duration = 32, transitions = DEFAULT_TRANSITIONS, overlay = null }) {
+  const [t1, t2] = transitions;
   function renderFrame(t) {
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H);
-    if (t < 10.7) scene1(t);
-    else if (t < 11.3) circleWipe(t, 10.7, 11.3, scene1, scene2, '#22e39a');
-    else if (t < 21.9) scene2(t);
-    else if (t < 22.4) circleWipe(t, 21.9, 22.4, scene2, scene3, '#ffc83d');
+    if (t < t1.a) scene1(t);
+    else if (t < t1.b) t1.fn(t, t1.a, t1.b, scene1, scene2);
+    else if (t < t2.a) scene2(t);
+    else if (t < t2.b) t2.fn(t, t2.a, t2.b, scene2, scene3);
     else scene3(t);
+    if (overlay) overlay(t);
     captions(t, caps);
     // fade from/to black
     const fb = Math.max(1 - prog(t, 0, .4), prog(t, duration - .5, duration));
