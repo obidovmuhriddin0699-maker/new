@@ -202,33 +202,30 @@ joyidan eshitiladi, plucklar beat'ga bo'ysunmaydi (3:4) — keng va tarqoq; magn
 
 Narxlar yig'indisi: 320 000 + 280 000 + 410 000 + 250 000 + 380 000 = 1 640 000 so'm. Kanal nomlari namuna.
 
-## 9-qism: "Aqlli kampaniya yaratish"
+## 9-qism: "Aqlli kampaniya yaratish" (2-variant)
 
-**Yangi ko'rinish:** muammo — butun kadrni egallagan "boshqaruv pulti": 8 murvat, 10 slayder, 12 tumbler, 6 tugma (jami 36),
-miltillovchi chiroqlar va "XATO" yozuvli LCD. Qo'l murvatni buradi, tumblerni yoqadi — displeyda xato chiqadi. O'tish — eski televizor
-o'chishi (`crtOff`): pult chiziqqa, so'ng nuqtaga aylanadi va undan ADUZ "yonadi". Yechim — "AI paneli": foydalanuvchi bitta gap yozadi,
-gapdagi so'zlar rangli belgilanib kampaniya rejasiga "uchib" tushadi, AI vaqt va kanallarni o'zi qo'shadi, reklama matnini yozadi;
-orqada neyron tarmoq "o'ylaydi" (o'ylash paytida yorqinroq). Natija — siljiydigan ajratuvchi chiziqli split-screen "Oldin | ADUZ".
-Ikkinchi o'tish — digital glitch (`sliceGlitch`).
+7-qism uslubida: telefon, sodda yorug' UI, kursor, squeegee va whip-pan o'tishlari, "ovoz vakuumi", taqqoslash kartasi.
+Birinchi variant (boshqaruv pulti + AI paneli) git tarixida saqlangan: `8afea94`.
 
-**Ovoz:** [`SOUND_ARCHITECTURE_9.md`](SOUND_ARCHITECTURE_9.md) — 14 ta yangi tovush. Muammoda pult tovushlari musiqaning o'zi:
-hi-hat o'rnida rele chiqillashi, murvat "ratchet"i, tumbler, slayder ishqalanishi, C-minor tonallikdagi signal. Televizor o'chganda gate:
-hamma narsa kesiladi, faqat CRT tovushi qoladi, keyin ADUZ Eb-major arpedjio bilan yonadi. Yechimda "aqlli" palitra:
-har bir ajratilgan so'z o'z notasidagi shisha shimmer, AI o'ylaganda mayda uchqunlar, future-garage groove (shuffle hat, sinkopali kick).
-Stereo kenglik monoga mos holda tekshirildi (mono'da yo'qotish ≤ 1,3 dB). Sonic logo Eb tonikada.
+**G'oya:** bitta maqsad tanlaysiz — ADUZ qolgan 20 ta sozlamani o'zi to'ldiradi. Muammo va yechimda **aynan bir xil 20 ta sozlama**
+ko'rsatiladi: avval qizil "Majburiy *" va "Tanlang ›" bilan, keyin ADUZ ularni domino kabi birin-ketin yashil qiymatlar bilan to'ldiradi.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_9.md`](SOUND_ARCHITECTURE_9.md). Musiqa — 7-qism aranjirovkasi 3 yarim ton yuqorida (G-minor → F-major),
+seriya "qardosh" eshitilishi uchun. Imzo tovushi — avtomatik to'ldirish "domino"si: 20 ta nota F-pentatonik bo'yicha 4 oktavaga ko'tariladi.
+Qoralama g'ijimlanganda ovoz vakuumi: faqat qog'oz chirsillashi va to'pning tushishi. Stereo 7-qismdan biroz torroq (telefon karnayi uchun).
 
 | Vaqt | Kadr | Ekranda | Diktor |
 |---|---|---|---|
-| 0:00–0:05 | 1. Muammo | "9-QISM · Aqlli kampaniya". Pult elementlari kaskad bo'lib paydo bo'ladi (hisoblagich 0 → 36 tugma). LCD: "OPTIMIZATSIYA: ??? PIKSEL: yo'q". Qo'l CPM murvatini buradi, AUTO-BID tumblerini yoqadi → "XATO: AUTO-BID va BID zid!", sozlandi 3% → 1% | Kampaniya sozlash: o'nlab murvat, slayder va tugmalar... |
-| 0:05–0:10.4 | 1. Muammo | Chiroqlar tezlashib miltillaydi. *QAYSI BIRINI? · XATO = PUL YO'Q · O'RGANISH — 1 HAFTA*. 8.5 s: **36 TA TUGMA — va hammasi sizga bog'liq** | Bittasini noto'g'ri qo'ysangiz — pul behuda ketadi. |
-| 0:10.4–0:11 | O'tish | Eski televizor o'chadi: chiziq → nuqta → yashil ekran yonadi | — |
-| 0:11–0:16 | 2. Yechim | AI paneli: "Reklamangiz haqida bitta gap yozing" → "Farg'onada ayollar kiyimi do'konim uchun 500 ming so'mlik reklama". AI tahlil qiladi: so'zlar rangli belgilanadi va "Kampaniya rejasi"ga uchadi: Hudud · Auditoriya · Soha · Byudjet | ADUZ'da bitta gap yozasiz — AI uni kampaniya rejasiga aylantiradi. |
-| 0:16–0:22 | 2. Yechim | AI o'zi qo'shadi: Vaqt 19:00–21:00, 6 ta mos kanal. "Reklama matni — AI yozdi". "Ishga tushirish" → Ishga tushdi. 18.5 s: **1 GAP — qolganini ADUZ qiladi**. Oyna: "Kampaniya ishga tushdi!" | Kanallar, vaqt va reklama matni tayyor. Siz faqat tasdiqlaysiz. |
-| 0:21.75–0:22.15 | O'tish | Digital glitch: kadr gorizontal bo'laklarga yirtiladi | — |
-| 0:22–0:27 | 3. Natija | "Aqlli — demak tez": split-screen, ajratuvchi chiziq siljib "ADUZ" tomonini ochadi. Oldin: 36 ta tugma, 2 soat sozlash, xato xavfi ✗ / ADUZ: 1 ta gap, 30 soniya, AI tekshirgan ✓. **240 barobar tezroq** | 2 soatlik sozlash o'rniga — 30 soniya. |
+| 0:00–0:05 | 1. Muammo | "9-QISM · Aqlli kampaniya". Telefonda "Kampaniya sozlamalari": 20 maydon, "To'ldirildi: 3 / 20", ko'pi qizil "*". "Narx strategiyasi" bosiladi — jargonli ro'yxat (Lowest cost, Cost cap, Bid cap...). Orqada tishli g'ildiraklar aylanadi | Kampaniya sozlamalari: yigirmata maydon, ko'pi majburiy... |
+| 0:05–0:10.5 | 1. Muammo | "12 ta majburiy maydon to'ldirilmagan". *MAJBURIY \* · QAYSI STRATEGIYA? · YANA XATO!*. "Saqlash" → "Saqlanmadi". 8.5 s: **20 TA SOZLAMA — bitta reklama uchun**. 9.55 s: qoralama g'ijimlanib qog'oz to'pga aylanadi va tushib ketadi (ovoz vakuumi) | Strategiya, chastota, istisno auditoriya... va yana xato. ...qoralama savatga. |
+| 0:10.5–0:11 | O'tish | Squeegee | — |
+| 0:11–0:16 | 2. Yechim | "Maqsadingiz nima?" — 3 ta katta karta: Do'konga mijoz · Kanalga obunachi · Aksiya / chegirma. "Do'konga mijoz" tanlanadi → "ADUZ avtomatik to'ldirmoqda...": o'sha 20 ta sozlama domino kabi to'ladi (0 → 20 / 20), ro'yxat o'zi pastga suriladi | ADUZ'da faqat maqsadni tanlaysiz — qolgan sozlamalarni ADUZ o'zi to'ldiradi. |
+| 0:16–0:22 | 2. Yechim | "Tavsiya etilgan reja": 500 000 so'm · 6 ta kanal · 19:00–21:00 · ≈ 9 000 ko'rish → "Ishga tushirish" → Ishga tushdi! 18.5 s: **1 TANLOV — 20 ta sozlama avtomatik** | Bir tanlov, bir bosish — va kampaniya ishga tushdi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Aqlli — demak oson": Oldin (20 ta sozlama, 12 ta majburiy maydon, "Saqlanmadi" xatosi, 1 soat) chizib o'chiriladi ↔ ADUZ (1 ta tanlov, 0 ta majburiy, avtomatik tekshiruv, 1 daqiqa). Nishonlar: Aqlli · Avtomatik · Moslashuvchan | Murakkab sozlamalar yo'q — aqlli tavsiyalar bor. |
 | 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
 
-"240 barobar" = 2 soat (7 200 s) / 30 s. AI funksiyalari va vaqtlar ssenariy asosidagi namuna — mahsulotdagi haqiqiy imkoniyatlar bilan solishtiring.
+Sozlama nomlari, tavsiya qiymatlari va vaqtlar namuna — ADUZ'dagi haqiqiy avto-sozlash bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

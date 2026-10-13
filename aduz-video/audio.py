@@ -424,8 +424,11 @@ def glitch_hit():
     return np.tanh((low + grit + filt(rng.standard_normal(len(x)), "lowpass", 1500) * np.exp(-x / 0.03) * 0.6) * 1.5)
 
 
+KEY_SHIFT = 0  # semitones; lets an episode reuse another episode's score in a new key
+
+
 def m(note):
-    return midi(note)
+    return midi(note + KEY_SHIFT)
 
 
 def render_4():
@@ -1625,134 +1628,114 @@ SOUNDS.update({
 })
 FRONT.add("tr.crt_off")
 
+
+# ---------- 9-qism (2-variant, 7-qism uslubida) ----------
+def fx_crumple():
+    x = seconds(0.45)
+    bursts = (rng.random(len(x)) < 0.012).astype(float)
+    bursts = np.convolve(bursts, np.exp(-seconds(0.004) / 0.001), mode="same")
+    crackle = filt(rng.standard_normal(len(x)) * bursts, "bandpass", [1000, 9000]) * 3
+    s = (crackle + filt(rng.standard_normal(len(x)), "bandpass", [400, 2500]) * 0.15) * np.sin(np.pi * x / 0.45) ** 0.5
+    return np.tanh(s * 2) / 2  # tame the sharpest crackles so they don't become the mix peak
+
+
+def fx_thud():
+    return layer(tone(65, 0.25, "sine", 0.001, 0.07), filt(rng.standard_normal(int(0.12 * SR)), "lowpass", 900) * np.exp(-seconds(0.12) / 0.02) * 0.6)
+
+
+def fx_fill(note=72):
+    return layer(bell(m(note), 0.28, 0.9, 0.09) * 0.8, ui_click() * 0.35)
+
+
+SOUNDS.update({
+    "fx.crumple": ("L5", lambda a=None: fx_crumple(), "Qoralama g'ijimlanadi: qog'oz chirsillashi"),
+    "fx.thud": ("L5", lambda a=None: fx_thud(), "Qog'oz to'p yerga tushadi"),
+    "fx.fill": ("L3", lambda a=None: fx_fill(a or 72), "Avtomatik to'ldirish 'domino'si: har sozlama o'z notasida"),
+})
+FRONT.update({"fx.crumple", "fx.thud"})
+_PENTA = [65, 67, 69, 72, 74, 77, 79, 81, 84, 86, 89, 91, 93, 96, 98, 101, 103, 105, 108, 110]  # F-major pentatonic, 4 octaves up
+
 CUES_9 = [
-    (0.0, "amb.office", 0.08, 0, 0, 0, "Xona: pult g'uvullashi", 10.4),
-    *[(0.5 + i * 0.1, "fx.detent", 0.22, -0.75 + 0.5 * (i % 4), 0.15, 0, f"Murvat #{i + 1} paydo bo'ldi", 60 + i) for i in range(8)],
-    *[(1.3 + i * 0.07, "fx.detent", 0.14, -0.8 + 0.18 * i, 0.1, 0, f"Slayder #{i + 1}", 67 + i) for i in range(10)],
-    (2.0, "fx.lcd", 0.25, -0.3, 0.2, 0, "LCD displey yondi", None),
-    *[(2.1 + i * 0.05, "fx.detent", 0.12, 0.4 + 0.08 * i, 0.1, 0, f"F{i + 1} tugmasi", 72 + i) for i in range(6)],
-    *[(2.4 + i * 0.06, "fx.switch", 0.12, -0.75 + 0.3 * (i % 6), 0.1, 0, f"Tumbler #{i + 1}", None) for i in range(12)],
-    (3.6, "fx.knob", 0.35, -0.3, 0.15, 0, "Qo'l CPM murvatini aylantiradi", 0.55),
-    (4.6, "fx.switch", 0.4, 0.1, 0.2, 0, "AUTO-BID yoqildi", None),
-    (4.68, "fx.alarm", 0.22, -0.3, 0.3, 0.2, "LCD: XATO — sozlamalar zid", (79, 3)),
-    (5.2, "fx.slider", 0.3, -0.7, 0.15, 0, "YOSH slayderi suriladi", 0.6),
-    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: QAYSI BIRINI?", None),
-    (6.2, "fx.alarm", 0.1, 0.6, 0.3, 0.3, "Chiroqlar miltillaydi", (75, 2)),
-    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: XATO = PUL YO'Q", None),
-    (7.2, "fx.alarm", 0.12, -0.6, 0.3, 0.3, "Signallar tezlashadi", (79, 4)),
-    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: O'RGANISH — 1 HAFTA", None),
-    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [60, 63, 67, 72]),
-    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "36 TA TUGMA — asosiy zarba", 1.0),
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    *[(0.4 + i * 0.45, "fx.detent", 0.08, (-1) ** i * 0.7, 0.2, 0.2, f"Tishli g'ildirak #{i + 1}", 55 + i) for i in range(14)],
+    (1.0, "tr.slide", 0.08, 0, 0.1, 0, "Ro'yxat pastga suriladi", None),
+    (2.0, "ui.tap", 0.3, 0.2, 0, 0, "Narx strategiyasi bosildi", None),
+    (2.05, "ui.dropdown", 0.2, 0.2, 0.1, 0, "Jargonli ro'yxat ochiladi", None),
+    (3.0, "ui.tap", 0.2, 0.2, 0, 0, "Yopildi — tanlanmadi", None),
+    (3.2, "tr.slide", 0.08, 0, 0.1, 0, "Yana pastga", None),
+    (5.0, "ui.error", 0.24, 0, 0.2, 0, "12 ta majburiy maydon to'ldirilmagan", None),
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: MAJBURIY *", None),
+    (5.8, "tr.slide", 0.08, 0, 0.1, 0, "Yana pastga", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: QAYSI STRATEGIYA?", None),
+    (7.6, "ui.tap", 0.3, 0.4, 0, 0, "Saqlash bosildi", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: YANA XATO!", None),
+    (7.8, "ui.error", 0.26, 0, 0.25, 0, "Saqlanmadi", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [55, 58, 62, 67]),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "20 TA SOZLAMA — asosiy zarba", 1.0),
     (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
-    (8.5, "imp.crash", 0.28, 0, 0, 0, "Zarba qatlami", None),
-    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — televizor o'chishi bilan uziladi", 1.8),
-    (10.4, "tr.crt_off", 0.6, 0, 0, 0, "ESKI TV O'CHADI — musiqa gate bilan kesiladi", None),
-    (10.7, "tr.boot", 0.35, 0, 0.4, 0.3, "ADUZ yonadi (Eb-major)", 63),
-    (11.0, "imp.boom", 0.45, 0, 0.35, 0, "Yechim boshlanishi", 0.7),
-    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit", 10.7),
-    (11.3, "tr.whoosh", 0.18, 0, 0.2, 0, "Prompt kartasi", None),
-    *[(11.8 + k * 0.0625, "fx.type", 0.1, 0.15 * np.sin(k), 0.05, 0, "Gap yozilmoqda", None) for k in range(24)],
-    (13.4, "fx.think", 0.22, 0, 0.4, 0.3, "AI tahlil qilmoqda", 1.6),
-    *[(at, "fx.token", 0.22, [-0.4, -0.1, 0.2, 0.5][i], 0.35, 0.3, f"So'z ajratildi: {['Hudud', 'Auditoriya', 'Soha', 'Byudjet'][i]}", [75, 77, 79, 82][i]) for i, at in enumerate([13.6, 13.9, 14.2, 14.5])],
-    *[(at - 0.45, "tr.slide", 0.08, [-0.4, -0.1, 0.2, 0.5][i], 0.1, 0, "Chip kartaga uchadi", None) for i, at in enumerate([14.75, 14.95, 15.15, 15.35])],
-    *[(at, "fx.snap", 0.18, [-0.5, 0, 0.5, -0.5][i], 0.2, 0, "Chip rejaga joylashdi", None) for i, at in enumerate([14.75, 14.95, 15.15, 15.35])],
-    (15.6, "fx.think", 0.2, 0, 0.4, 0.3, "AI qo'shimcha taklif qilmoqda", 1.8),
-    (15.8, "fx.token", 0.25, 0, 0.4, 0.4, "AI qo'shdi: VAQT", 87),
-    (16.1, "fx.token", 0.25, 0.5, 0.4, 0.4, "AI qo'shdi: KANALLAR", 89),
-    *[(16.4 + k * 0.06, "fx.type", 0.08, 0.2 * np.sin(k * 1.3), 0.05, 0, "AI matn yozmoqda", None) for k in range(18)],
-    (17.5, "ui.popup", 0.2, 0, 0.2, 0, "Ishga tushirish tugmasi", 75),
-    (17.9, "ui.tap", 0.35, 0.2, 0, 0, "Bosildi", None),
-    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: 1 GAP oldidan", [63, 67, 70, 75]),
-    (18.15, "ui.success", 0.26, 0, 0.4, 0.3, "Ishga tushdi", None),
-    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "1 GAP — zarba", 0.9),
-    (18.5, "imp.crash", 0.25, 0, 0, 0, "Zarba qatlami", None),
-    (18.5, "imp.sparkle", 0.38, 0, 0.5, 0, "Uchqunlar", 11),
+    (8.5, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.55, "fx.crumple", 0.26, 0, 0, 0, "OVOZ VAKUUMI: qoralama g'ijimlanadi", None),
+    (9.95, "fx.thud", 0.4, 0.15, 0, 0, "Qog'oz to'p tushadi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi kesimdan oldin", [65, 69, 72, 77]),
+    (10.55, "tr.squeegee", 0.45, 0, 0.25, 0, "Squeegee o'tishi", None),
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    *[(11.6 + i * 0.15, "ui.select", 0.12, -0.3 + 0.3 * i, 0.25, 0.2, f"Maqsad kartasi #{i + 1}", [77, 81, 84][i]) for i in range(3)],
+    (13.0, "ui.select", 0.24, 0.2, 0.2, 0, "Tanlandi: Do'konga mijoz", 84),
+    (13.2, "tr.slide", 0.14, 0.5, 0.1, 0, "Aqlli sozlash ekrani", None),
+    *[(13.55 + k * 0.105, "fx.fill", 0.17, -0.5 + k * 0.05, 0.25, 0.15, f"Avto-to'ldirish {k + 1}/20 — domino", _PENTA[k]) for k in range(20)],
+    (15.8, "ui.next", 0.22, 0, 0.3, 0.2, "20/20 — hammasi to'ldirildi", None),
+    (15.95, "tr.slide", 0.16, 0, 0.15, 0, "Tavsiya etilgan reja", None),
+    (16.8, "ui.tap", 0.35, 0.1, 0, 0, "Ishga tushirish bosildi", None),
+    (16.85, "ui.launch", 0.25, 0, 0.3, 0.2, "Ishga tushmoqda...", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: 1 TANLOV oldidan", [69, 72, 77, 81]),
+    (18.2, "ui.success", 0.3, 0, 0.4, 0.3, "Ishga tushdi!", None),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "1 TANLOV — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 15),
     (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Kampaniya ishga tushdi oynasi", None),
-    (21.2, "tr.riser", 0.24, 0, 0, 0, "J-cut: glitch oldidan", 0.55),
-    (21.75, "tr.glitch", 0.4, 0, 0.15, 0, "Digital glitch o'tishi", None),
-    (22.0, "imp.boom", 0.5, 0, 0.45, 0, "Natija boshlanishi", 0.8),
-    (22.6, "fx.slider", 0.25, 0.6, 0.2, 0, "Ajratuvchi chiziq suriladi", 0.9),
-    *[(at, "fx.nope", 0.22, -0.5, 0.2, 0, f"Oldin: {s}", None) for at, s in [(22.9, "36 ta tugma"), (23.2, "2 soat"), (23.5, "xato xavfi")]],
-    *[(at, "ui.select", 0.18, 0.5, 0.3, 0.2, f"ADUZ: {s}", n) for (at, s), n in zip([(23.9, "1 ta gap"), (24.2, "30 soniya"), (24.5, "AI tekshirgan")], [75, 79, 82])],
-    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: pill oldidan", [68, 72, 75, 80]),
-    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "240 barobar tezroq", 0.6),
-    (25.0, "imp.sparkle", 0.42, 0, 0.5, 0, "Uchqunlar", 13),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    *[(22.8 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(4)],
+    *[(23.0 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [77, 81, 84, 89][i]) for i in range(4)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [72, 77, 81, 84]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 17),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [84, 89, 93][i]) for i in range(3)],
     (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
-    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (Eb tonallikda)", 51),
-    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 87),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (F tonikada)", 53),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 96),
 ]
 
 SCORE_9 = [
-    ("0:00–0:10.4", "Muammo · C-minor, mexanik", "Hi-hat o'rnida rele chiqillashi (16-lik), filtrlangan bas pulsi, Cm pad; 5.5 s dan kick. Pult tovushlari musiqaning bir qismi bo'lib eshitiladi."),
-    ("0:10.4–0:10.8", "Televizor o'chishi", "Gate: musiqa va dumlar keskin kesiladi, faqat TV o'chish tovushi qoladi; keyin ADUZ Eb-major arpedjio bilan 'yonadi'."),
-    ("0:11–0:21.75", "Yechim · Eb-major, future-garage", "Siljigan (shuffle) hat'lar, sinkopali kick, reverb'li snare 2 va 4 da, Rhodes Eb–Cm–Ab–Bb, sub, delay'li pluck arpedjio. AI 'o'ylaganda' shimmer qatlami."),
-    ("0:22–0:27", "Natija · Ab-major, ko'tarilish", "Ab–Eb–Fm–Db: to'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi."),
-    ("0:27–0:32", "Yakun · brend", "Db → Eb, ADUZ sonic logo (Eb tonikada), so'nish."),
+    ("0:00–0:09.5", "Muammo · G-minor, tashvishli minimal", "7-qism aranjirovkasi 3 yarim ton yuqorida: qorong'i pad, offbeat bo'g'iq Rhodes, filtrlangan bas pulsi, yumshoq hat, 5.5 s dan kick. 9.5 s da hammasi keskin to'xtaydi."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: musiqa va dumlar −30 dB. Faqat qoralama g'ijimlanishi va qog'oz to'pning tushishi eshitiladi. Keyin J-cut swell F-major'da."),
+    ("0:11–0:21.75", "Yechim · F-major, siyrak", "Half-time kick + snap, iliq Rhodes, sub, qo'ng'iroqcha. Ustida 20 notali 'domino' — avtomatik to'ldirish F-pentatonik bo'yicha 4 oktavaga ko'tariladi."),
+    ("0:22–0:27", "Natija · F-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (F tonikada), so'nish."),
 ]
 
 
 def score_9(M):
-    g = np.random.default_rng(99)
-    # Scene 1: C minor, mechanical
-    M.put("music", 0.0, pad([m(48), m(51), m(55), m(60)], 10.4, cutoff=700, attack=1.2, release=0.05), 0.26, verb=0.3)
-    for k, at in enumerate(np.arange(0.5, 10.4, 0.125)):
-        M.put("drums", at, fx_relay(), (0.05 if k % 2 else 0.09) * (0.5 + prog_np(at, 3, 9)), g.uniform(-0.5, 0.5))
-    for i, at in enumerate(np.arange(1.0, 10.4, 0.25)):
-        x = seconds(0.2)
-        cut = 250 + 1600 * ((at - 1) / 9.4) ** 1.5
-        M.put("music", at, filt(saw(m(36) if i % 8 not in (5, 6) else m(39), x) * np.exp(-x / 0.1), "lowpass", cut), 0.2)
-    for at in np.arange(5.5, 8.5, 0.5):
-        M.put("drums", at, soft_kick(), 0.5)
-        M.kicks.append(at)
-    # Scene 2: Eb major future-garage
-    prog2 = [(11, [63, 67, 70, 74], 39), (13, [60, 63, 67, 70], 36), (15, [56, 60, 63, 67], 32), (17, [58, 62, 65, 69], 34), (19, [63, 67, 70, 74], 39), (21, [60, 63, 67, 70], 36)]
-    for start, notes, root in prog2:
-        dur = min(2.0, 21.75 - start)
-        M.put("music", start, chord_ep(notes, dur, 0.65), 0.36, verb=0.35)
-        M.put("music", start, pad([m(n + 12) for n in notes[:3]], dur, cutoff=2600, attack=0.3), 0.1, verb=0.4)
-        for b in (0.0, 0.75, 1.25):
-            if b < dur:
-                M.put("music", start + b, sub(m(root + 12), 0.3), 0.26)
-        for j, b in enumerate(np.arange(0, dur - 0.01, 0.25)):
-            M.put("music", start + b, bell(m(notes[(j * 3) % 4] + 12), 0.3, 0.8, 0.12), 0.05, 0.4 * np.sin(j * 1.7), echo=0.45)
-    for at in np.arange(11.0, 21.75, 1.0):  # 2-step: kick on 1 and the 'and' of 2, snare on 2 and 4
-        for off in (0.0, 0.75):
-            if at + off < 21.75:
-                M.put("drums", at + off, soft_kick(), 0.55)
-                M.kicks.append(at + off)
-        M.put("drums", at + 0.5, snare(), 0.26, verb=0.35)
-    for k, at in enumerate(np.arange(11.0, 21.75, 0.125)):
-        M.put("drums", at + (0.035 if k % 2 else 0), hat(k % 8 == 6), (0.08 if k % 2 == 0 else 0.04) * g.uniform(0.7, 1), 0.35)
-    # Scene 3: Ab major lift, Db -> Eb at the end
-    prog3 = [(22, [56, 60, 63], 44), (24, [51, 55, 58], 39), (26, [53, 56, 60], 41), (28, [49, 53, 56], 37), (30, [51, 55, 58, 63], 39)]
-    for start, notes, root in prog3:
-        full = start < 27
-        M.put("music", start, chord_ep(notes + [notes[0] + 12], 2.0 + (1.5 if start == 30 else 0), 0.85), 0.42, verb=0.4, echo=0.2)
-        M.put("music", start, supersaw([m(n) for n in notes], 2.0, cutoff=3000 if full else 1500), 0.15 if full else 0.08, verb=0.3)
-        for b in np.arange(0, 1.99, 0.5):
-            M.put("music", start + b, sub(m(root), 0.45), 0.3 if full else 0.18)
-    melody = [(22, 75), (22.5, 80), (23, 84), (23.5, 82), (24, 79), (24.5, 75), (25, 79), (25.5, 82), (26, 80), (26.5, 77), (28, 77), (29, 75), (29.5, 73), (30, 75)]
-    for at, n in melody:
-        M.put("music", at, epiano(m(n), 0.9, 0.9), 0.28, 0.15, verb=0.45, echo=0.35)
-        M.put("music", at, bell(m(n + 12), 0.8, 1.2, 0.3), 0.05, -0.15, verb=0.4)
-    for at in np.arange(22.0, 26.75, 0.5):
-        M.put("drums", at, soft_kick(), 0.65)
-        M.kicks.append(at)
-        if int(round(at * 2)) % 2 == 1:
-            M.put("drums", at, snare(), 0.3, verb=0.25)
-    for k, at in enumerate(np.arange(22.0, 26.75, 0.125)):
-        M.put("drums", at + (0.02 if k % 2 else 0), hat(k % 4 == 2), 0.08 if k % 2 == 0 else 0.045, 0.35)
-
-
-def prog_np(x, a, b):
-    return float(np.clip((x - a) / (b - a), 0, 1))
+    """7-qism partiturasi, 3 yarim ton yuqorida (seriya 'qardosh' eshitilishi uchun)."""
+    global KEY_SHIFT
+    KEY_SHIFT = 3
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
 
 
 def render_9():
-    """9-qism: Aqlli kampaniya yaratish. Score + cue-sheet (CUES_9)."""
+    """9-qism (2-variant): Aqlli kampaniya yaratish. Score + cue-sheet (CUES_9)."""
     M = MixerPro(120)
-    M.gates.append((10.42, 10.72, 0.03))  # TV switches off: everything but the CRT sound is cut
-    M.width = [(0, 1.0), (10.4, 1.0), (11.0, 0.8), (21.7, 0.8), (22.0, 0.8), (32, 0.8)]
+    M.gates.append((9.5, 10.15, 0.03))  # crumpled draft: sound vacuum
+    M.width = [(0, 0.9), (32, 0.9)]  # a little narrower than 7-qism for mono-safe phone speakers
     score_9(M)
     render_cues(M, CUES_9)
     out = M.render()
