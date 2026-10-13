@@ -11,6 +11,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 4 | `ADUZ_4-qism.mp4` | Vaqtni o'g'irlaydigan jarayonlar |
 | 5 | `ADUZ_5-qism.mp4` | Hisobotlarning yo'qligi |
 | 6 | `ADUZ_6-qism.mp4` | ADUZ kashfiyoti |
+| 7 | `ADUZ_7-qism.mp4` | Platforma interfeysi bilan tanishuv |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -147,6 +148,31 @@ ikki eshikdek ochilib, ichidan yorug'lik bilan ADUZ chiqadi. Mux'da `loudnorm` d
 | 0:27–0:32 | Yakun | ADUZ logotipi, shior, CTA | Baraban o'chadi, "ting" | ADUZ — biznesingiz himoyachisi! |
 
 Vaqtlar (10 soniya, 1 daqiqa, 1-kun) va "ortiqcha hujjatlarsiz" da'vosi namuna — haqiqiy jarayonga moslab tekshiring.
+
+## 7-qism: "Platforma interfeysi bilan tanishuv"
+
+**Ovoz arxitekturasi:** [`SOUND_ARCHITECTURE_7.md`](SOUND_ARCHITECTURE_7.md) — 7 qatlam (musiqa, muhit, UI/foley, o'tishlar,
+zarbalar, brend, diktor joyi), 27 ta nomlangan tovushdan iborat kutubxona, musiqa bo'limlari va taymkodli cue-sheet.
+Hujjat koddan avtomatik yaratiladi: `python3 audio.py 7 --cuesheet SOUND_ARCHITECTURE_7.md`. Qism ovozi shu cue-sheet'dan
+yig'iladi (`CUES_7`, `score_7`, `render_7`), shuning uchun hujjat va ovoz doim bir xil.
+
+**Montaj:** har bir o'tishda J-cut (tovush kesimdan oldin boshlanadi); 9.5 s da "ovoz vakuumi" — ilova yopilganda musiqa,
+reverb va dumlar keskin kesiladi, faqat xona shovqini va yurak urishi qoladi; riser ataylab yarmida uziladi;
+o'tishlar xilma-xil — squeegee-wipe (tartibsizlikni "artib tashlaydi") va whip-pan. Yechim musiqasi ataylab siyrak
+(4 qatlam) — "sodda" xabarini aranjirovka ham aytadi. Yakunda **ADUZ sonic logo** (5–1–3 motiv) logotip bilan bir kadrda.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "7-QISM · Platforma interfeysi". Zich reklama kabineti: 6 ta tab, 9 ta mayda ikonka, 12 qatorli jadval (CPM, CTR, CPC...). Popup'lar ustma-ust: "Bid strategiyasi", "Optimallashtirish maqsadi", piksel kodi, "To'lov usuli tasdiqlanmagan", "Qo'llanma.pdf — 128 sahifa". Atrofda jargon bo'laklari aylanadi; adashgan kursor "?" bilan kezadi | Reklama kabinetini ochdingiz: o'nlab menyu, notanish atamalar... |
+| 0:05–0:10.5 | 1. Muammo | Qizil so'zlar: *CPM? CTR? · QAYERDAN BOSHLASH? · QO'LLANMA: 128 SAHIFA*. 8.5 s: **CHALKASH — va siz ilovani yopasiz**. 9.6 s: ilova nuqtaga "so'rilib" yopiladi, kadr qorayadi (ovoz vakuumi) | CPM, CTR, piksel, strategiya... Qayerdan boshlash kerak? ...va ilova yopiladi. |
+| 0:10.5–0:11 | O'tish | Yashil squeegee chizig'i yuqoridan pastga tartibsizlikni artib, yangi sahnani ochadi | — |
+| 0:11–0:16 | 2. Yechim | ADUZ "Bugun nima qilamiz?": 3 ta katta tugma. "Reklama berish" → 1/3 "Nimani reklama qilamiz?" (Do'kon / Xizmat / Tadbir, "Har ekranda bitta savol" maslahati) → 2/3 "Byudjetingiz qancha?" katta slider 100 000 → 500 000 so'm, ≈ ko'rishlar | ADUZ boshqacha: har ekranda bitta savol, katta va tushunarli tugmalar. |
+| 0:16–0:22 | 2. Yechim | 3/3 "Hammasi tayyor!" — post ko'rinishi, "Ishga tushirish" → progress → **Ishga tushdi!** 18.5 s: **3 QADAM — qo'llanmasiz**. "Kampaniya ishga tushdi!" oynasi | Uch qadam — va reklamangiz ishga tushdi. Qo'llanma shart emas. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan: kadr chapga "uchib" ketadi, natija o'ngdan keladi | — |
+| 0:22–0:27 | 3. Natija | "Sodda — demak tez": Oldin (47 sozlama, 12 atama, 128 sahifa, 3 kun) qizil chiziq bilan o'chiriladi ↔ ADUZ (3 qadam, 0 atama, qo'llanma shart emas, 2 daqiqa). Nishonlar: Sodda · Tushunarli · O'zbekcha | Murakkablik yo'q — faqat natija. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Raqamlar (47 sozlama, 128 sahifa, 2 daqiqa) va boshqa platformaning ko'rinishi umumlashtirilgan namuna — biror real mahsulot nomi ishlatilmagan.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

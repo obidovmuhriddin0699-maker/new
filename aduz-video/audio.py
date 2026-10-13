@@ -552,6 +552,8 @@ class MixerPro(Mixer):
     def __init__(self, bpm=120):
         super().__init__()
         self.delay = np.zeros((N, 2))
+        self.front = np.zeros((N, 2))  # bypasses gates (e.g. sounds inside a "sound vacuum")
+        self.gates = []  # [(start, end, gain)] — editorial cuts applied to everything but `front`
         self.beat = 60 / bpm
 
     def put(self, bus, start, sig, gain=1.0, pan=0.0, verb=0.0, echo=0.0):
@@ -592,6 +594,15 @@ class MixerPro(Mixer):
         drums = self.drums.copy()
         drums -= filt(drums, "highpass", 13000) * 0.6  # tame hat fizz
         out = music + drums + self.sfx + verb * 0.5 + echo * 0.6
+        if self.gates:
+            g = np.ones(N)
+            for a, b, gain in self.gates:
+                i, j, r = int(a * SR), int(b * SR), int(0.03 * SR)
+                g[i:j] = np.minimum(g[i:j], gain)
+                g[max(0, i - r) : i] = np.minimum(g[max(0, i - r) : i], np.linspace(1, gain, i - max(0, i - r)))
+                g[j : j + r] = np.minimum(g[j : j + r], np.linspace(gain, 1, len(g[j : j + r])))
+            out *= g[:, None]
+        out += self.front
         out = filt(out, "highpass", 30)
         out -= filt(out, "bandpass", [180, 320]) * 0.15  # clear low-mid mud
         out += filt(out, "lowpass", 110) * 0.06 + filt(out, "highpass", 10000) * 0.05  # warmth + air
@@ -942,13 +953,378 @@ def render_6():
     return out
 
 
-V2 = {4: render_4, 5: render_5, 6: render_6}
+# =====================================================================================
+# Ovoz arxitekturasi (7-qismdan): qatlamlar, nomlangan tovushlar kutubxonasi va cue-sheet.
+# Har bir qism = score (musiqa) + cue-sheet (taymkodli tovushlar ro'yxati). Cue-sheet hujjatga
+# ham eksport qilinadi:  python3 audio.py 7 --cuesheet SOUND_ARCHITECTURE_7.md
+# =====================================================================================
+LAYERS = {
+    "L1": ("Musiqa (score)", "Pad, klavishlar, bas, baraban, melodiya. Kick'dan sidechain; 2,2–4,2 kHz diktor uchun bo'shatilgan."),
+    "L2": ("Muhit (ambience)", "Sahna 'xonasi': ofis shovqini, havo. Juda past, sezilmas — lekin sukunatni 'jonli' qiladi."),
+    "L3": ("UI / foley", "Bosish, tanlash, slider, popup, xato. Musiqa tonalligiga sozlangan."),
+    "L4": ("O'tishlar", "Whoosh, swell, riser, squeegee, whip. J-cut: tovush kesimdan oldin boshlanadi."),
+    "L5": ("Zarbalar / urg'u", "Boom, crash, glitch, uchqunlar. Kinetik so'zlar bilan bir kadrda."),
+    "L6": ("Brend (sonic logo)", "ADUZ ovozli logotipi: 5–1–3 motiv (qo'ng'iroq + elektro-pianino + sub)."),
+    "L7": ("Diktor joyi", "Hozircha bo'sh. Diktor qo'shilsa: musiqa −6 dB ducking, SFX −3 dB."),
+}
+
+
+def amb_office(dur=10.3):
+    x = seconds(dur)
+    br = np.cumsum(rng.standard_normal((len(x), 2)), axis=0)
+    br = filt(br - filt(br, "lowpass", 20), "lowpass", 380)
+    br /= np.max(np.abs(br)) + 1e-9
+    hvac = filt(rng.standard_normal((len(x), 2)), "bandpass", [600, 1400]) * 0.12
+    hum = (np.sin(2 * np.pi * 50 * x) + 0.4 * np.sin(2 * np.pi * 100 * x))[:, None] * 0.05
+    env = np.minimum(1, x / 0.6) * np.minimum(1, (dur - x) / 0.25)
+    return (br * 0.6 + hvac + hum) * env[:, None]
+
+
+def amb_air(dur=10.7):
+    x = seconds(dur)
+    n = filt(rng.standard_normal((len(x), 2)), "bandpass", [2500, 7000]) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.2 * x))[:, None]
+    return n * 0.25 * (np.minimum(1, x / 1.0) * np.minimum(1, (dur - x) / 0.6))[:, None]
+
+
+def heartbeat():
+    hb = tone(60, 0.3, "sine", 0.002, 0.09) + 0.5 * tone(45, 0.3, "sine", 0.002, 0.12)
+    out = np.zeros(int(0.6 * SR))
+    out[: len(hb)] += hb
+    out[int(0.22 * SR) : int(0.22 * SR) + len(hb)] += hb * 0.6
+    return out
+
+
+def fragment(note=76):
+    x = seconds(0.09)
+    s = np.sign(np.sin(2 * np.pi * m(note) * x)) * 0.4 + np.sin(2 * np.pi * m(note) * 2 * x) * 0.3
+    s = np.round(s * 6) / 6  # bit-crushed
+    return filt(s, "bandpass", [500, 6000]) * np.exp(-x / 0.03)
+
+
+def ui_popup(note=72):
+    x = seconds(0.12)
+    f = m(note) * (1 + 0.5 * x / 0.12)
+    out = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x / 0.04) * 0.8
+    c = ui_click()
+    out[: len(c)] += c * 0.3
+    return out
+
+
+def ui_dropdown():
+    out = np.zeros(int(0.3 * SR))
+    for k in range(5):
+        c = tick(k % 2 == 0)
+        i = int(k * 0.045 * SR)
+        out[i : i + len(c)] += c * (1 - k * 0.12)
+    return out
+
+
+def ui_error():
+    a, b = tone(m(64), 0.15, "sine", 0.002, 0.06), tone(m(60), 0.28, "sine", 0.002, 0.11)
+    out = np.zeros(int(0.45 * SR))
+    out[: len(a)] += a
+    out[int(0.13 * SR) : int(0.13 * SR) + len(b)] += b
+    gl = glitch_hit()[: len(out)]
+    out[: len(gl)] += gl * 0.3
+    return out
+
+
+def ui_select(note=74):
+    s = bell(m(note), 0.45, 1.3, 0.14)
+    c = ui_click()
+    s[: len(c)] += c * 0.5
+    return s
+
+
+def layer(*sigs):
+    """Sum 1-D signals of different lengths (zero-padded)."""
+    out = np.zeros(max(len(x) for x in sigs))
+    for x in sigs:
+        out[: len(x)] += x
+    return out
+
+
+def ui_slider(note=74):
+    return layer(bell(m(note), 0.08, 0.5, 0.025), tick(True) * 0.4)
+
+
+def ui_next():
+    return np.concatenate([bell(m(74), 0.09, 0.8, 0.05), bell(m(81), 0.4, 1.0, 0.15)])
+
+
+def ui_launch(dur=1.35):
+    x = seconds(dur)
+    f = m(62) * 2 ** (2 * x / dur)
+    s = np.sin(2 * np.pi * np.cumsum(f) / SR) * (x / dur) ** 1.5 * 0.5
+    return s + sweep_filter(rng.standard_normal(len(x)), 800, 9000) * (x / dur) ** 2 * 0.4
+
+
+def ui_success():
+    out = np.zeros(int(1.6 * SR))
+    for k, n in enumerate((74, 78, 81, 86)):
+        b = bell(m(n), 1.3, 1.2, 0.45)
+        i = int(k * 0.06 * SR)
+        out[i : i + len(b)] += b * 0.5
+    return out
+
+
+def fx_collapse():
+    x = seconds(0.6)
+    f = 1400 * 2 ** (-6 * x / 0.6)
+    s = np.sin(2 * np.pi * np.cumsum(f) / SR) * (1 - x / 0.6) * 0.6 + sweep_filter(rng.standard_normal(len(x)), 6000, 300) * (1 - x / 0.6) * 0.5
+    th = tone(55, 0.6, "sine", 0.002, 0.12)
+    s[int(0.42 * SR) :] += th[: len(s) - int(0.42 * SR)] * 0.9
+    return s
+
+
+def fx_strike():
+    return sweep_filter(rng.standard_normal(int(0.25 * SR)), 4000, 900) * np.exp(-seconds(0.25) / 0.08) * 0.8
+
+
+def sparkle(seed=1):
+    gg = np.random.default_rng(seed)
+    out = np.zeros((int(1.8 * SR), 2))
+    for _ in range(16):
+        b = bell(m(int(gg.choice([86, 88, 90, 93, 95, 98]))), 0.8, 1.5, 0.25)
+        i, p = int(gg.uniform(0, 0.9) * SR), gg.uniform(-0.8, 0.8)
+        out[i : i + len(b), 0] += b * np.sqrt(0.5 * (1 - p)) * 0.3
+        out[i : i + len(b), 1] += b * np.sqrt(0.5 * (1 + p)) * 0.3
+    return out
+
+
+def squeegee_fx():
+    x = seconds(0.45)
+    swish = sweep_filter(rng.standard_normal(len(x)), 1500, 9000) * np.sin(np.pi * x / 0.45) ** 1.2
+    squeak = np.sin(2 * np.pi * np.cumsum(1800 + 700 * x / 0.45) / SR) * np.exp(-((x - 0.3) / 0.05) ** 2) * 0.15
+    return swish + squeak
+
+
+def whip():
+    w = whoosh(0.4, 300, 7000)
+    return np.stack([w * np.linspace(1, 0.15, len(w)), w * np.linspace(0.15, 1, len(w))], axis=1)
+
+
+def brand_logo(tonic=62):
+    """ADUZ sonic logo: 5-1-3 motif over the tonic (tonic-relative so it fits every key)."""
+    out = np.zeros((int(3.0 * SR), 2))
+    for k, iv in enumerate((7, 12, 16)):
+        n = tonic + 12 + iv
+        b = bell(m(n + 12), 2.2, 1.6, 0.6) * 0.45
+        e = epiano(m(n), 2.2, 0.9)
+        i = int(k * 0.25 * SR)
+        out[i : i + len(b), 0] += b * (0.8 - 0.2 * k) + e[: len(b), 0] * 0.6
+        out[i : i + len(b), 1] += b * (0.4 + 0.2 * k) + e[: len(b), 1] * 0.6
+    s = sub(m(tonic - 24), 2.5) * np.exp(-seconds(2.5) / 0.9)
+    out[: len(s)] += s[:, None] * 0.35
+    return out
+
+
+# name -> (layer, generator(arg), description)
+SOUNDS = {
+    "amb.office": ("L2", lambda a=None: amb_office(a or 10.3), "Ofis fon shovqini: past 'xona tovushi', ventilyatsiya, 50 Hz g'uvullash"),
+    "amb.air": ("L2", lambda a=None: amb_air(a or 10.7), "Yorug', ochiq havo — yechim sahnasi muhiti"),
+    "ui.popup": ("L3", lambda a=None: ui_popup(a or 72), "Yumshoq 'pop' — popup paydo bo'lishi (balandligi sozlanadi)"),
+    "ui.dropdown": ("L3", lambda a=None: ui_dropdown(), "Ochiluvchi ro'yxat 'shitirlashi' (5 ta tez tik)"),
+    "ui.error": ("L3", lambda a=None: ui_error(), "Xato: pastga tushuvchi ikki nota + glitch"),
+    "ui.tap": ("L3", lambda a=None: ui_click(), "Barmoq bosishi"),
+    "ui.select": ("L3", lambda a=None: ui_select(a or 74), "Tanlash: klik + tonallikdagi qo'ng'iroqcha"),
+    "ui.slider": ("L3", lambda a=None: ui_slider(a or 74), "Slider qadami: ko'tariluvchi mayda tik"),
+    "ui.next": ("L3", lambda a=None: ui_next(), "'Keyingi': ikki nota yuqoriga"),
+    "ui.launch": ("L3", lambda a=None: ui_launch(), "Ishga tushirish: ko'tariluvchi ton + shovqin"),
+    "ui.success": ("L3", lambda a=None: ui_success(), "Muvaffaqiyat: D-major arpedjio akkordi"),
+    "fx.fragment": ("L3", lambda a=None: fragment(a or 76), "Suzuvchi jargon bo'lagi: bit-crush 'blip'"),
+    "fx.strike": ("L3", lambda a=None: fx_strike(), "Matn ustidan chizish: tushuvchi 'chirt'"),
+    "fx.collapse": ("L5", lambda a=None: fx_collapse(), "Ilova yopilishi: pastga 'so'rilish' + zarba"),
+    "fx.heartbeat": ("L5", lambda a=None: heartbeat(), "Yurak urishi — ovoz vakuumi ichida"),
+    "tr.whoosh": ("L4", lambda a=None: whoosh(0.4, 600, 3000), "Yumshoq whoosh: telefon/ekran kirishi"),
+    "tr.slide": ("L4", lambda a=None: whoosh(0.35, 900, 4000), "Ekranlar orasida sirpanish"),
+    "tr.swell": ("L4", lambda a=None: reverse_swell(a or [62, 66, 69, 74], 0.45), "Teskari swell (J-cut): keyingi kadrga 'nafas'"),
+    "tr.riser": ("L4", lambda a=None: riser(a or 0.9), "Riser — keskin kesiladi (montaj usuli)"),
+    "tr.squeegee": ("L4", lambda a=None: squeegee_fx(), "Squeegee o'tishi: yuqori chastotali 'shirr' + rezina g'ichirlashi"),
+    "tr.whip": ("L4", lambda a=None: whip(), "Whip-pan: chapdan o'ngga tez o'tuvchi whoosh"),
+    "imp.glitch": ("L5", lambda a=None: glitch_hit(), "Qizil kinetik so'z zarbasi"),
+    "imp.boom": ("L5", lambda a=None: boom(a or 1.0), "Katta zarba: sub + thump"),
+    "imp.clap": ("L5", lambda a=None: clap(), "Zarba ustidagi clap qatlami"),
+    "imp.crash": ("L5", lambda a=None: crash(), "Crash tarelka (yumshatilgan)"),
+    "imp.sparkle": ("L5", lambda a=None: sparkle(a or 1), "Uchqunlar: D-pentatonik qo'ng'iroqchalar to'dasi"),
+    "brand.logo": ("L6", lambda a=None: brand_logo(a or 62), "ADUZ sonic logo (5–1–3 motiv)"),
+}
+
+# (time, sound, gain, pan, reverb, echo, izoh, arg)
+CUES_7 = [
+    (0.0, "amb.office", 0.10, 0, 0, 0, "Ofis xonasi — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    *[(0.8 + i * 0.55, "fx.fragment", 0.07, (-1) ** i * 0.6, 0.15, 0.3, f"Jargon bo'lagi #{i + 1}", [64, 67, 71, 74, 76, 79][i % 6]) for i in range(12)],
+    (1.2, "ui.popup", 0.18, 0.1, 0.2, 0, "Popup: 'Bid strategiyasi'", 76),
+    (2.2, "ui.dropdown", 0.2, 0.2, 0.1, 0, "Ochiluvchi ro'yxat", None),
+    (3.2, "ui.popup", 0.18, -0.1, 0.2, 0, "Popup: piksel kodi", 71),
+    (4.2, "ui.error", 0.22, 0, 0.2, 0, "To'lov usuli tasdiqlanmagan", None),
+    (5.0, "ui.popup", 0.18, 0.2, 0.2, 0, "Qo'llanma.pdf — 128 sahifa", 67),
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: CPM? CTR?", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: QAYERDAN BOSHLASH?", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: QO'LLANMA: 128 SAHIFA", None),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "CHALKASH — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.6, "fx.collapse", 0.5, 0, 0.35, 0, "Ilova nuqtaga 'so'riladi'", None),
+    (9.75, "fx.heartbeat", 0.45, 0, 0.2, 0, "OVOZ VAKUUMI: faqat yurak", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi kesimdan oldin", [62, 66, 69, 74]),
+    (10.55, "tr.squeegee", 0.45, 0, 0.25, 0, "Squeegee o'tishi", None),
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    *[(11.6 + i * 0.15, "ui.select", 0.12, -0.3 + 0.3 * i, 0.25, 0.2, f"Katta tugma #{i + 1}", [74, 78, 81][i]) for i in range(3)],
+    (13.0, "ui.select", 0.24, 0.2, 0.2, 0, "Tanlandi: Reklama berish", 81),
+    (13.2, "tr.slide", 0.14, 0.5, 0.1, 0, "1-qadam ekrani", None),
+    *[(13.4 + i * 0.12, "ui.popup", 0.1, -0.3 + 0.3 * i, 0.2, 0, f"Variant #{i + 1}", [74, 76, 78][i]) for i in range(3)],
+    (13.7, "ui.select", 0.1, 0.3, 0.3, 0.3, "Maslahat pufagi", 86),
+    (14.0, "ui.select", 0.24, -0.2, 0.2, 0, "Tanlandi: Do'kon", 78),
+    (14.3, "tr.slide", 0.14, 0.5, 0.1, 0, "2-qadam ekrani", None),
+    *[(14.7 + i * 0.08, "ui.slider", 0.08, -0.4 + 0.08 * i, 0.1, 0, f"Slider qadami {i + 1}/10", [62, 64, 66, 67, 69, 71, 73, 74, 76, 78][i]) for i in range(10)],
+    (15.75, "ui.next", 0.22, 0.2, 0.25, 0.2, "Keyingi", None),
+    (16.0, "tr.slide", 0.14, 0.5, 0.1, 0, "3-qadam ekrani", None),
+    (16.8, "ui.tap", 0.35, 0.1, 0, 0, "Ishga tushirish bosildi", None),
+    (16.85, "ui.launch", 0.25, 0, 0.3, 0.2, "Ishga tushmoqda...", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: 3 QADAM oldidan", [66, 69, 74, 78]),
+    (18.2, "ui.success", 0.3, 0, 0.4, 0.3, "Ishga tushdi!", None),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "3 QADAM — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 3),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Kampaniya ishga tushdi oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    *[(22.8 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(4)],
+    *[(23.0 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [74, 78, 81, 86][i]) for i in range(4)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [69, 74, 78, 81]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 5),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [81, 86, 90][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO — logotip bilan bir kadrda", 62),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 93),
+]
+
+SCORE_7 = [
+    ("0:00–0:09.5", "Muammo · E-minor, tashvishli minimal", "Qorong'i pad; offbeat bo'g'iq elektro-pianino; 2 s dan filtrlangan bas pulsi; 3 s dan yumshoq 16-lik hat; 5.5 s dan kick. 9.5 s da hammasi keskin to'xtaydi."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Montaj kesimi: musiqa, reverb va dumlar −30 dB ga keskin o'chiriladi (gate). Faqat xona shovqini, ilova yopilishi va yurak urishi qoladi. Keyin J-cut swell yechim tonalligida."),
+    ("0:11–0:21.75", "Yechim · D-major, ataylab siyrak", "Faqat 4 qatlam: half-time kick + snap, marimba-uslub qo'ng'iroqcha, iliq Rhodes (D–Bm–G–A), sub. 'Sodda' xabarini aranjirovka ham aytadi."),
+    ("0:22–0:27", "Natija · D-major, to'liq", "D–A–Bm–G: to'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi."),
+    ("0:27–0:32", "Yakun · brend", "Baraban o'chadi; ADUZ sonic logo (A–D–F#) logotip bilan bir kadrda; D akkord bilan so'nadi."),
+]
+
+
+def score_7(M):
+    # Scene 1: E minor, anxious; cut dead at 9.5 for the sound vacuum
+    M.put("music", 0.0, pad([m(40), m(43), m(47), m(50)], 9.5, cutoff=700, attack=1.5, release=0.05), 0.3, verb=0.3)
+    for at in np.arange(1.25, 9.4, 0.5):
+        M.put("music", at, filt(chord_ep([64, 67, 71], 0.3, 0.5), "lowpass", 1500), 0.22, 0.2, echo=0.2)
+    for i, at in enumerate(np.arange(2.0, 9.5, 0.25)):
+        x = seconds(0.22)
+        cut = 250 + 1500 * ((at - 2) / 7.5) ** 1.5
+        M.put("music", at, filt(saw(m(28) if i % 8 not in (6, 7) else m(31), x) * np.exp(-x / 0.12), "lowpass", cut), 0.2)
+    for k, at in enumerate(np.arange(3.0, 9.5, 0.125)):
+        M.put("drums", at, hat(), 0.05 if k % 2 else 0.08, 0.3)
+    for at in np.arange(5.5, 9.5, 0.5):
+        M.put("drums", at, soft_kick(), 0.5)
+        M.kicks.append(at)
+    # Scene 2: D major, deliberately sparse
+    prog2 = [(11, [62, 66, 69, 73], 38), (13, [59, 62, 66, 69], 35), (15, [55, 59, 62, 66], 31), (17, [57, 61, 64, 69], 33), (19, [62, 66, 69, 73], 38), (21, [59, 62, 66, 69], 35)]
+    for start, notes, root in prog2:
+        dur = min(2.0, 21.75 - start)
+        M.put("music", start, chord_ep(notes, dur, 0.6), 0.38, verb=0.3)
+        for b in np.arange(0, dur - 0.01, 1.0):
+            M.put("music", start + b, sub(m(root + 12), 0.6), 0.26)
+        for j, b in enumerate(np.arange(0, dur - 0.01, 0.5)):
+            M.put("music", start + b + 0.25, bell(m(notes[(j * 2) % 4] + 12), 0.35, 0.5, 0.15), 0.07, 0.3 * (-1) ** j, verb=0.2, echo=0.35)
+    for at in np.arange(11.0, 21.75, 1.0):
+        M.put("drums", at, soft_kick(), 0.55)
+        M.kicks.append(at)
+        M.put("drums", at + 0.5, filt(clap(), "highpass", 1200), 0.2, 0.1, verb=0.25)
+    for k, at in enumerate(np.arange(11.0, 21.75, 0.25)):
+        M.put("drums", at + (0.02 if k % 2 else 0), shaker(), 0.07, 0.4)
+    # Scene 3: D major, full
+    prog3 = [(22, [62, 66, 69], 38), (24, [57, 61, 64], 33), (26, [59, 62, 66], 35), (28, [55, 59, 62], 31), (30, [62, 66, 69, 74], 38)]
+    for start, notes, root in prog3:
+        full = start < 27
+        M.put("music", start, chord_ep(notes + [notes[0] + 12], 2.0 + (1.5 if start == 30 else 0), 0.85), 0.42, verb=0.4, echo=0.2)
+        M.put("music", start, supersaw([m(n) for n in notes], 2.0, cutoff=3000 if full else 1500), 0.16 if full else 0.08, verb=0.3)
+        for b in np.arange(0, 1.99, 0.5):
+            M.put("music", start + b, sub(m(root + 12), 0.45), 0.3 if full else 0.18)
+    melody = [(22, 78), (22.5, 81), (23, 86), (23.5, 85), (24, 81), (24.5, 76), (25, 81), (25.5, 85), (26, 83), (26.5, 81), (28, 79), (29, 78), (29.5, 76), (30, 74)]
+    for at, n in melody:
+        M.put("music", at, epiano(m(n), 0.9, 0.9), 0.28, 0.15, verb=0.45, echo=0.35)
+        M.put("music", at, bell(m(n + 12), 0.8, 1.2, 0.3), 0.05, -0.15, verb=0.4)
+    for at in np.arange(22.0, 26.75, 0.5):
+        M.put("drums", at, soft_kick(), 0.65)
+        M.kicks.append(at)
+        if int(round(at * 2)) % 2 == 1:
+            M.put("drums", at, snare(), 0.3, verb=0.25)
+    for k, at in enumerate(np.arange(22.0, 26.75, 0.125)):
+        M.put("drums", at + (0.02 if k % 2 else 0), hat(k % 4 == 2), 0.08 if k % 2 == 0 else 0.045, 0.35)
+
+
+FRONT = {"amb.office", "fx.collapse", "fx.heartbeat"}  # stay audible through the vacuum gate
+
+
+def render_cues(M, cues):
+    for at, name, gain, pan, verb, echo, _note, arg in cues:
+        layer, gen, _ = SOUNDS[name]
+        sig = gen(arg) if arg is not None else gen()
+        if name in FRONT:
+            M.put("front", at, sig, gain, pan)
+        else:
+            M.put("sfx", at, sig, gain, pan, verb=verb, echo=echo)
+
+
+def render_7():
+    """7-qism: Platforma interfeysi bilan tanishuv. Score + cue-sheet (CUES_7)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # sound vacuum: hard editorial cut, only `front` survives
+    score_7(M)
+    render_cues(M, CUES_7)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+
+def cuesheet_md(ep, cues, score):
+    db = lambda g: f"{20 * np.log10(g):+.0f} dB"
+    tc = lambda s: f"{int(s // 60)}:{s % 60:05.2f}"
+    lines = [f"# ADUZ {ep}-qism — ovoz arxitekturasi va cue-sheet", "",
+             "Bu hujjat `audio.py` dan avtomatik yaratiladi (`python3 audio.py 7 --cuesheet SOUND_ARCHITECTURE_7.md`).", "",
+             "## Qatlamlar", "", "| Qatlam | Nomi | Vazifasi |", "|---|---|---|"]
+    lines += [f"| {k} | {n} | {d} |" for k, (n, d) in LAYERS.items()]
+    lines += ["", "## Tovushlar kutubxonasi", "", "| Nomi | Qatlam | Tavsif |", "|---|---|---|"]
+    lines += [f"| `{k}` | {v[0]} | {v[2]} |" for k, v in SOUNDS.items()]
+    lines += ["", "## Musiqa (score)", "", "| Vaqt | Bo'lim | Aranjirovka |", "|---|---|---|"]
+    lines += [f"| {a} | {b} | {c} |" for a, b, c in score]
+    lines += ["", "## Cue-sheet", "", "| Taymkod | Qatlam | Tovush | Daraja | Pan | Reverb | Izoh |", "|---|---|---|---|---|---|---|"]
+    for at, name, gain, pan, verb, echo, note, arg in sorted(cues, key=lambda c: c[0]):
+        p = "C" if abs(pan) < 0.05 else (f"L{abs(pan) * 100:.0f}" if pan < 0 else f"R{pan * 100:.0f}")
+        lines.append(f"| {tc(at)} | {SOUNDS[name][0]} | `{name}` | {db(gain)} | {p} | {verb:.0%} | {note} |")
+    lines += ["", "## Master zanjir", "",
+              "Sidechain (kick) → diktor uchun 2,2–4,2 kHz chuqurcha → 300 Hz dan yuqori stereo kengaytirish (bas mono) → "
+              "hi-hat 'shivillashi' yumshatilgan → ping-pong delay (nuqtali 8-lik) → reverb (2,8 s) → bus-kompressor 2:1 → "
+              "iliqlik/havo EQ → soft-clip → ffmpeg `loudnorm` −14 LUFS + `alimiter` −1,5 dBFS.", ""]
+    return "\n".join(lines)
+
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 
 if __name__ == "__main__":
-    episode, out = int(sys.argv[1]), sys.argv[2]
+    episode, out = int(sys.argv[1]), sys.argv[-1]
+    if "--cuesheet" in sys.argv:
+        sheets = {7: (CUES_7, SCORE_7)}
+        with open(out, "w") as fh:
+            fh.write(cuesheet_md(episode, *sheets[episode]))
+        print("wrote", out)
+        sys.exit(0)
     if episode in V2:
         mix[:] = V2[episode]()
     else:

@@ -401,6 +401,26 @@ function splitDoors(t, a, b, drawA, drawB, color) {
     ctx.fillStyle = color; ctx.fillRect(W / 2 + side * gap - (side < 0 ? 8 : 0), 0, 8, H); ctx.restore();
   }
 }
+// Transition: a glowing squeegee bar sweeps top→bottom, wiping drawA away to reveal drawB.
+function squeegee(t, a, b, drawA, drawB, color) {
+  const p = eInOut(prog(t, a, b)), y = p * (H + 120) - 60;
+  drawA(t);
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, Math.max(0, y)); ctx.clip(); drawB(t); ctx.restore();
+  if (p > 0 && p < 1) {
+    const g = ctx.createLinearGradient(0, y - 140, 0, y + 20);
+    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.85, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, y - 140, W, 160);
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 50; ctx.fillStyle = color; ctx.fillRect(0, y - 7, W, 14); ctx.restore();
+  }
+}
+// Transition: fast whip-pan — drawA streaks out left with motion trails, drawB lands from the right.
+function whipPan(t, a, b, drawA, drawB) {
+  const p = prog(t, a, b), e = eInOut(p), off = e * W * 1.15;
+  const ghost = (fn, dx, alpha) => withAlpha(alpha, () => { ctx.save(); ctx.translate(dx, 0); fn(t); ctx.restore(); });
+  for (let k = 3; k >= 0; k--) ghost(drawA, -off + k * 70 * Math.sin(Math.PI * p), k ? .18 : 1);
+  for (let k = 3; k >= 0; k--) ghost(drawB, W * 1.15 - off + k * 70 * Math.sin(Math.PI * p), k ? .18 : 1);
+  withAlpha(Math.sin(Math.PI * p) * .35, () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); });
+}
 // Film grain + vignette, frame-stable for rendering.
 let GRAIN = null;
 function filmLook(t, grain = .07, vignette = .38) {
