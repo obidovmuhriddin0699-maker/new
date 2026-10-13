@@ -91,6 +91,78 @@ function captions(t, list) {
   }
 }
 
+// ---------- scene building blocks ----------
+const fmt = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const bump = (t, at, len = .15) => prog(t, at, at + len / 2) * (1 - prog(t, at + len / 2, at + len));
+
+// Eased cursor path through keyframes [[time, x, y], ...].
+function pathAt(t, keys) {
+  if (t <= keys[0][0]) return [keys[0][1], keys[0][2]];
+  for (let i = 1; i < keys.length; i++) {
+    const [t1, x1, y1] = keys[i], [t0, x0, y0] = keys[i - 1];
+    if (t <= t1) { const p = eInOut(prog(t, t0, t1)); return [lerp(x0, x1, p), lerp(y0, y1, p)]; }
+  }
+  const k = keys[keys.length - 1]; return [k[1], k[2]];
+}
+
+// Muammo background: dark navy turning red as stress (0..1) grows, with a pulsing vignette.
+function problemBg(t, stress) {
+  const g = ctx.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 1300);
+  g.addColorStop(0, '#141a2e'); g.addColorStop(1, `rgba(${Math.round(lerp(11, 90, stress))},16,32,1)`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const pulse = stress * (0.25 + 0.25 * Math.sin(t * 9));
+  const v = ctx.createRadialGradient(W / 2, H / 2, 500, W / 2, H / 2, 1200);
+  v.addColorStop(0, 'rgba(255,40,60,0)'); v.addColorStop(1, `rgba(255,40,60,${pulse})`);
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+function episodeTitle(t, label, title, size) {
+  withAlpha(prog(t, 0, .5), () => {
+    text(label, W / 2, 120, 34, C.red, 800, 'center');
+    text(title, W / 2, 185, size, '#fff', 800, 'center');
+  });
+}
+// Row of three stat tiles under the title: [[value, label, color], ...].
+function counters(t, items) {
+  withAlpha(prog(t, .6, 1.2), () => {
+    items.forEach(([a, b, col], i) => {
+      const x = 200 + i * 340;
+      rr(x - 150, 228, 300, 100, 22); ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fill();
+      text(a, x, 278, 44, col, 800, 'center');
+      text(b, x, 312, 26, '#94a3b8', 500, 'center');
+    });
+  });
+}
+// Red warning stickers: [[time, label, x, y, rotation], ...].
+function errorBadges(t, list) {
+  for (const [at, s, x, y, r] of list) {
+    const p = prog(t, at, at + .4);
+    if (p <= 0) continue;
+    ctx.save(); ctx.translate(x + 170, y + 45); ctx.rotate(r + Math.sin(t * 8 + x) * .02);
+    ctx.scale(eBack(p), eBack(p));
+    ctx.font = `800 32px ${F}`; const bw = ctx.measureText(s).width + 130;
+    ctx.shadowColor = 'rgba(255,40,60,.6)'; ctx.shadowBlur = 30;
+    rr(-bw / 2, -48, bw, 96, 24); ctx.fillStyle = C.red; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(-bw / 2 + 52, 0, 26, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+    cross(-bw / 2 + 52, 0, 10, C.red, 7);
+    text(s, -bw / 2 + 94, 2, 32, '#fff', 800, 'left', 'middle');
+    ctx.restore();
+  }
+}
+// Yechim background with drifting light blobs, ADUZ logo and a subtitle under it.
+function solutionBg(t, subtitle) {
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#04261f'); g.addColorStop(1, '#0b5a46'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 3; i++) {
+    const bx = 200 + i * 340 + Math.sin(t * .6 + i) * 60, by = 500 + i * 380;
+    const b = ctx.createRadialGradient(bx, by, 0, bx, by, 420);
+    b.addColorStop(0, 'rgba(34,227,154,.18)'); b.addColorStop(1, 'rgba(34,227,154,0)');
+    ctx.fillStyle = b; ctx.fillRect(0, 0, W, H);
+  }
+  const lp = eBack(prog(t, 11.2, 11.9));
+  withAlpha(prog(t, 11.2, 11.6), () => scaled(W / 2, 200, lp, () => logo(W / 2 - 205, 150, 1)));
+  withAlpha(prog(t, 11.8, 12.3), () => text(subtitle, W / 2, 310, 34, '#a7f3d0', 600, 'center'));
+}
+
 // ---------- shared UI ----------
 function logo(x, y, s, light = false) {
   rr(x, y, 96 * s, 96 * s, 26 * s);

@@ -7,6 +7,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 |---|---|---|
 | 1 | `ADUZ_1-qism.mp4` | Reklama bozoridagi xaos |
 | 2 | `ADUZ_2-qism.mp4` | Auditoriyani topish muammosi |
+| 3 | `ADUZ_3-qism.mp4` | Soxta obunachilar va ishonchsizlik |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -19,7 +20,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | Fayl | Nima |
 |---|---|
 | `episodeN.html` | Qism sahnalari. Brauzerda ochsangiz takrorlanib o'ynaydi |
-| `lib.js` | Umumiy qismlar: telefon, logotip, subtitr, kursor, natija foni, yakuniy kadr, sahnalar tartibi |
+| `lib.js` | Umumiy qismlar: telefon, logotip, subtitr, kursor, sarlavha va hisoblagichlar, xatolik belgilari, muammo/yechim/natija fonlari, yakuniy kadr, sahnalar tartibi |
 | `render.mjs` | HTML → MP4 render (Playwright + ffmpeg) |
 | `audio.py` | Musiqa va SFX sintezi (numpy). Musiqa foni umumiy, effektlar har qismga alohida |
 
@@ -60,6 +61,18 @@ Tekshirish uchun alohida kadrlar: `node render.mjs episode2.html --stills=3,8.5,
 | 0:11–0:16 | 2. Yechim | ADUZ "Kimga reklama beramiz?" ekrani. Barmoq tanlaydi: hudud (Farg'ona, Marg'ilon, Qo'qon), jins (Ayollar), yoshni 20–40 ga suradi, qiziqish (Moda, Kiyim-kechak). "Mos kanallar" soni 214 → **12** ga tushadi | Kliklar, slider, pad + arpedjio | ADUZ'da auditoriyani oldindan tanlaysiz: hudud, jins, yosh, qiziqish. |
 | 0:16–0:22 | 2. Yechim | "Eng mos kanallar": Ayollar Klubi · Farg'ona — moslik **94%** (Farg'ona vodiysi 88%, ayollar 91%, 20–40 yosh 76%), 290 000 so'm. "Buyurtma berish" → "Reklama aniq manzilga yetadi!" | Gauge ovozi, click, chime | Algoritm faqat sizning mijozlaringiz o'qiydigan kanallarni topadi. |
 | 0:22–0:27 | 3. Natija | "To'g'ri auditoriya": endi tomoshabinlar nishon markaziga tushadi (1-kadrga ishora). Oldin / ADUZ bilan: ko'rishlar 38 000 → 9 500, mijozlar 2 → **64**, 1 mijoz narxi 600 000 → 4 500 so'm. **×32 ko'p mijoz** | G'alaba musiqasi, cha-ching | Ko'rishlar kamroq — mijozlar esa 32 barobar ko'p. |
+| 0:27–0:32 | Yakun | ADUZ logotipi, "Biznesingiz himoyachisi!", CTA "Hoziroq sinab ko'ring" | "Ting" | ADUZ — biznesingiz himoyachisi! |
+
+## 3-qism: "Soxta obunachilar va ishonchsizlik"
+
+| Vaqt | Kadr | Ekranda | Audio / SFX | Diktor |
+|---|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "3-QISM · Soxta obunachilar va ishonchsizlik". "Biznes Olami" kanali — 250 000 obunachi. Tadbirkor "Farg'ona Mebel" reklamasini beradi (1,5 mln so'm). Ko'rishlar sekinlashib 1 900 da to'xtaydi, 0 reaksiya. "Kutilgan: 50 000+ · Haqiqatda: 1 900". Fonda bot avatarlar suzib yuradi | Tarang dron, sekinlashuvchi "tik"lar, past "umidsizlik" tovushi | 250 ming obunachi — lekin reklamangizni deyarli hech kim ko'rmadi. |
+| 0:05–0:11 | 1. Muammo | "Obunachilar" ro'yxatini qizil chiziq skanerlaydi: user_83746251, Deleted Account, bot_5521x... har biriga BOT / O'CHIRILGAN belgisi. O'sish grafigida **+80 000 bir kunda** sakrash. Qizil belgilar: *Bot obunachilar · Sun'iy ko'rishlar · ERR 0,7% · Ishonch yo'q*. Oxirida hisoblagich 250 000 → **3 100 haqiqiy obunachi** ga tushib ketadi | Skaner, "pop"lar, buzzerlar, pastga tushuvchi tovush | Obunachilar sotib olingan: botlar, o'chirilgan akkauntlar, soxta ko'rishlar. |
+| 0:11 | O'tish | Yashil doira | Whoosh | — |
+| 0:11–0:16 | 2. Yechim | ADUZ "Kanal tekshiruvi": @biznes_olami kiritiladi → "Tekshirish". 4 ta tekshiruv: faol obunachilar 1,2%, bot va o'chirilgan 78%, ko'rishlar sun'iy, +80 ming / 1 kun. Ishonch reytingi **12/100**, muhr: **KATALOGGA KIRITILMADI** | Klaviatura, skaner "tik"lari, muhr zarbasi | ADUZ har bir kanalni tekshiradi: botlar, soxta ko'rishlar, sun'iy o'sish. |
+| 0:16–0:22 | 2. Yechim | "Tekshirilgan kanallar": "Har bir kanal har kuni avtomatik tekshiriladi". Kartalarda qalqon belgisi va "Haqiqiy 96%". "Buyurtma berish" → "Faqat haqiqiy ko'rishlar!" | Swoosh, click, chime | Katalogda faqat haqiqiy va faol auditoriyali kanallar qoladi. |
+| 0:22–0:27 | 3. Natija | "Haqiqiy auditoriya": "Reklamani ko'rganlar" to'ridagi bot avatarlar birin-ketin haqiqiy odamlarga aylanadi (haqiqiy 96%). 14 200 haqiqiy ko'rish · ERR 31% · 47 mijoz. **Ishonch reytingi 96/100** | G'alaba musiqasi, cha-ching | Endi har bir ko'rish ortida — haqiqiy odam va haqiqiy mijoz. |
 | 0:27–0:32 | Yakun | ADUZ logotipi, "Biznesingiz himoyachisi!", CTA "Hoziroq sinab ko'ring" | "Ting" | ADUZ — biznesingiz himoyachisi! |
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)

@@ -196,7 +196,52 @@ def cues_2():
     cha_ching(25.0)
 
 
-CUES = {1: cues_1, 2: cues_2}
+def cues_3():
+    """3-qism: Soxta obunachilar va ishonchsizlik."""
+    add(0.6, noise(0.3, 0.07, 16), 0.15)  # post slides in
+    for i, at in enumerate(1.2 + 3.0 * (np.arange(14) / 14) ** 2):  # view ticks slowing to a stop
+        add(at, tone(1500, 0.04, "sine", 0.001, 0.015), 0.07, 0.2)
+    add(3.6, tone(98, 0.9, "saw", 0.02, 0.4) + 0.6 * tone(92.5, 0.9, "saw", 0.02, 0.4), 0.07)  # disappointment
+    add(4.8, noise(0.4, 0.1, 18), 0.2)  # audit sheet
+    sweep = int(1.6 * SR)
+    sx = np.arange(sweep) / SR
+    add(5.3, np.sin(2 * np.pi * (300 * sx + 120 * sx**2)) * np.minimum(1, sx / 0.1) * np.minimum(1, (1.6 - sx) / 0.2), 0.05)  # scan line
+    for i in range(6):  # BOT tags
+        pop(5.6 + i * 0.22, 420, 0.1, (-1) ** i * 0.3)
+    jump = int(0.5 * SR)
+    jx = np.arange(jump) / SR
+    add(7.4, np.sin(2 * np.pi * (200 * jx + 900 * jx**2)) * np.exp(-jx * 4), 0.1)  # bought spike
+    for at, pan in zip([6.6, 7.1, 7.6, 8.1], [-0.5, 0.5, -0.5, 0.5]):
+        buzzer(at, pan)
+    fall = int(1.0 * SR)
+    fx = np.arange(fall) / SR
+    add(9.0, np.sin(2 * np.pi * (700 * fx - 300 * fx**2)) * np.minimum(1, fx / 0.05) * np.exp(-fx * 1.5), 0.1)  # deflate
+    for at in np.arange(12.0, 12.7, 0.06):  # typing
+        add(at, noise(0.03, 0.006), 0.05, rng.uniform(-0.3, 0.3))
+    tap(12.9)
+    for i in range(4):  # audit rows: scanning ticks, then a red result
+        a = 13.05 + i * 0.5
+        for k in range(4):
+            add(a + k * 0.1, tone(1800, 0.03, "sine", 0.001, 0.01), 0.04)
+        add(a + 0.4, tone(220, 0.18, "square", 0.004, 0.06), 0.08, 0.3)
+    add(15.0, tone(110, 0.6, "saw", 0.01, 0.25), 0.07)  # low trust score
+    add(15.35, noise(0.15, 0.04, 30), 0.5)  # stamp thud
+    add(15.35, tone(70, 0.3, "sine", 0.002, 0.12), 0.5)
+    add(16.0, noise(0.45, 0.11, 20), 0.2, 0.5)  # slide to verified channels
+    for i in range(3):
+        add(16.35 + i * 0.25, noise(0.3, 0.08, 20), 0.14, 0.6)
+    tap(17.6)
+    chime(18.6)
+    for i in range(3):
+        add(19.3 + i * 0.35, tone(midi(84 + 3 * i), 0.2, "sine", 0.002, 0.06), 0.08)
+    for i in range(0, 50, 2):  # bots flipping into real people
+        add(22.9 + i * 0.036, tone(midi(79 + (i // 2) % 6 * 2), 0.1, "sine", 0.002, 0.04), 0.06, np.sin(i) * 0.5)
+    for i in range(3):  # stat tiles
+        add(23.4 + i * 0.15, tone(midi(76 + 4 * i), 0.2, "sine", 0.002, 0.08), 0.1)
+    cha_ching(25.0)
+
+
+CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[2]
