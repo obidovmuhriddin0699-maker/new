@@ -27,6 +27,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 20 | `ADUZ_20-qism.mp4` | Qonuniy va oq savdo (B2B) |
 | 21 | `ADUZ_21-qism.mp4` | Raqamli adolat (Arbitraj) |
 | 22 | `ADUZ_22-qism.mp4` | Jalb qiluvchi kontent |
+| 23 | `ADUZ_23-qism.mp4` | Iliq mijozlarni qaytarish (birinchi neon qism) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -40,6 +41,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 |---|---|
 | `episodeN.html` | Qism sahnalari. Brauzerda ochsangiz takrorlanib o'ynaydi |
 | `lib.js` | Umumiy qismlar: telefon, logotip, subtitr, kursor, sarlavha va hisoblagichlar, xatolik belgilari, muammo/yechim/natija fonlari, yakuniy kadr, sahnalar tartibi |
+| `neon.js` | Neon mavzu (23-qismdan): telegram_reklama777 dizayn tizimi — ranglar, Russo One + Archivo shriftlari (`fonts/`, OFL), fonlar, subtitr, logotip, yakuniy kadr, neon nishon, izoh-CTA, PostTimeline |
 | `render.mjs` | HTML → MP4 render (Playwright + ffmpeg) |
 | `audio.py` | Musiqa va SFX sintezi. 1–3-qism: oddiy fon (numpy). 4-qismdan: v2 dvigatel (numpy + scipy) — 120 BPM aranjirovka (baraban, sub-bas, supersaw akkordlar, FM qo'ng'iroqchalar), reverb, sidechain, soft-clip |
 
@@ -656,6 +658,43 @@ va logotip ostida **"heavenly" xor "aaah"** (formant sintez). Referens meme trek
 
 Raqamlar (diqqat soniyalari, bosishlar, CTR 0.1% → 3.8%, "120+ shablon") va konstruktor imkoniyatlari (presetlar, rang,
 "bir daqiqada") — namuna. ADUZ'ning haqiqiy reklama konstruktori bilan solishtiring.
+
+## 23-qism: "Iliq mijozlarni qaytarish"
+
+**Birinchi neon qism.** Vizual uslub — foydalanuvchining "telegram_reklama777" dizayn tizimi ([`neon.js`](neon.js)):
+ground-900 tungi fon, chap-pastdan xira qizil nur, ink matn yumshoq "glow" bilan, Russo One (sarlavha/slamlar, KATTA HARF)
++ Archivo (italik izohlar), neon-pushti qahramon so'z, signal-sariq — bitta taklif so'zi/oltin slam, signal-firuza —
+ijobiy/CTA kalit so'zi, chip-kartalar. Tuzilma, FX v2, kinetik matn, [`sfx/`](sfx/README.md), xor va pizzicato — avvalgidek.
+Yangi o'tish: **radar sweep** (nur aylanib yechimni ochadi, 4 ta "ping"). Natijada dizayn tizimidagi **PostTimeline**
+(eslatma postlari kanallar bo'ylab o'ynatgich ostida o'tadi), yakunda **izoh-CTA** va handle.
+
+**G'oya:** "Vodiy Textile" posti (yozgi ko'ylak, 189 000 so'm): 6 ta iliq mijoz (pushti halqa) ko'rmoqda, 3 tasi savatga
+qo'shadi. So'ng bildirishnomalar ("Mem kanal", "Futbol 24: GOL!", "Onam: qo'ng'iroq", "Boshqa do'kon −50%") har birini
+olib ketadi — avatar uchib chiqadi, o'rnida bo'sh halqa; "Savat tashlandi · 0 ta buyurtma"; yo'qotildi 1 222.
+*CHALG'IDI · SAVAT TASHLANDI · QAYTMADI*, 8.5 s: **YO'QOTILDI — qiziqqan mijoz, endi boshqa joyda**. Vakuum: oxirgi iliq
+mijoz soviydi va kulga aylanadi. Yechim — ADUZ "Retargeting": iliq auditoriya 1 222 → "Savatga qo'shdi" segmenti 486 →
+eslatma reklamasi "SAVATINGIZ KUTMOQDA · bugun −10%" → "Mijozlarni qaytarish" → radar kanallar bo'ylab ularni topadi va
+mijozlar do'konga qaytadi: qaytdi 214, buyurtma 96, konversiya 8.6% (oldin 1.4%). 18.5 s: **QAYTIB KELDI — iliq mijoz,
+ikkinchi imkoniyat**. "Retargeting yoqildi". Natija — PostTimeline, Oldin ↔ ADUZ kartasi, kassa, neon nishonlar.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_23.md`](SOUND_ARCHITECTURE_23.md). 7-qism partiturasi 2 yarim ton pastda (D-minor → C-major),
+muammoda pizzicato (D), vahiy lahzasida / oltin slamda / logotip ostida xor C-major'da (`mus.choir_c`), mijoz qaytganda
+xor "ooo". Yangi: `sfx.cool_down` (iliq mijoz soviydi), radar ping'lari va topilgan har mijoz — pentatonik tick_hi.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:04.5 | 1. Muammo | "23-QISM · Iliq mijozlarni qaytarish". Post, 6 iliq mijoz, 3 tasi savatga qo'shadi | Mijoz qiziqdi, savatga qo'shdi — va... |
+| 0:04.5–0:10.4 | 1. Muammo | Bildirishnomalar mijozlarni olib ketadi. *CHALG'IDI · SAVAT TASHLANDI · QAYTMADI*. 8.5 s: **YO'QOTILDI**. 9.6 s: oxirgi mijoz soviydi (vakuum) | ...bitta bildirishnoma — chalg'idi. Qaytmadi. ...va unutdi. |
+| 0:10.4–0:11 | O'tish | Radar sweep + xor "aaah" | — |
+| 0:11–0:16 | 2. Yechim | Retargeting: 1 222 → segment 486 → eslatma "SAVATINGIZ KUTMOQDA −10%" → "Mijozlarni qaytarish" → radar | ADUZ retargeting qiziqqanlarni topadi va eslatadi. |
+| 0:16–0:21.75 | 2. Yechim | Topilgan mijozlar do'konga qaytadi: 214 · 96 · 8.6%. 18.5 s: **QAYTIB KELDI**. "Retargeting yoqildi" | Iliq mijoz qaytib keladi — savati bilan. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | PostTimeline (kanallar: qaytdi +38…). Oldin (yo'qotilgan mijoz; bir marta ko'rdi; 1.4%) ↔ ADUZ (qaytgan mijoz; takroriy eslatma; 8.6%). Nishonlar: Retargeting · Segment · Eslatma | Boy berilgan mijoz — endi qaytgan mijoz. |
+| 0:27–0:32 | Yakun | Neon logotip, **BIZNESINGIZ HIMOYACHISI!**, IZOHGA "ADUZ" deb yozing, @telegram_reklama777 | ADUZ — biznesingiz himoyachisi! |
+
+Namuna — tekshiring: barcha raqamlar (1 222, 486, 214, 96, 1.4% → 8.6%, −10% chegirma, kanal nomlari), retargeting
+funksiyasining o'zi (segmentlar, eslatma reklamasi, "kanallar bo'ylab topish"), shuningdek yakundagi izoh-CTA kalit so'zi
+("ADUZ") va handle `@telegram_reklama777` — ADUZ uchun to'g'ri ekanini tasdiqlang.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 

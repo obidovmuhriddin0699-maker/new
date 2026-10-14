@@ -5,7 +5,10 @@
 const W = 1080, H = 1920;
 const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
-const F = 'Inter, "DejaVu Sans", sans-serif';
+let F = 'Inter, "DejaVu Sans", sans-serif';
+// Neon theme (neon.js, 23-qismdan): FD = display font; weights ≥ 900 are drawn in it (Russo One has a single weight).
+let FD = null;
+const fnt = (w, s) => FD && +w >= 900 ? `400 ${s}px ${FD}` : `${w} ${s}px ${F}`;
 
 const C = {
   navy: '#0b1020', red: '#ff3b4e', redDim: '#7a1422',
@@ -29,11 +32,11 @@ function rr(x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
 function text(s, x, y, size, color, weight = 600, align = 'left', base = 'alphabetic') {
-  ctx.font = `${weight} ${size}px ${F}`; ctx.fillStyle = color;
+  ctx.font = fnt(weight, size); ctx.fillStyle = color;
   ctx.textAlign = align; ctx.textBaseline = base; ctx.fillText(s, x, y);
 }
 function wrap(s, maxW, size, weight = 500) {
-  ctx.font = `${weight} ${size}px ${F}`;
+  ctx.font = fnt(weight, size);
   const words = s.split(' '), lines = []; let cur = '';
   for (const w of words) {
     const test = cur ? cur + ' ' + w : w;
@@ -313,7 +316,7 @@ function slam(t, at, s, x, y, size, color, o = {}) {
   if (p <= 0 || q >= 1) return;
   const a = clamp(p * 4) * (1 - q), base = ctx.globalAlpha;
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
-  ctx.font = `900 ${size}px ${F}`; const w = ctx.measureText(s).width;
+  ctx.font = fnt(900, size); const w = ctx.measureText(s).width;
   const draw = alpha => {
     ctx.globalAlpha = base * alpha;
     if (slab) { rr(-w / 2 - size * .45, -size * .68, w + size * .9, size * 1.36, size * .24); ctx.fillStyle = slab; ctx.fill(); }
@@ -739,7 +742,7 @@ function kText(t, at, str, x, y, size, color, preset = 'bounce', o = {}) {
   const { weight = 900, hold = 99, accent = '#ffc83d', stagger = null, glow = null, out = .25 } = o;
   const d = t - at; if (d < 0) return;
   const fade = 1 - clamp((d - hold) / out); if (fade <= 0) return;
-  ctx.save(); ctx.font = `${weight} ${size}px ${F}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.save(); ctx.font = fnt(weight, size); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
   if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 30; }
   const words = preset === 'blurUp' || preset === 'scale' || preset === 'wordRight';
   const units = words ? str.split(/(\s+)/) : [...str];
@@ -769,4 +772,32 @@ function kText(t, at, str, x, y, size, color, preset = 'bounce', o = {}) {
   if (preset === 'typewriter' && fade > 0) { const typed = Math.min(k, Math.floor(d / st)); let tw = 0; for (let i = 0, c = 0; i < units.length && c < typed; i++) { tw += ws[i]; if (units[i].trim()) c++; }
     if (Math.floor(d * 2.5) % 2 === 0 || typed < k) { ctx.fillStyle = accent; ctx.fillRect(x - total / 2 + tw + 4, y - size * .5, Math.max(3, size * .07), size); } }
   ctx.restore();
+}
+
+// Transition (23-qism): radar sweep — a glowing beam turns once round the centre, revealing drawB in its wake;
+// rings + a fading trail wedge behind the beam. RADAR_PINGS: [progress, x, y] blips lit as the beam passes (shared with audio cues).
+const RADAR_PINGS = [[.18, 760, 520], [.42, 820, 1300], [.63, 300, 1420], [.86, 250, 560]];
+function radarSweep(t, a, b, drawA, drawB, color = '#08c0c8') {
+  const p = eInOut(prog(t, a, b)), ang = -Math.PI / 2 + p * Math.PI * 2, cx = W / 2, cy = H / 2;
+  drawA(t);
+  ctx.save(); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, 2400, -Math.PI / 2, ang); ctx.closePath(); ctx.clip(); drawB(t); ctx.restore();
+  if (p <= 0 || p >= 1) return;
+  const fade = Math.sin(Math.PI * p);
+  withAlpha(fade, () => {
+    ctx.strokeStyle = color; ctx.lineWidth = 3;
+    for (let r = 160; r < 1100; r += 190) { ctx.globalAlpha = fade * .35; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); }
+    ctx.globalAlpha = fade;
+    for (let k = 0; k < 14; k++) { // trail wedge
+      const a0 = ang - (k + 1) * .045; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, 2400, a0, a0 + .045); ctx.closePath();
+      ctx.fillStyle = `rgba(8,192,200,${.16 * (1 - k / 14)})`; ctx.fill();
+    }
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 40; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * 2400, cy + Math.sin(ang) * 2400); ctx.lineWidth = 10; ctx.strokeStyle = color; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, 22, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.restore();
+    for (const [pp, x, y] of RADAR_PINGS) {
+      const d = p - pp; if (d < 0 || d > .3) continue; const q = d / .3;
+      ctx.beginPath(); ctx.arc(x, y, 14 + 70 * eOut(q), 0, 7); ctx.lineWidth = 6 * (1 - q) + 1; ctx.strokeStyle = color; ctx.globalAlpha = fade * (1 - q); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 14, 0, 7); ctx.fillStyle = '#fcfcfc'; ctx.globalAlpha = fade * (1 - q * .6); ctx.fill();
+    }
+  });
 }

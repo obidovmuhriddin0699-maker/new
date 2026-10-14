@@ -13,6 +13,19 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   23.2 da kassa) → endCard 27 s.
 - Har qismda: aniq namuna raqamlar va funksiya da'volarini README'da "namuna — tekshiring" deb belgilash.
 
+## Dizayn (23-qismdan): NEON mavzu — foydalanuvchi tanlovi "ADUZ qismlariga qo'llash"
+- Manba: foydalanuvchining "telegram_reklama777" dizayn tizimi (artifact VaMAiJqBED4BgPhffYNP8A). Qism sahifasida
+  `<script src="lib.js"></script><script src="neon.js"></script>` — `neon.js` fonlar, subtitr, logotip, hisoblagich,
+  natija foni, yakuniy kadrni almashtiradi; `C` ranglarini neon palitraga o'tkazadi; `F`=Archivo, `FD`=Russo One
+  (`fnt()`: og'irlik ≥ 900 → Russo One). Eski qismlar (`neon.js` siz) o'zgarmaydi — tekshirilgan.
+- Ranglar `N.*`: ground #110e18, burg/burgHi, glowRed #c82224 (chap-past nur), ink #fcfcfc, muted #a0959f,
+  pink #f84058 (qahramon so'z, muammo slablari), pinkSoft, yellow #f8e800 (bitta taklif so'zi / oltin slam),
+  cyan #08c0c8 (ijobiy, yechim, CTA kalit so'zi; sariq bilan bir blokda emas), chip #401820 + chipEdge #5c2729.
+- Shrift: Russo One — faqat KATTA HARF (slam, sarlavha, CTA); Archivo 800 — sarlavha qatori; Archivo italik
+  (`it(500)`) — izoh/subtitr. Matnda emoji va heshteg yo'q, "Siz" murojaati, o'zbek lotin ʻ bilan.
+- Yordamchilar: `glowText`, `neonGround`, `chipCard`, `neonBadge`, `commentCTA`, `postTimeline`, `HANDLE`.
+  Pastki ~420 px — subtitrdan boshqa matnsiz (subtitr y≈1588).
+
 ## Vizual effektlar (foydalanuvchi: "juda yoqdi, yanada efekt qil")
 - **FX v2** (`lib.js`, 20-qismdan): `rgbGlitch`, `punch`, `shine`, `inkSplat`, `flare`, `trail`, `pulseVignette`,
   `godRays`, `disintegrate`. Har qismda ko'p ishlatiladi: slamlarda glitch, voqealarda punch, tayyor kartalarda shine,
@@ -21,7 +34,7 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   `bounce`, `charsDown`, `letterUp`, `colorBounce`, `flicker`, `typewriter`, `blurUp`, `scale`, `wordRight`.
   Sarlavhalar, oltin slam, natija sarlavhasi va reklama kartalari shu presetlar bilan jonlantiriladi.
 - Ishlatilgan o'tishlar (takrorlamaslik uchun): circleWipe, clockWipe, zoomThrough, pixelDissolve, splitDoors, squeegee,
-  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi.
+  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23).
 
 ## Ovoz
 - **SFX kutubxonasi** `sfx/` (39 ta, foydalanuvchi yuborgan SFX-to'plam videolaridan kesilgan): UI/o'tish/zarba

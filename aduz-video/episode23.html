@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 23-qism</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script src="neon.js"></script>
+<script>
+// ADUZ — 23-qism: "Iliq mijozlarni qaytarish" — birinchi NEON qism (telegram_reklama777 dizayn tizimi: neon.js).
+// Problem: warm customers look at a product post, add it to the cart — then a notification pulls each one away;
+// the cart is abandoned, 1 222 interested people lost. Vacuum: the last warm avatar cools down and turns to dust.
+// Transition: radar sweep. Solution: ADUZ retargeting — pick the warm segment, a reminder ad, launch; a radar finds
+// them across channels and they come back to the shop. Result: before/after card, PostTimeline of reminder placements.
+// Sound: CUES_23 in audio.py.
+
+const CAPTIONS = [
+  [0.4, 4.4, 'Mijoz qiziqdi, savatga qoʻshdi — va...'],
+  [4.6, 9.4, '...bitta bildirishnoma — chalgʻidi. Qaytmadi.'],
+  [9.6, 10.4, '...va unutdi.'],
+  [11.4, 16.2, 'ADUZ retargeting qiziqqanlarni topadi va eslatadi.'],
+  [16.4, 21.6, 'Iliq mijoz qaytib keladi — savati bilan.'],
+  [22.4, 27.0, 'Boy berilgan mijoz — endi qaytgan mijoz.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+function glyph(kind, x, y, s = 1, col = N.ink) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (kind === 'cart') { ctx.beginPath(); ctx.moveTo(-30, -22); ctx.lineTo(-20, -22); ctx.lineTo(-12, 12); ctx.lineTo(22, 12); ctx.lineTo(28, -12); ctx.lineTo(-16, -12); ctx.stroke(); [[-8, 24], [18, 24]].forEach(([a, b]) => { ctx.beginPath(); ctx.arc(a, b, 5, 0, 7); ctx.fill(); }); }
+  else if (kind === 'radar') { ctx.beginPath(); ctx.arc(0, 0, 28, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 14, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(22, -18); ctx.stroke(); ctx.beginPath(); ctx.arc(14, 10, 5, 0, 7); ctx.fill(); }
+  else if (kind === 'people') { [[-14, 0, .8], [14, 0, .8], [0, 4, 1]].forEach(([dx, dy, k]) => { ctx.beginPath(); ctx.arc(dx, dy - 14 * k, 9 * k, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(dx, dy + 18 * k, 16 * k, Math.PI, 0); ctx.fill(); }); }
+  else if (kind === 'bell') { ctx.beginPath(); ctx.moveTo(-22, 14); ctx.quadraticCurveTo(-16, 8, -16, -4); ctx.quadraticCurveTo(-16, -24, 0, -26); ctx.quadraticCurveTo(16, -24, 16, -4); ctx.quadraticCurveTo(16, 8, 22, 14); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(0, 20, 6, 0, 7); ctx.fill(); }
+  else if (kind === 'flame') { ctx.beginPath(); ctx.moveTo(0, -30); ctx.quadraticCurveTo(24, -6, 18, 12); ctx.quadraticCurveTo(12, 28, 0, 28); ctx.quadraticCurveTo(-12, 28, -18, 12); ctx.quadraticCurveTo(-22, -4, -6, -14); ctx.quadraticCurveTo(-2, -2, 4, -6); ctx.quadraticCurveTo(6, -18, 0, -30); ctx.fill(); }
+  ctx.restore();
+}
+// Customer avatar: head + shoulders in a circle; heat 0..1 → warm pink glowing ring, 0 → cold grey.
+const SKIN = ['#e0a07a', '#c98b65', '#f0c09a', '#b5774f', '#d9a27c', '#efb48e'];
+const SHIRT = ['#6366f1', '#14b8a6', '#f97316', '#ec4899', '#84cc16', '#3b82f6'];
+function avatar(x, y, r, i, heat = 1, alpha = 1) {
+  withAlpha(alpha, () => {
+    ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = '#2a2235'; ctx.fill(); ctx.clip();
+    ctx.globalAlpha *= .35 + .65 * heat;
+    ctx.beginPath(); ctx.arc(x, y + r * .95, r * .75, Math.PI, 0); ctx.fillStyle = SHIRT[i % 6]; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y - r * .12, r * .36, 0, 7); ctx.fillStyle = SKIN[i % 6]; ctx.fill();
+    ctx.restore();
+    ctx.save(); if (heat > .05) { ctx.shadowColor = `rgba(248,64,88,${heat})`; ctx.shadowBlur = 24 * heat; }
+    ctx.beginPath(); ctx.arc(x, y, r + 5, 0, 7); ctx.lineWidth = 6; ctx.strokeStyle = heat > .05 ? lerpColor('#6b6270', N.pink, heat) : '#4a4352'; ctx.stroke(); ctx.restore();
+  });
+}
+function lerpColor(a, b, k) { const pa = [1, 3, 5].map(i => parseInt(a.substr(i, 2), 16)), pb = [1, 3, 5].map(i => parseInt(b.substr(i, 2), 16)); return `rgb(${pa.map((v, i) => Math.round(lerp(v, pb[i], k))).join(',')})`; }
+function shirtShape(x, y, s, col) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = col;
+  ctx.beginPath(); ctx.moveTo(-30, -60); ctx.lineTo(-90, -30); ctx.lineTo(-70, 10); ctx.lineTo(-50, 0); ctx.lineTo(-50, 70); ctx.lineTo(50, 70); ctx.lineTo(50, 0); ctx.lineTo(70, 10); ctx.lineTo(90, -30); ctx.lineTo(30, -60); ctx.quadraticCurveTo(0, -36, -30, -60); ctx.fill();
+  ctx.restore();
+}
+const curve = (t, keys) => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) if (t <= keys[i][0]) return lerp(keys[i - 1][1], keys[i][1], eInOut(clamp((t - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0])))); return keys[keys.length - 1][1]; };
+
+// ---------- SCENE 1 — Muammo: distracted, gone ----------
+const AV = Array.from({ length: 6 }, (_, i) => ({ x: SX + 98 + i * 108, y: SY + 830, in: .8 + i * .18 }));
+const CART = [2.4, 3.0, 3.5];                // avatars 1, 3, 4 add to cart
+const CART_BY = [1, 3, 4];
+const NOTE = [[4.0, 'Mem kanal', 'Yangi video chiqdi', [1, 5]], [5.0, 'Futbol 24', 'GOL! 1:0', [0, 3]], [6.0, 'Onam', 'Qoʻngʻiroq qilmoqda...', [2]], [7.0, 'Boshqa doʻkon', 'Hammasi −50%', [4]]];
+const LEAVE = {}; NOTE.forEach(([a, , , who]) => who.forEach((k, j) => LEAVE[k] = a + .35 + j * .12));
+const IMPACTS1 = [[5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46]];
+const DROP = [9.6, 10.3];
+function shopScreen(t) {
+  ctx.fillStyle = '#151120'; ctx.fillRect(SX, SY, SW, SH);
+  ctx.fillStyle = '#1d1729'; ctx.fillRect(SX, SY, SW, 150);
+  ctx.beginPath(); ctx.arc(SX + 80, SY + 92, 34, 0, 7); ctx.fillStyle = N.pink; ctx.fill(); shirtShape(SX + 80, SY + 92, .25, '#fff');
+  text('Vodiy Textile', SX + 134, SY + 88, 32, N.ink, 800); text('kanal · 12 400 obunachi', SX + 134, SY + 124, 22, N.muted, it(500));
+  // product post
+  const px = SX + 30, py = SY + 180, pw = SW - 60;
+  rr(px, py, pw, 520, 22); ctx.fillStyle = '#221a2e'; ctx.fill();
+  ctx.save(); rr(px + 16, py + 16, pw - 32, 300, 16); ctx.clip();
+  const g = ctx.createLinearGradient(px, py, px + pw, py + 300); g.addColorStop(0, '#5c2729'); g.addColorStop(1, N.ground); ctx.fillStyle = g; ctx.fillRect(px, py, pw, 320);
+  shirtShape(px + pw / 2, py + 170, 1.2 + .03 * Math.sin(t * 2), N.pinkSoft); ctx.restore();
+  text('Yozgi koʻylak', px + 30, py + 370, 34, N.ink, 800); text('189 000 soʻm', px + 30, py + 416, 30, N.pinkSoft, 800);
+  const cb = CART.reduce((n, a) => n + bump(t, a, .2), 0);
+  scaled(px + pw - 130, py + 455, 1 - .06 * cb, () => { rr(px + pw - 230, py + 425, 200, 60, 30); ctx.fillStyle = N.pink; ctx.fill(); text('Savatga', px + pw - 130, py + 465, 26, N.ink, 800, 'center'); });
+  // live viewers
+  text('Hozir koʻrmoqda', SX + 40, SY + 760, 24, N.muted, it(500));
+  const here = AV.filter((a, i) => t > a.in && !(LEAVE[i] && t > LEAVE[i] + .5)).length;
+  text(String(here), SX + SW - 40, SY + 760, 26, here ? N.pinkSoft : '#6b6270', 900, 'right');
+  AV.forEach((a, i) => {
+    const p = eBack(prog(t, a.in, a.in + .35)); if (p <= 0) return;
+    const lv = LEAVE[i];
+    if (lv && t > lv) { // ghost slot
+      ctx.save(); ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.arc(a.x, a.y, 44, 0, 7); ctx.lineWidth = 3; ctx.strokeStyle = '#4a4352'; ctx.stroke(); ctx.restore();
+      return;
+    }
+    scaled(a.x, a.y, p, () => avatar(a.x, a.y, 42, i, 1));
+    const ci = CART_BY.indexOf(i);
+    if (ci >= 0) { const q = eBack(prog(t, CART[ci], CART[ci] + .3)); if (q > 0) scaled(a.x + 32, a.y - 32, q, () => { ctx.beginPath(); ctx.arc(a.x + 32, a.y - 32, 18, 0, 7); ctx.fillStyle = N.cyan; ctx.fill(); glyph('cart', a.x + 32, a.y - 32, .38, N.ground); }); }
+  });
+  // cart row
+  const inCart = CART.filter(a => t > a).length, dumped = t > 7.6;
+  rr(SX + 30, SY + 930, SW - 60, 90, 18); ctx.fillStyle = dumped ? 'rgba(248,64,88,.14)' : '#1d1729'; ctx.fill();
+  glyph('cart', SX + 90, SY + 975, .8, dumped ? N.pink : N.muted);
+  text(dumped ? 'Savat tashlandi · 0 ta buyurtma' : `Savatda: ${inCart} ta`, SX + 140, SY + 985, 28, dumped ? N.pink : N.ink, 800);
+  // notifications drop in over the top
+  NOTE.forEach(([a, who, msg]) => {
+    const p = eBack(prog(t, a, a + .3)), q = eIn(prog(t, a + .9, a + 1.15)); if (p <= 0 || q >= 1) return;
+    const y = SY + lerp(-140, 24, p) - 200 * q;
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 30; rr(SX + 24, y, SW - 48, 110, 24); ctx.fillStyle = '#f8f8f0'; ctx.fill(); ctx.restore();
+    glyph('bell', SX + 84, y + 55, .8, N.pink);
+    text(who, SX + 130, y + 46, 26, N.ground, 800); text(msg, SX + 130, y + 84, 24, '#5c5560', 500);
+  });
+}
+// a leaving avatar flies up to its notification (drawn outside the phone clip so it can exit the frame)
+function leavers(t) {
+  AV.forEach((a, i) => {
+    const lv = LEAVE[i]; if (!lv) return;
+    const pos = tt => { const q = prog(tt, lv, lv + .55); if (q <= 0 || q >= 1) return null; const e = eIn(q); return [lerp(a.x, W / 2 + (i % 2 ? 260 : -260), e), lerp(a.y, -120, e) - Math.sin(Math.PI * q) * 80]; };
+    trail(t, pos, 6, .025, (x, y, al) => avatar(x, y, 42, i, lerp(1, 0, prog(t, lv, lv + .5)), al));
+  });
+}
+function scene1(t) {
+  const stress = prog(t, 4.0, 9.4);
+  problemBg(t, stress);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  const lost = Object.values(LEAVE).filter(a => t > a).length / 6;
+  camera((1 + .06 * eInOut(prog(t, 0, 10.6))) * punch(t, NOTE.map(n => n[0]), .03), sr, sx, sy, () => {
+    kText(t, .15, '23-QISM', W / 2, 100, 30, N.pink, 'charsDown', { glow: N.pink });
+    kText(t, .3, 'Iliq mijozlarni qaytarish', W / 2, 165, 56, N.ink, 'blurUp', { weight: 800 });
+    counters(t, [['1 240', 'qiziqdi', '#fff'], ['18', 'sotib oldi', N.pink], [fmt(1222 * eOut(lost)), 'yoʻqotildi', N.pink]]);
+    const enter = eOut(prog(t, 0, .7));
+    phone('#151120', 0, lerp(160, 0, enter), 0, () => { shopScreen(t); ctx.fillStyle = `rgba(248,64,88,${.05 * stress})`; ctx.fillRect(SX, SY, SW, SH); });
+    leavers(t);
+  });
+  slam(t, 5.6, 'CHALGʻIDI', 310, 560, 52, N.ink, { slab: N.pink, rot: -.08, hold: 2.9 });
+  slam(t, 6.6, 'SAVAT TASHLANDI', 690, 1180, 44, N.ink, { slab: N.pink, rot: .06, hold: 1.9 });
+  slam(t, 7.6, 'QAYTMADI', 330, 1440, 52, N.ink, { slab: N.pink, rot: .05, hold: .9 });
+  const dim = prog(t, 8.45, 8.6) * (1 - prog(t, 9.25, 9.45));
+  if (dim > 0) withAlpha(dim * .6, () => { ctx.fillStyle = N.ground; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, 8.5, W / 2, 900, N.pink, 1100);
+  sparks(t, 8.5, W / 2, 900, 401, [N.pink, N.pinkSoft, N.ink], 36, 1200);
+  slam(t, 8.5, 'YOʻQOTILDI', W / 2, 880, 118, N.ink, { hold: .75, glow: 'rgba(248,64,88,.95)' });
+  kText(t, 8.7, 'qiziqqan mijoz — endi boshqa joyda', W / 2, 1030, 46, N.pinkSoft, 'blurUp', { weight: it(600), hold: .55, stagger: .05 });
+  flash(t, 8.5, N.pink, .4, .45);
+  // vacuum: the last warm customer cools down and turns to dust
+  if (t > 9.5) {
+    ctx.fillStyle = N.ground; ctx.fillRect(0, 0, W, H);
+    const p = prog(t, ...DROP), heat = 1 - eOut(clamp(p * 1.6));
+    avatar(W / 2, 880, 170, 2, heat);
+    if (heat > .02) withAlpha(heat, () => glyph('flame', W / 2 + 150, 720, 1.3, N.pink));
+    disintegrate(W / 2 - 200, 680, 400, 400, clamp((p - .35) / .65), N.ground, 409, 12);
+  }
+}
+
+// ---------- SCENE 2 — Yechim: retargeting ----------
+const T23 = { seg: 12.4, tpl: 13.4, launch: 14.4, radar: [14.65, 15.0], scan: 15.0, back: 16.75, stats: 17.0, slam: 18.5, sheet: 19.7 };
+const IMPACTS2 = [[11.0, 26], [T23.launch, 12], [T23.back, 12], [T23.slam, 34]];
+const SEGS = [['Postni koʻrdi', 1222], ['Savatga qoʻshdi', 486], ['Izoh yozdi', 97]];
+const seg = i => ({ x: SX + 30, y: SY + 380 + i * 104, w: SW - 60, h: 88 });
+const LAUNCH = { x: SX + 40, y: SY + SH - 112, w: SW - 80, h: 86 };
+// blips found by the radar: angle (rad from 12 o'clock, clockwise), radius in px → found when the beam passes
+const BLIPS = (() => { const r = rnd(423); return Array.from({ length: 14 }, (_, i) => ({ a: (i + .3 + r() * .4) / 14 * Math.PI * 2 * 1.7, d: 90 + r() * 230, k: i })); })();
+const RCX = SX + SW / 2, RCY = SY + 470, SPIN = 3.4;   // radar: rad/s
+const beamAt = t => (t - T23.scan) * SPIN;
+const foundAt = b => T23.scan + b.a / SPIN;
+function audienceScreen(t) {
+  ctx.fillStyle = '#151120'; ctx.fillRect(SX, SY, SW, SH);
+  ctx.fillStyle = '#0b5f66'; ctx.fillRect(SX, SY, SW, 150);
+  text('Retargeting', SX + 50, SY + 108, 40, N.ink, 900); glyph('radar', SX + SW - 80, SY + 92, .9, N.ink);
+  text('Iliq auditoriya', SX + 40, SY + 220, 26, N.muted, it(500));
+  const sel = t > T23.seg, n = sel ? Math.round(lerp(1222, 486, eOut(prog(t, T23.seg, T23.seg + .6)))) : 1222;
+  glowText(`${fmt(n)} kishi`, SX + 40, SY + 290, 64, N.ink, 900, 'left', 'middle', 'rgba(252,252,252,.5)', .6);
+  text('koʻrdi, lekin sotib olmadi', SX + 40, SY + 345, 26, N.muted, it(500));
+  SEGS.forEach(([l, v], i) => { const s = seg(i), on = sel && i === 1, p = eOut(prog(t, 11.5 + i * .12, 11.85 + i * .12)); if (p <= 0) return;
+    withAlpha(p, () => scaled(s.x + s.w / 2, s.y + s.h / 2, 1 + .05 * bump(t, T23.seg, .22) * on, () => {
+      chipCard(s.x + (1 - p) * 60, s.y, s.w, s.h, 14, on ? '#0b3f45' : N.chip, on ? N.cyan : N.chipEdge);
+      glyph(['people', 'cart', 'bell'][i], s.x + 50, s.y + 44, .7, on ? N.cyan : N.muted);
+      text(l, s.x + 100, s.y + 55, 30, N.ink, 800); text(fmt(v), s.x + s.w - 30, s.y + 55, 30, on ? N.cyan : N.muted, 900, 'right');
+    })); });
+  // reminder template
+  const tp = eBack(prog(t, T23.tpl - .25, T23.tpl + .1));
+  text('Eslatma reklamasi', SX + 40, SY + 735, 24, N.muted, it(500));
+  if (tp > 0) scaled(SX + SW / 2, SY + 850, tp * (1 + .04 * bump(t, T23.tpl, .22)), () => {
+    ctx.save(); rr(SX + 30, SY + 760, SW - 60, 180, 18); ctx.clip();
+    const g = ctx.createLinearGradient(SX, SY + 760, SX + SW, SY + 940); g.addColorStop(0, N.burgHi); g.addColorStop(1, N.chip); ctx.fillStyle = g; ctx.fillRect(SX, SY + 760, SW, 180);
+    shirtShape(SX + 120, SY + 850, .7, N.pinkSoft);
+    kText(t, T23.tpl, 'SAVATINGIZ KUTMOQDA', SX + 440, SY + 820, 34, N.ink, 'letterUp', { stagger: .02 });
+    kText(t, T23.tpl + .25, 'bugun', SX + 360, SY + 885, 30, N.ink, 'blurUp', { weight: it(500) });
+    kText(t, T23.tpl + .35, '−10%', SX + 480, SY + 885, 48, N.yellow, 'bounce', { glow: N.yellow });
+    shine(SX + 30, SY + 760, SW - 60, 180, prog(t, T23.tpl + .5, T23.tpl + 1.0), 18);
+    ctx.restore();
+    if (t > T23.tpl) { rr(SX + 30, SY + 760, SW - 60, 180, 18); ctx.lineWidth = 4; ctx.strokeStyle = N.cyan; ctx.stroke(); }
+  });
+  scaled(LAUNCH.x + LAUNCH.w / 2, LAUNCH.y + 43, 1 - .05 * bump(t, T23.launch, .22), () => { ctx.save(); ctx.shadowColor = 'rgba(8,192,200,.7)'; ctx.shadowBlur = 24; rr(LAUNCH.x, LAUNCH.y, LAUNCH.w, LAUNCH.h, 43); ctx.fillStyle = t > T23.launch ? '#067f86' : N.cyan; ctx.fill(); ctx.restore();
+    text(t > T23.launch ? 'Ishga tushdi ✓' : 'Mijozlarni qaytarish', LAUNCH.x + LAUNCH.w / 2, LAUNCH.y + 55, 32, N.ground, 900, 'center'); shine(LAUNCH.x, LAUNCH.y, LAUNCH.w, LAUNCH.h, prog(t, T23.launch, T23.launch + .5), 43); });
+}
+function radarScreen(t) {
+  ctx.fillStyle = '#0d0b14'; ctx.fillRect(SX, SY, SW, SH);
+  ctx.fillStyle = '#0b5f66'; ctx.fillRect(SX, SY, SW, 150);
+  text('Qidirilmoqda...', SX + 50, SY + 108, 40, N.ink, 900);
+  const R = 330, ba = beamAt(t);
+  ctx.save(); ctx.translate(RCX, RCY);
+  const bg = ctx.createRadialGradient(0, 0, 0, 0, 0, R); bg.addColorStop(0, 'rgba(8,192,200,.12)'); bg.addColorStop(1, 'rgba(8,192,200,.02)'); ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fillStyle = bg; ctx.fill();
+  ctx.strokeStyle = 'rgba(8,192,200,.35)'; ctx.lineWidth = 2;
+  [R, R * .66, R * .33].forEach(r => { ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke(); });
+  ctx.beginPath(); ctx.moveTo(-R, 0); ctx.lineTo(R, 0); ctx.moveTo(0, -R); ctx.lineTo(0, R); ctx.stroke();
+  if (t > T23.scan && t < T23.back + .3) {
+    const a = -Math.PI / 2 + ba;
+    for (let k = 0; k < 16; k++) { const a0 = a - (k + 1) * .05; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, a0, a0 + .05); ctx.closePath(); ctx.fillStyle = `rgba(8,192,200,${.22 * (1 - k / 16)})`; ctx.fill(); }
+    ctx.save(); ctx.shadowColor = N.cyan; ctx.shadowBlur = 20; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R); ctx.lineWidth = 5; ctx.strokeStyle = N.cyan; ctx.stroke(); ctx.restore();
+  }
+  ctx.restore();
+  // shop at the centre; found customers pop in, then fly home to it
+  ctx.beginPath(); ctx.arc(RCX, RCY, 46, 0, 7); ctx.fillStyle = N.pink; ctx.fill(); shirtShape(RCX, RCY, .3, '#fff');
+  BLIPS.forEach(b => {
+    const f = foundAt(b); if (t <= f) return; const p = eBack(prog(t, f, f + .3));
+    const home = eInOut(prog(t, T23.back + b.k * .025, T23.back + .45 + b.k * .025));
+    const bx = RCX + Math.sin(b.a) * b.d * (1 - home), by = RCY - Math.cos(b.a) * b.d * (1 - home);
+    if (home >= 1) return;
+    const q = prog(t, f, f + .5); if (q < 1) { ctx.beginPath(); ctx.arc(bx, by, 30 + 50 * q, 0, 7); ctx.lineWidth = 3; ctx.strokeStyle = `rgba(8,192,200,${1 - q})`; ctx.stroke(); }
+    scaled(bx, by, p * (1 - .5 * home), () => avatar(bx, by, 28, b.k, 1));
+  });
+  const found = BLIPS.filter(b => t > foundAt(b)).length;
+  const n = Math.round(486 * Math.min(1, found / BLIPS.length) * .64);
+  chipCard(SX + 30, SY + 840, SW - 60, 150, 18);
+  text('Topildi', SX + 70, SY + 895, 26, N.muted, it(500)); glowText(fmt(n), SX + 70, SY + 950, 52, N.cyan, 900, 'left', 'middle', N.cyan, .6);
+  text('Eslatma yuborildi', SX + 400, SY + 895, 26, N.muted, it(500)); glowText(fmt(n), SX + 400, SY + 950, 52, N.ink, 900, 'left', 'middle', 'rgba(252,252,252,.4)', .5);
+  // returned — stats
+  const st = eOut(prog(t, T23.stats, T23.stats + .4));
+  if (st > 0) withAlpha(st, () => {
+    rr(SX + 30, SY + 840, SW - 60, 230, 18); ctx.fillStyle = '#0b3f45'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = N.cyan; ctx.stroke();
+    const k = eOut(prog(t, T23.stats, T23.stats + 1.4));
+    [['Qaytdi', fmt(214 * k)], ['Buyurtma', fmt(96 * k)], ['Konversiya', `${(8.6 * k).toFixed(1)}%`]].forEach(([l, v], i) => { text(l, SX + 70 + i * 225, SY + 895, 24, N.muted, it(500)); glowText(v, SX + 70 + i * 225, SY + 960, 50, N.cyan, 900, 'left', 'middle', N.cyan, .5); });
+    text('Oldin: 1.4%', SX + 70, SY + 1035, 22, N.muted, it(500));
+    shine(SX + 30, SY + 840, SW - 60, 230, prog(t, T23.stats + .4, T23.stats + 1.0), 18);
+  });
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  camera((1.04 - .04 * eOut(prog(t, 11, 12)) + .025 * eInOut(prog(t, 12, 21.8))) * punch(t, [T23.seg, T23.tpl, T23.launch, T23.back], .025), sr, sx, sy, () => {
+    solutionBg(t, 'Iliq mijozlarni qaytarish');
+    const enter = eBack(prog(t, 11.1, 11.75)), s1 = eInOut(prog(t, ...T23.radar));
+    scaled(W / 2, PY + PH / 2, lerp(.8, 1, enter), () => withAlpha(prog(t, 11.1, 11.35), () =>
+      phone('#151120', 0, lerp(180, 0, enter), 0, () => {
+        if (s1 < 1) { ctx.save(); ctx.translate(-SW * s1, 0); audienceScreen(t); ctx.restore(); }
+        if (s1 > 0) { ctx.save(); ctx.translate(SW * (1 - s1), 0); radarScreen(t); ctx.restore(); }
+      })));
+    const s = seg(1), taps = [[T23.seg, s.x + s.w / 2, s.y + s.h / 2], [T23.tpl, SX + SW / 2, SY + 850], [T23.launch, LAUNCH.x + LAUNCH.w / 2 + 150, LAUNCH.y + 43]];
+    if (t > 11.8 && t < 14.8) {
+      const [cx, cy] = pathAt(t, [[11.8, W - 40, 1650], taps[0], [13.0, W - 60, 1500], taps[1], taps[2], [14.8, W - 40, 1700]]);
+      withAlpha(Math.min(prog(t, 11.8, 12.0), 1 - prog(t, 14.6, 14.8)), () => cursor(cx, cy, Math.max(...taps.map(([a]) => bump(t, a, .22)))));
+    }
+    for (const [a, x, y] of taps) ripple(x, y, prog(t, a, a + .6), N.cyan);
+    sparks(t, T23.back + .5, RCX, RCY, 427, [N.cyan, N.ink, N.yellow], 26, 520);
+  });
+  const dim = prog(t, T23.slam - .05, T23.slam + .1) * (1 - prog(t, T23.sheet - .2, T23.sheet));
+  if (dim > 0) withAlpha(dim * .6, () => { ctx.fillStyle = N.ground; ctx.fillRect(0, 0, W, H); });
+  godRays(t, W / 2, 860, prog(t, T23.slam, T23.slam + .2) * (1 - prog(t, T23.slam + 1.0, T23.slam + 1.3)), '248,232,0');
+  shockwave(t, T23.slam, W / 2, 880, N.yellow, 1100);
+  sparks(t, T23.slam, W / 2, 880, 431, [N.yellow, N.ink, N.cyan], 40, 1250);
+  kText(t, T23.slam, 'QAYTIB KELDI', W / 2, 840, 104, N.yellow, 'colorBounce', { hold: 1.0, accent: N.ink, glow: 'rgba(248,232,0,.85)' });
+  kText(t, T23.slam + .2, 'iliq mijoz — ikkinchi imkoniyat', W / 2, 990, 46, N.ink, 'blurUp', { weight: it(600), hold: 1.0, stagger: .05 });
+  flash(t, T23.slam, '#fffbd0', .35, .45);
+  const mp = eOut(prog(t, T23.sheet, T23.sheet + .45));
+  if (mp > 0) {
+    withAlpha(.6 * mp, () => { ctx.fillStyle = N.ground; ctx.fillRect(0, 0, W, H); });
+    const y0 = lerp(H, 680, mp);
+    ctx.save(); ctx.shadowColor = 'rgba(8,192,200,.45)'; ctx.shadowBlur = 50; rr(120, y0, W - 240, 760, 30); ctx.fillStyle = N.chip; ctx.fill(); ctx.restore();
+    rr(120, y0, W - 240, 760, 30); ctx.lineWidth = 2; ctx.strokeStyle = N.chipEdge; ctx.stroke();
+    const c = eBack(prog(t, T23.sheet + .2, T23.sheet + .6));
+    ctx.save(); ctx.shadowColor = N.cyan; ctx.shadowBlur = 30; ctx.beginPath(); ctx.arc(W / 2, y0 + 150, 80 * c, 0, 7); ctx.fillStyle = N.cyan; ctx.fill(); ctx.restore();
+    if (c > .5) check(W / 2, y0 + 152, 70, N.ground, 13, prog(t, T23.sheet + .45, T23.sheet + .8));
+    kText(t, T23.sheet + .6, 'RETARGETING YOQILDI', W / 2, y0 + 290, 50, N.ink, 'letterUp', { glow: 'rgba(252,252,252,.5)', stagger: .02 });
+    ['Iliq auditoriya — avtomatik', 'Eslatma reklamasi', 'Kanallar boʻylab topish'].forEach((s, i) => withAlpha(prog(t, T23.sheet + .9 + i * .25, T23.sheet + 1.15 + i * .25), () => { check(220, y0 + 390 + i * 74, 26, N.cyan, 6); text(s, 260, y0 + 401 + i * 74, 32, N.ink, it(500)); }));
+  }
+}
+
+// ---------- SCENE 3 — Natija ----------
+const CMP = [['Yoʻqotilgan mijoz', 'Qaytgan mijoz'], ['Bir marta koʻrdi', 'Takroriy eslatma'], ['Konversiya 1.4%', 'Konversiya 8.6%']];
+const IMPACTS3 = [[22.15, 22], [22.6, 10], [23.2, 10], [25.0, 16]];
+const PLACES = [['Vodiy Bozor', '+38'], ['Fargʻona 24', '+52'], ['Andijon Savdo', '+41'], ['Namangan Shop', '+47'], ['Qoʻqon Market', '+36'], ['Margʻilon Uy', '+29']];
+function scene3(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera((1 + .03 * eInOut(prog(t, 22, 27))) * punch(t, [22.6, 23.2, 25.0], .03), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.3));
+    withAlpha(1 - out, () => {
+      kText(t, 22.2, 'NATIJA', W / 2, 170, 34, N.yellow, 'charsDown', { glow: N.yellow });
+      kText(t, 22.3, 'Mijoz qaytib keladi', W / 2, 245, 60, N.ink, 'wordRight', { weight: 800 });
+      // PostTimeline: reminder posts across channels, the live one under the playhead
+      const tp = eOut(prog(t, 22.35, 22.8)), off = lerp(-200, 1500, (t - 22.35) / 4.4), live = Math.round(off / 324);
+      withAlpha(tp, () => postTimeline(400, PLACES.map(([a, b]) => ({ label: a, sub: `qaytdi ${b}` })), off, live));
+      const cp = eOut(prog(t, 23.0, 23.5)), x = 90, y = lerp(690, 650, cp), w = 900, h = 450;
+      withAlpha(cp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 32; ctx.shadowOffsetY = 12; rr(x, y, w, h, 30); ctx.fillStyle = N.chip; ctx.fill(); ctx.restore();
+        rr(x, y, w, h, 30); ctx.lineWidth = 2; ctx.strokeStyle = N.chipEdge; ctx.stroke();
+        text('OLDIN', x + 60, y + 72, 30, N.muted, 900);
+        rr(x + 470, y + 38, 200, 50, 14); ctx.fillStyle = '#0b3f45'; ctx.fill();
+        text('ADUZ', x + 570, y + 74, 30, N.cyan, 900, 'center');
+        ctx.fillStyle = N.chipEdge; ctx.fillRect(x + w / 2 - 20, y + 110, 2, h - 140);
+        CMP.forEach(([a, b], i) => {
+          const ry = y + 175 + i * 105, st = eInOut(prog(t, 23.5 + i * .35, 23.8 + i * .35)), ok = eBack(prog(t, 23.7 + i * .35, 24.0 + i * .35));
+          text(a, x + 60, ry, 28, st > 0 ? '#6b6270' : N.ink, it(500));
+          if (st > 0) { ctx.font = fnt(it(500), 28); const tw = ctx.measureText(a).width; ctx.beginPath(); ctx.moveTo(x + 55, ry - 10); ctx.lineTo(x + 55 + (tw + 10) * st, ry - 10); ctx.lineWidth = 5; ctx.strokeStyle = N.pink; ctx.stroke(); }
+          if (ok > 0) scaled(x + 470, ry - 10, ok, () => {
+            ctx.beginPath(); ctx.arc(x + 490, ry - 10, 20, 0, 7); ctx.fillStyle = N.cyan; ctx.fill(); check(x + 490, ry - 9, 18, N.ground, 5);
+            text(b, x + 525, ry, 28, N.ink, 800);
+          });
+        });
+      });
+      [['Retargeting', 'radar'], ['Segment', 'people'], ['Eslatma', 'bell']].forEach(([l, k], i) => {
+        const p = eBack(prog(t, 25.2 + i * .25, 25.65 + i * .25));
+        if (p > 0) neonBadge(230 + i * 310, 1290, l, (bx, by) => glyph(k, bx, by, 1.4, N.yellow), p);
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 900, N.yellow, 900);
+  sparks(t, 23.2, W / 2 + 240, 820, 439, [N.yellow, N.ink, N.cyan], 26, 600);
+  sparks(t, 25.0, W - 200, 900, 443, [N.yellow, N.ink, N.pink], 34, 1100);
+  confetti(t, 25.0);
+  endCard(t, 27.0);
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.4, b: 11.0, fn: radarSweep },
+    { a: 21.75, b: 22.15, fn: whipPan },
+  ],
+  overlay: t => {
+    NOTE.forEach(([a], i) => rgbGlitch(t, a + .35, .2, .35, i + 1));
+    [5.6, 6.6, 7.6].forEach((a, i) => rgbGlitch(t, a, .25, .8, i + 5));
+    rgbGlitch(t, 8.5, .42, 1.1, 9); flare(t, 8.5, W / 2, 880, N.pinkSoft);
+    pulseVignette(t, [9.6, 9.95, 10.2], '248,64,88');
+    flare(t, 11.0, W / 2, H / 2, '#9ff6fa', 1100, .5);
+    flare(t, T23.back + .5, W / 2, RCY, '#9ff6fa', 600, .5);
+    rgbGlitch(t, T23.launch, .2, .3, 12);
+    rgbGlitch(t, T23.slam, .3, .5, 13); flare(t, T23.slam, W / 2, 840, '#fffbd0');
+    flare(t, 23.2, W / 2, 820, '#fffbd0', 500, .5); flare(t, 25.0, W / 2, 1290, '#fffbd0', 800, .6); flare(t, 27.05, W / 2, 700, '#9ff6fa', 900, .8);
+    filmLook(t);
+  },
+});
+</script>
+</body>
+</html>
