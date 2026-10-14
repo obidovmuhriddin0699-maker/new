@@ -31,6 +31,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 24 | `ADUZ_24-qism.mp4` | Doimiy hamroh — 24/7 yordam (birinchi "motion reel" qism) |
 | 25 | `ADUZ_25-qism.mp4` | Mutlaq erkinlik — mobil boshqaruv (uchala dizayn + butun ovoz kutubxonasi) |
 | 26 | `ADUZ_26-qism.mp4` | Ulashing va daromad ko'ring — referal havola ("motion reel", 24-qism dizayni) |
+| 27 | `ADUZ_27-qism.mp4` | Aqlli byudjet taqsimoti — **Instagram Reels** uchun (hook, xavfsiz zona, loop; [`INSTAGRAM_27.md`](INSTAGRAM_27.md)) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -809,6 +810,32 @@ vakuumda aloqalar uziladi (fx.chain_snap).
 Namuna — tekshiring: referal dasturining o'zi va shartlari (10% komissiya, ro'yxat uchun +15 000 so'm, "har oy"
 passiv to'lov), havola formati (aduz.uz/r/…), 1 240 000 so'm/oy va do'st ismlari — ADUZ'ning haqiqiy referal shartlari
 bilan almashtiring.
+
+## 27-qism: "Aqlli byudjet taqsimoti" — Instagram Reels
+
+**Instagram Reels uchun moslangan** (foydalanuvchi: "Instagram uchun moslab, rekka chiqish uchun tayyorla"); "motion reel"
+uslubi. To'liq paket va joylash bo'yicha qo'llanma: [`INSTAGRAM_27.md`](INSTAGRAM_27.md) (post matni, alt matn, muqova).
+- **Hook kadr 0 da** (fade-in yo'q): to'q sariq fonda "62% KUYYAPTI", yonayotgan pullar, zarba ovozi.
+- **Xavfsiz zona:** matn y 250…1460, pastki o'ng ustun bo'sh (`IG`, `igSafe()`, `--safe` bilan tekshiriladi);
+  subtitrlar katta, Instagram izoh blokidan yuqorida (`igCaptions`).
+- **Loop:** oxirgi 0.6 s boshidagi kadrni qayta quradi (kadr 0 ≈ oxirgi kadr), ovozda riser kadr 0 zarbasiga ulanadi,
+  audio so'nishsiz. `boot({ fadeIn: 0, fadeOut: 0 })`.
+- **Izoh-CTA:** yakunda "IZOHGA YOZING: BYUDJET" + "saqlab qo'ying".
+- **Eksport:** H.264 High 4.1, 30 fps, AAC 48 kHz 256k, −14 LUFS; muqova `ADUZ_27-qism_cover.jpg`.
+
+**G'oya:** 3 000 000 so'm byudjet olti kanalga teng bo'linadi — tangalar uchadi; to'rtta kanal o'lik (botlar, ERR 0.1–0.4%):
+tangalar yonib ketadi, "kuydi" hisoblagichi o'sadi. *O'LIK KANAL · BOTLAR KO'RADI · PUL KUYDI*; 8.5 s: **KUL. — byudjetning
+62% i havoga**. Vakuum: oxirgi tanga yonib kulga aylanadi. Yangi o'tish: **barsWipe** (ekvalayzer ustunlari,
+"Optimallash."). Yechim: "Jonli optimizatsiya" yoqiladi → skaner har kanalni tekshiradi (STOP / FOYDALI) → "Qayta
+taqsimlash" → byudjet chiziqlari jonli kanallarga ko'chadi; tejaldi 1 860 000 so'm, 100% foydali kanalga. 18.5 s: **HAR
+SO'M ISHLAYDI.**; binafsha keyframe kartasi (TAHLIL → STOP → TAQSIMLASH → NATIJA). Natija: chiziqli fonda **×3**, Oldin ↔ ADUZ
+(hamma kanalga teng → faqat jonli kanallarga; 62% kuyadi → 0% isrof; natija taxmin → ×3 mijoz), nishonlar Tahlil · Taqsimot ·
+Foyda. Yakun: identity "ADUZ" + izoh-CTA → loop.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_27.md`](SOUND_ARCHITECTURE_27.md). 7-qism partiturasi 1 yarim ton yuqorida, pizzicato,
+xor Eb-major; tanga — fx.coin, o'lik kanal — fx.zap, jonli — tick_hi, skaner — fx.scan + fx.nope / ui.select.
+
+Namuna — tekshiring: 62%, 3 000 000 / 1 860 000 so'm, ×3, kanal nomlari va ERR qiymatlari, "jonli optimizatsiya" funksiyasi.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 

@@ -532,7 +532,8 @@ const DEFAULT_TRANSITIONS = [
   { a: 10.7, b: 11.3, fn: (t, a, b, A, B) => circleWipe(t, a, b, A, B, '#22e39a') },
   { a: 21.9, b: 22.4, fn: (t, a, b, A, B) => circleWipe(t, a, b, A, B, '#ffc83d') },
 ];
-function boot({ scene1, scene2, scene3, captions: caps, duration = 32, transitions = DEFAULT_TRANSITIONS, overlay = null }) {
+// fadeIn/fadeOut: black fades at the ends (Instagram Reels loop: 0 / 0).
+function boot({ scene1, scene2, scene3, captions: caps, duration = 32, transitions = DEFAULT_TRANSITIONS, overlay = null, fadeIn = .4, fadeOut = .5 }) {
   const [t1, t2] = transitions;
   function renderFrame(t) {
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H);
@@ -544,7 +545,7 @@ function boot({ scene1, scene2, scene3, captions: caps, duration = 32, transitio
     if (overlay) overlay(t);
     captions(t, caps);
     // fade from/to black
-    const fb = Math.max(1 - prog(t, 0, .4), prog(t, duration - .5, duration));
+    const fb = Math.max(fadeIn ? 1 - prog(t, 0, fadeIn) : 0, fadeOut ? prog(t, duration - fadeOut, duration) : 0);
     if (fb > 0) { ctx.fillStyle = `rgba(0,0,0,${fb})`; ctx.fillRect(0, 0, W, H); }
   }
   window.renderFrame = renderFrame;

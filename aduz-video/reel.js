@@ -220,7 +220,8 @@ function reelBadge(bx, by, label, col, drawGlyph, p) {
 }
 // Identity end card: letters fall into "ADUZ" along an arc, orbit ellipse with two satellites, orange underline,
 // mono strap line + serif italic tagline, CTA pill.
-function endCard(t, t0) {
+// cta: optional fn(t, t0) replacing the default CTA pill (e.g. a comment CTA for Instagram).
+function endCard(t, t0, cta = null) {
   const ep = prog(t, t0, t0 + .5);
   if (ep <= 0) return;
   withAlpha(ep, () => {
@@ -255,8 +256,9 @@ function endCard(t, t0) {
   if (ul > 0) { ctx.fillStyle = R.orange; ctx.fillRect(W / 2 - 380, 975, 760 * ul, 7); }
   scramble(t, t0 + 1.0, 'BIZNESINGIZ HIMOYACHISI', W / 2, 1035, 26, R.off, { dur: .8, track: .32 });
   withAlpha(prog(t, t0 + 1.3, t0 + 1.7), () => serif('Telegram reklama ekotizimi', W / 2, 1110, 58, R.off));
-  const cta = eBack(prog(t, t0 + 1.6, t0 + 2.0));
-  if (cta > 0) scaled(W / 2, 1290, cta * (1 + .03 * Math.sin(t * 6)), () => {
+  if (cta) { cta(t, t0); return; }
+  const cp = eBack(prog(t, t0 + 1.6, t0 + 2.0));
+  if (cp > 0) scaled(W / 2, 1290, cp * (1 + .03 * Math.sin(t * 6)), () => {
     rr(W / 2 - 300, 1240, 600, 100, 50); ctx.fillStyle = R.orange; ctx.fill();
     text('Hoziroq sinab koʻring', W / 2, 1292, 40, R.ink, 900, 'center', 'middle');
   });
@@ -291,4 +293,43 @@ function stripeWipe(t, a, b, drawA, drawB, word = '') {
   ctx.restore();
   if (word) { const wp = clamp((cover - .6) / .4); if (wp > 0) withAlpha(wp, () => {
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 40; serif(word, W / 2 + 6, H / 2, 200, R.violet); serif(word, W / 2, H / 2, 200, R.off); ctx.restore(); }); }
+}
+
+
+// ======================= Instagram Reels (27-qismdan) =======================
+// Safe area for 1080×1920 Reels: the app covers the top ~250 px (header), the bottom ~460 px (caption, username,
+// audio) and a right column ~170 px wide from y≈1060 (like / comment / share / remix). Keep text and key visuals in
+// x 60…900 below y 1060, y 250…1460 overall. igSafe() draws these zones when the page URL has '&safe' (QA stills).
+const IG = { top: 250, bottom: 1460, right: 910, rightFrom: 1060 };
+function igSafe() {
+  if (!location.search.includes('safe')) return;
+  ctx.save(); ctx.fillStyle = 'rgba(255,0,80,.28)';
+  ctx.fillRect(0, 0, W, IG.top); ctx.fillRect(0, IG.bottom, W, H - IG.bottom); ctx.fillRect(IG.right, IG.rightFrom, W - IG.right, IG.bottom - IG.rightFrom);
+  ctx.strokeStyle = '#ff0050'; ctx.lineWidth = 4; ctx.strokeRect(60, IG.top, W - 120, IG.bottom - IG.top); ctx.restore();
+}
+// Burned-in captions inside the Reels safe area (centre x 480, above the app's caption block).
+function igCaptions(t, list) {
+  for (const [a, b, s] of list) {
+    if (t < a || t > b) continue;
+    const al = Math.min(prog(t, a, a + .2), 1 - prog(t, b - .2, b));
+    const lines = wrap(s, 760, 44, 800), lh = 58, h = lines.length * lh + 34, cx = 480, y = 1410 - h;
+    withAlpha(al, () => {
+      rr(cx - 410, y, 820, h, 18); ctx.fillStyle = 'rgba(14,13,15,.88)'; ctx.fill();
+      ctx.fillStyle = R.orange; ctx.fillRect(cx - 410, y + 17, 6, h - 34);
+      lines.forEach((l, i) => text(l, cx, y + 17 + lh * i + lh / 2 + 2, 44, R.off, 800, 'center', 'middle'));
+    });
+  }
+}
+// Transition (27-qism): equalizer bars in the palette shoot up from the bottom and cover A, a serif word flashes,
+// then the bars drop away revealing B.
+function barsWipe(t, a, b, drawA, drawB, word = '') {
+  const p = prog(t, a, b), n = 12, bw = W / n;
+  (p < .5 ? drawA : drawB)(t);
+  for (let i = 0; i < n; i++) {
+    const d = Math.abs(i - (n - 1) / 2) / n, up = eOut(clamp((p * 2.2 - d * .6) / .6)), down = eIn(clamp(((p - .5) * 2.2 - d * .6) / .6));
+    const top = lerp(H, -20, up) + (H + 20) * down; if (top >= H) continue;
+    ctx.fillStyle = [R.orange, R.ink, R.violet, R.lime][i % 4]; ctx.fillRect(i * bw - 1, top, bw + 2, H - top);
+  }
+  if (word) { const wp = Math.sin(Math.PI * clamp((p - .3) / .4)); if (wp > 0) withAlpha(wp, () => {
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 40; serif(word, W / 2 - 60, H / 2 - 200, 170, R.off); ctx.restore(); }); }
 }

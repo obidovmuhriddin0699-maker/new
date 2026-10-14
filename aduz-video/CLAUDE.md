@@ -49,6 +49,15 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
 - Foydalanuvchi "barcha dizayn va ovozlar" so'rasa — shu rejim + butun ovoz kutubxonasi (sfx/ + oldingi qismlarning
   fx./tr./imp. sintez ovozlari + xor + pizzicato).
 
+## Instagram Reels rejimi (27-qismdan) — foydalanuvchi "Instagram uchun, rekka chiqish uchun" so'rasa
+- Hook kadr 0 da: `boot({ fadeIn: 0, fadeOut: 0 })`, birinchi kadrda katta raqam/savol + zarba ovozi.
+- Xavfsiz zona (`reel.js`: `IG`, `igSafe()`, `render.mjs --safe`): matn y 250…1460; y > 1060 da x ≤ 900.
+  Subtitr — `window.captions = igCaptions` (markaz x 480, pastki cheti y 1410). Pastdagi elementlar markazi `IGX = 480`.
+- Loop: oxirgi ~0.6 s da hook kadrini qayta qurish (`hookFrame(t - 32, t)`), audio — riser kadr 0 zarbasiga, render'da
+  so'nish o'rniga 20 ms anti-klik. Yakunda izoh-kalit so'z CTA (`endCard(t, t0, ctaFn)`) + "saqlab qo'ying".
+- Eksport: `-c:v libx264 -profile:v high -level 4.1 -pix_fmt yuv420p -crf 17 -r 30 -g 30 … -ar 48000 -c:a aac -b:a 256k`;
+  muqova `ADUZ_N-qism_cover.jpg` (hook kadri, subtitrsiz), `INSTAGRAM_N.md` (post matni, 3–5 heshteg, alt matn, joylash).
+
 ## Vizual effektlar (foydalanuvchi: "juda yoqdi, yanada efekt qil")
 - **FX v2** (`lib.js`, 20-qismdan): `rgbGlitch`, `punch`, `shine`, `inkSplat`, `flare`, `trail`, `pulseVignette`,
   `godRays`, `disintegrate`. Har qismda ko'p ishlatiladi: slamlarda glitch, voqealarda punch, tayyor kartalarda shine,
@@ -57,7 +66,7 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   `bounce`, `charsDown`, `letterUp`, `colorBounce`, `flicker`, `typewriter`, `blurUp`, `scale`, `wordRight`.
   Sarlavhalar, oltin slam, natija sarlavhasi va reklama kartalari shu presetlar bilan jonlantiriladi.
 - Ishlatilgan o'tishlar (takrorlamaslik uchun): circleWipe, clockWipe, zoomThrough, pixelDissolve, splitDoors, squeegee,
-  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23), gridWave (24), pocketZoom (25), stripeWipe (26, reel.js).
+  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23), gridWave (24), pocketZoom (25), stripeWipe (26, reel.js), barsWipe (27, reel.js).
 
 ## Ovoz
 - **SFX kutubxonasi** `sfx/` (39 ta, foydalanuvchi yuborgan SFX-to'plam videolaridan kesilgan): UI/o'tish/zarba

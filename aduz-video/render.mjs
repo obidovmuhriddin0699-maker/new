@@ -22,7 +22,8 @@ const FPS = 30;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 540, height: 960 } });
-await page.goto('file://' + path.resolve(dir, html) + '?render');
+// --safe draws the Instagram Reels UI zones over stills (QA only).
+await page.goto('file://' + path.resolve(dir, html) + '?render' + (process.argv.includes('--safe') ? '&safe' : ''));
 await page.evaluate(() => document.fonts.ready);
 const duration = await page.evaluate(() => window.DURATION);
 const grab = t => page.evaluate(t => { window.renderFrame(t); return document.getElementById('c').toDataURL('image/jpeg', 0.93).split(',')[1]; }, t);

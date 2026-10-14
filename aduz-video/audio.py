@@ -4194,7 +4194,161 @@ def render_26():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20, 21: render_21, 22: render_22, 23: render_23, 24: render_24, 25: render_25, 26: render_26}
+
+# ---------- 27-qism: Aqlli byudjet taqsimoti — INSTAGRAM REELS (hook 0-kadrda, loop, xavfsiz zona) ----------
+SOUNDS.update({
+    "mus.choir_eb": ("L1", lambda a=None: choir([63, 67, 70, 75], a or 2.5), "Xor 'aaah' Eb-major (heavenly uslub, original sintez)"),
+    "mus.choir_eb_hi": ("L1", lambda a=None: choir([75, 79, 82], a or 1.8, "o"), "Baland xor 'ooo' Eb-major"),
+    "fx.coin_v": ("L3", SOUNDS["fx.coin"][1], "Tanga (vakuum ichida eshitiladigan nusxa)"),
+})
+FRONT.update({"fx.coin_v"})
+_DROPS27 = [(2.0 + k * 0.38, k % 6) for k in range(18)]
+_LIVE27 = {1, 4}
+_KEYS27 = sorted({20.2 + 1.2 * _ease_inv(k) for k in (0, .06, .12, .28, .34, .5, .56, .62, .78, .84, .9)})
+
+CUES_27 = [
+    # --- HOOK (0-kadr = loop nuqtasi) ---
+    (0.0, "sfx.boom_sub", 0.95, 0, 0.3, 0, "HOOK: '62%' — kadr 0 dan zarba", None),
+    (0.0, "sfx.bass_drop", 0.7, 0, 0.3, 0, "'62%' og'ir grotesk", None),
+    (0.12, "sfx.bass_drop", 0.5, 0, 0.3, 0, "'KUYYAPTI'", 5),
+    (0.05, "fx.fizz", 0.14, 0.3, 0.2, 0, "Kuyayotgan pul shitirlashi", None),
+    (0.3, "sfx.swoosh_text", 0.2, 0, 0.2, 0, "Serif izoh", None),
+    (1.45, "sfx.glitch_short", 0.4, 0, 0.15, 0, "Keskin kesim → muammo", None),
+    (1.5, "sfx.swipe", 0.3, 0, 0.15, 0, "Kesim qatlami", None),
+    # --- 1. Muammo ---
+    (1.6, "amb.office", 0.06, 0, 0, 0, "Xona — sahna 'havosi'", 8.0),
+    (1.6, "sfx.type_burst", 0.26, 0, 0.15, 0, "'27-QISM' dekodlanadi", None),
+    (1.75, "sfx.bass_drop", 0.4, 0, 0.3, 0, "'BYUDJET'", 3),
+    *[(1.75 + i * 0.06, "sfx.pop_short", 0.14, round(-0.5 + 0.2 * i, 2), 0.2, 0, f"Kanal kartasi #{i + 1}", [0, 2, 4, 7, 9, 12][i]) for i in range(6)],
+    *[x for k, (a, ch) in enumerate(_DROPS27) for x in [
+        (a, "fx.coin", 0.07, round(-0.4 + 0.16 * ch, 2), 0.15, 0, f"Tanga → kanal #{ch + 1}", None),
+        ((a + 0.45, "sfx.tick_hi", 0.12, round(-0.4 + 0.16 * ch, 2), 0.2, 0.1, "Jonli kanal: foydali", 12) if ch in _LIVE27 else
+         (a + 0.45, "fx.zap", 0.1, round(-0.4 + 0.16 * ch, 2), 0.15, 0, "O'lik kanal: tanga yonib ketdi", None)),
+    ]],
+    *[x for at, pan, nm in ((5.6, -0.4, "O'LIK KANAL"), (6.6, 0.4, "BOTLAR KO'RADI"), (7.6, -0.4, "PUL KUYDI")) for x in [
+        (at, "sfx.stutter", 0.42, pan, 0.2, 0, f"Slab-karta: {nm}", None),
+        (at, "sfx.glitch_short", 0.5, pan, 0.2, 0, "Slam qatlami", None),
+    ]],
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [53, 56, 60, 65]),
+    (8.38, "sfx.riser_click", 0.3, 0, 0, 0, "Riser — cho'qqisi 9.5 s da", None),
+    (8.45, "sfx.whoosh_low", 0.35, 0, 0.2, 0, "To'q sariq kadr", None),
+    (8.5, "sfx.boom_sub", 0.9, 0, 0.35, 0, "KUL. — asosiy zarba", None),
+    (8.5, "sfx.bass_drop", 0.6, 0, 0.3, 0, "Zarba qatlami", None),
+    (8.5, "sfx.glitch_seq", 0.26, 0, 0.2, 0, "Zarba qatlami: glitch", None),
+    (8.55, "fx.fizz", 0.2, 0, 0.2, 0, "Kul uchqunlari", None),
+    # --- vakuum ---
+    (9.6, "fx.coin_v", 0.3, 0, 0.2, 0, "OVOZ VAKUUMI: oxirgi tanga tushadi", None),
+    (9.85, "fx.fizz", 0.3, 0, 0.1, 0, "...yonib ketadi", None),
+    (10.0, "sfx.dust", 0.3, 0.2, 0, 0, "...kulga aylanadi", None),
+    (9.95, "fx.heartbeat", 0.26, 0, 0, 0, "Yurak urishi", None),
+    # --- o'tish: barsWipe ---
+    (10.15, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: yechim akkordi (Eb-major)", [63, 67, 70, 75]),
+    (10.2, "mus.choir_eb", 1.2, 0, 0.6, 0.2, "HEAVENLY XOR — 'Optimallash.'", 2.8),
+    *[(10.3 + i * 0.03, "sfx.pop_short", 0.12, round(-0.5 + 0.09 * i, 2), 0.15, 0, f"Ekvalayzer ustuni #{i + 1}", [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26][i]) for i in range(12)],
+    (10.55, "sfx.shimmer", 0.3, 0, 0.4, 0.2, "'Optimallash.'", None),
+    (10.7, "sfx.whoosh_sweep", 0.25, 0, 0.25, 0, "Ustunlar tushadi", 7),
+    # --- 2. Yechim ---
+    (11.0, "sfx.boom_sub", 0.45, 0, 0.35, 0, "Yechim boshlanishi", None),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit", 10.7),
+    *[(11.25 + i * 0.12, "sfx.swoosh_text", 0.16, round(-0.4 + 0.27 * i, 2), 0.15, 0, f"UI-karta #{i + 1}", None) for i in range(4)],
+    (12.2, "sfx.click_1", 0.7, 0.3, 0, 0, "Jonli optimizatsiya — YONDI", None),
+    (12.22, "sfx.blip_up", 0.3, 0.3, 0.25, 0.2, "Toggle laym", None),
+    (12.55, "fx.scan", 0.22, 0, 0.2, 0, "Skaner kanallar bo'ylab", None),
+    *[((12.55 + 0.85 * (i + 0.5) / 6, "ui.select", 0.12, 0.3, 0.3, 0.2, f"Kanal #{i + 1}: FOYDALI", 75) if i in _LIVE27 else
+       (12.55 + 0.85 * (i + 0.5) / 6, "fx.nope", 0.16, -0.3, 0.15, 0, f"Kanal #{i + 1}: STOP", None)) for i in range(6)],
+    (13.7, "sfx.click_double_2", 0.7, 0.2, 0, 0, "'Qayta taqsimlash'", None),
+    (13.72, "fx.transfer", 0.3, 0, 0.2, 0, "Pul jonli kanallarga oqadi", None),
+    (13.75, "sfx.whoosh_sweep", 0.2, 0, 0.2, 0, "Budjet chiziqlari ko'chadi", 5),
+    (14.6, "sfx.ratchet_roll", 0.2, -0.3, 0.15, 0, "Tejaldi: 1 860 000", None),
+    *[(14.65 + k * 0.08, "fx.coin", 0.06, round(-0.4 + 0.1 * k, 2), 0.2, 0, f"Tanga #{k + 1}", None) for k in range(8)],
+    (15.4, "sfx.whoosh_sweep", 0.15, 0.3, 0.2, 0, "Donut 100%", 9),
+    (16.0, "mus.choir_eb_hi", 0.45, 0, 0.6, 0.2, "Xor 'ooo' — har so'm ishlaydi", 1.4),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: HAR SO'M ISHLAYDI oldidan", [67, 70, 75, 79]),
+    (18.45, "sfx.whoosh_low", 0.3, 0, 0.3, 0, "Laym kadr", None),
+    (18.5, "sfx.boom_sub", 0.8, 0, 0.35, 0, "HAR SO'M — zarba", None),
+    (18.5, "sfx.bass_drop", 0.5, 0, 0.3, 0, "Og'ir grotesk", None),
+    (18.6, "sfx.thump", 0.45, 0, 0.25, 0, "ISHLAYDI. — ikkinchi zarba", None),
+    (18.5, "mus.choir_eb", 0.8, 0, 0.6, 0.2, "Xor zarba ostida", 1.8),
+    (18.5, "imp.sparkle", 0.3, 0, 0.5, 0, "Uchqunlar", 331),
+    (18.8, "sfx.swoosh_text", 0.3, 0, 0.2, 0, "Serif izoh", None),
+    (19.7, "sfx.swipe", 0.3, 0, 0.2, 0, "Binafsha karta", None),
+    (20.0, "sfx.shimmer", 0.22, 0, 0.3, 0.2, "'Byudjet — aqlli taqsimotda.'", None),
+    *[(k, "sfx.tick_hi", 0.18, round(-0.45 + 0.9 * i / max(1, len(_KEYS27) - 1), 2), 0.25, 0.2, f"Keyframe #{i + 1}", [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24][i % 11]) for i, k in enumerate(_KEYS27)],
+    (21.35, "ui.success", 0.24, 0, 0.5, 0.3, "BYUDJET ISHLAYAPTI", None),
+    (20.63, "sfx.riser_click", 0.32, 0, 0, 0, "Riser — whip'ga", None),
+    (21.75, "sfx.whoosh_sweep", 0.42, 0, 0.25, 0, "Whip-pan", None),
+    (21.75, "sfx.swipe", 0.3, 0, 0.2, 0, "Whip qatlami", None),
+    # --- 3. Natija ---
+    (22.0, "sfx.boom_sub", 0.5, 0, 0.4, 0, "Natija boshlanishi", None),
+    (22.1, "sfx.bass_drop", 0.45, 0, 0.3, 0, "'×3' chiziqli fonda", 5),
+    (22.1, "sfx.whoosh_low", 0.2, 0, 0.2, 0, "Chiziqlar oqadi", 3),
+    (22.95, "sfx.type_burst", 0.25, 0, 0.15, 0, "'NATIJA'", None),
+    (23.0, "sfx.bass_drop", 0.3, 0, 0.3, 0, "'O'SHA PUL — ×3'", 7),
+    (23.2, "fx.kassa", 0.32, 0, 0.3, 0.2, "KASSA", None),
+    (23.22, "sfx.notify_ring", 0.22, 0.2, 0.25, 0.2, "Kassa qatlami", None),
+    *[(23.5 + i * 0.35, "sfx.swipe", 0.34, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[x for i in range(3) for x in [
+        (23.7 + i * 0.35, f"sfx.{CLICKS[i % 5]}", 0.4, 0.4, 0, 0, f"ADUZ qatori #{i + 1}", None),
+        (23.72 + i * 0.35, "ui.select", 0.13, 0.4, 0.3, 0.2, "Tonallikdagi tasdiq", [75, 79, 82][i]),
+    ]],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [67, 72, 75, 79]),
+    (25.0, "sfx.boom_sub", 0.45, 0, 0.4, 0, "Urg'u", None),
+    (25.0, "imp.sparkle", 0.35, 0, 0.5, 0, "Uchqunlar", 337),
+    *[x for i in range(3) for x in [
+        (25.2 + i * 0.25, "sfx.pop_short", 0.32, -0.4 + 0.4 * i, 0.3, 0, f"Rangli nishon #{i + 1}", [3, 8, 12][i]),
+        (25.22 + i * 0.25, "ui.select", 0.1, -0.4 + 0.4 * i, 0.3, 0, "Qo'ng'iroqcha", [79, 84, 87][i]),
+    ]],
+    (26.85, "sfx.whoosh_soft", 0.2, 0, 0.4, 0, "Yakuniy kadrga", None),
+    # --- yakun + loop ko'prigi ---
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (Eb tonikada)", 63),
+    (27.0, "mus.choir_eb", 0.5, 0, 0.6, 0.2, "Xor logotip ostida", 3.5),
+    *[(27.45 + i * 0.1, "sfx.thump", 0.28, round(-0.45 + 0.3 * i, 2), 0.2, 0, f"'{'ADUZ'[i]}' harfi tushadi", None) for i in range(4)],
+    (27.7, "sfx.whoosh_soft", 0.16, 0, 0.3, 0, "Orbita", 7),
+    (27.8, "sfx.swoosh_text", 0.22, 0, 0.2, 0, "Tagchiziq", None),
+    (28.0, "sfx.type_burst", 0.22, 0, 0.15, 0, "'BIZNESINGIZ HIMOYACHISI'", None),
+    (28.5, "sfx.bass_drop", 0.3, 0, 0.3, 0, "IZOHGA 'BYUDJET' — CTA", 7),
+    (28.52, "ui.select", 0.08, 0, 0.5, 0.4, "CTA qo'ng'iroqchasi", 87),
+    (28.9, "sfx.swoosh_text", 0.2, 0, 0.2, 0, "'saqlab qo'ying'", None),
+    (30.8, "sfx.riser_click", 0.3, 0, 0, 0, "LOOP: riser — cho'qqisi kadr 0 zarbasiga ulanadi", None),
+    (31.4, "sfx.whoosh_low", 0.3, 0, 0.2, 0, "LOOP: to'q sariq kadr qayta ochiladi", None),
+    (31.4, "sfx.glitch_short", 0.25, 0, 0.15, 0, "LOOP: glitch", None),
+]
+
+SCORE_27 = [
+    ("Format", "Instagram Reels uchun", "Hook kadr 0 da (fade-in yo'q), har 1–2 s da yangi voqea, matn xavfsiz zonada, katta subtitrlar (ovozsiz ko'rish), izoh-CTA va loop: oxirgi 0.6 s boshidagi kadrni qayta quradi, ovozda riser kadr 0 dagi zarbaga ulanadi. Audio — boshida/oxirida so'nish yo'q (20 ms anti-klik)."),
+    ("0:00–0:01.6", "HOOK", "Kadr 0 dan sub-boom + bass_drop ('62% KUYYAPTI'), kuyayotgan pul shitirlashi; 1.45 s keskin kesim (glitch + swipe)."),
+    ("0:01.6–0:09.5", "Muammo · D-minor + pizzicato", "7-qism aranjirovkasi 1 yarim ton yuqorida + pizzicato. 18 ta tanga oltita kanalga: jonli kanalda — tick_hi, o'lik kanalda — fx.zap (yonib ketadi). Slab-kartalar — stutter + glitch; 8.5 s KUL. — boom + fizz."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: oxirgi tanga tushadi (fx.coin_v), yonadi (fizz), kulga aylanadi (dust); yurak urishi."),
+    ("0:10.15–0:11", "Vahiy · barsWipe", "HEAVENLY XOR Eb-major'da; ekvalayzer ustunlari — 12 pog'onali pentatonik pop kaskadi, 'Optimallash.' — shimmer."),
+    ("0:11–0:21.75", "Yechim · Eb-major, siyrak", "Toggle — klik + blip; skaner — fx.scan, har kanal: STOP — fx.nope, FOYDALI — ui.select; qayta taqsimlash — qo'sh klik + fx.transfer; tejaldi — ratchet + tangalar. 18.5 s: HAR SO'M / ISHLAYDI. — ikki zarba + xor; keyframe'lar — tick_hi."),
+    ("0:22–0:27", "Natija · Eb-major, to'liq", "'×3' chiziqli fonda, kassa, nishonlar."),
+    ("0:27–0:32", "Yakun + loop", "Sonic logo (Eb) + xor, harflar, izoh-CTA 'BYUDJET'; 30.8 s riser + 31.4 s whoosh — loop orqali kadr 0 zarbasiga ulanadi."),
+]
+
+
+def score_27(M):
+    """7-qism partiturasi, 1 yarim ton yuqorida (F-minor → Eb-major)."""
+    global KEY_SHIFT
+    KEY_SHIFT = 1
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_27():
+    """27-qism (Instagram Reels): Score (+1) + pizzicato + xor + cue-sheet (CUES_27). Loop: so'nishsiz, 20 ms anti-klik."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # the last coin burns: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_27(M)
+    quirky_pizz(M, 1.6, 9.45, root=65, gain=0.36)
+    render_cues(M, CUES_27)
+    out = M.render()
+    out *= np.clip((DUR - t) / 0.02, 0, 1)[:, None] * np.clip(t / 0.005, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20, 21: render_21, 22: render_22, 23: render_23, 24: render_24, 25: render_25, 26: render_26, 27: render_27}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -4202,7 +4356,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20), 21: (CUES_21, SCORE_21), 22: (CUES_22, SCORE_22), 23: (CUES_23, SCORE_23), 24: (CUES_24, SCORE_24), 25: (CUES_25, SCORE_25), 26: (CUES_26, SCORE_26)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20), 21: (CUES_21, SCORE_21), 22: (CUES_22, SCORE_22), 23: (CUES_23, SCORE_23), 24: (CUES_24, SCORE_24), 25: (CUES_25, SCORE_25), 26: (CUES_26, SCORE_26), 27: (CUES_27, SCORE_27)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
