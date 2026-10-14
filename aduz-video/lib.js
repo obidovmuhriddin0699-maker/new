@@ -476,6 +476,18 @@ function sliceGlitch(t, a, b, drawA, drawB) {
     GLITCH_BANDS.forEach(([y, h, d], i) => { ctx.fillStyle = i % 2 ? '#00e5ff' : '#ff2bd6'; ctx.fillRect(0, y + h * (.5 + d * .3), W, 4); });
   });
 }
+// Transition: lights on — drawA goes dark, a fluorescent tube flickers (drawB on/off), then drawB stays lit.
+const FLICKER_ON = [[.30, .36], [.46, .52], [.62, 1.01]];   // in transition progress (shared with audio cues)
+function lightsOn(t, a, b, drawA, drawB) {
+  const p = prog(t, a, b);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  if (p < .25) { drawA(t); withAlpha(p / .25, () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }); return; }
+  const seg = FLICKER_ON.find(([s, e]) => p >= s && p < e);
+  if (!seg) return;
+  drawB(t);
+  const k = 1 - clamp((p - seg[0]) / .06);
+  withAlpha(.6 * k, () => { ctx.fillStyle = '#f0fff8'; ctx.fillRect(0, 0, W, H); });
+}
 // Film grain + vignette, frame-stable for rendering.
 let GRAIN = null;
 function filmLook(t, grain = .07, vignette = .38) {

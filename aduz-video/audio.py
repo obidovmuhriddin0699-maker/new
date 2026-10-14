@@ -2024,7 +2024,152 @@ def render_11():
     return out
 
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11}
+
+# ---------- 12-qism: Shaffof statistika va jonli tahlil ----------
+def fx_dart_throw():
+    return whoosh(0.32, 1500, 7000) * 0.8
+
+
+def fx_dart_hit():
+    x = seconds(0.6)
+    thunk = np.sin(2 * np.pi * np.cumsum(260 * 2 ** (-x * 6) + 90) / SR) * np.exp(-x / 0.04)
+    click = filt(rng.standard_normal(len(x)), "bandpass", [1800, 6000]) * np.exp(-x / 0.003) * 0.6
+    quiver = np.sin(2 * np.pi * 340 * x) * (0.5 + 0.5 * np.sin(2 * np.pi * 34 * x)) * np.exp(-x / 0.14) * 0.22
+    return np.tanh((thunk + click + quiver) * 1.3) * 0.9
+
+
+def fx_thunder():
+    x = seconds(2.2)
+    crack = filt(rng.standard_normal(len(x)), "highpass", 1800) * np.exp(-x / 0.03) * 0.8
+    roll = filt(rng.standard_normal(len(x)), "lowpass", 260) * np.exp(-x / 0.7) * (0.6 + 0.4 * np.sin(2 * np.pi * 3.1 * x) * np.sin(2 * np.pi * 1.3 * x)) * 2.2
+    return np.tanh((crack + roll) * 1.1) * 0.85
+
+
+def fx_breaker():
+    x = seconds(0.35)
+    return np.tanh(layer(tone(70, 0.35, "sine", 0.001, 0.08) * 1.2, filt(rng.standard_normal(len(x)), "lowpass", 900) * np.exp(-x / 0.02), fx_switch() * 0.8) * 1.2)
+
+
+def fx_flicker(dur=0.06):
+    x = seconds(dur + 0.03)
+    buzz = filt(2 * ((120 * x) % 1) - 1, "bandpass", [200, 2400]) + np.sin(2 * np.pi * 60 * x) * 0.5
+    ping = filt(rng.standard_normal(len(x)), "highpass", 4000) * np.exp(-x / 0.006) * 0.6
+    return (buzz * np.clip(x / 0.004, 0, 1) * np.clip((dur + 0.03 - x) / 0.03, 0, 1) + ping) * 0.6
+
+
+def fx_blip(note=82):
+    return layer(tone(m(note), 0.09, "pluck", 0.002, 0.06) * 0.6, bell(m(note + 12), 0.15, 0.8, 0.05) * 0.25)
+
+
+def fx_bar(note=70):
+    x = seconds(0.4)
+    return np.sin(2 * np.pi * np.cumsum(m(note) * 2 ** (x / 0.4)) / SR) * np.exp(-x / 0.12) * np.clip(x / 0.01, 0, 1) * 0.5
+
+
+SOUNDS.update({
+    "fx.dart_throw": ("L3", lambda a=None: fx_dart_throw(), "Dart uchishi: qisqa, yuqori chastotali 'fiyyu'"),
+    "fx.dart_hit": ("L3", lambda a=None: fx_dart_hit(), "Dart tegishi: yog'och 'tuk' + dumning titrashi"),
+    "fx.thunder": ("L5", lambda a=None: fx_thunder(), "Chaqmoq: keskin 'chars' + past gumburlash"),
+    "fx.breaker": ("L5", lambda a=None: fx_breaker(), "Elektr shiti yoqiladi: og'ir 'klak'"),
+    "fx.flicker": ("L3", lambda a=None: fx_flicker(a or 0.06), "Lyuminessent lampa: g'uvullab miltillash"),
+    "fx.blip": ("L3", lambda a=None: fx_blip(a or 82), "Issiqlik xaritasi katagi: tonallikdagi 'blip'"),
+    "fx.bar": ("L3", lambda a=None: fx_bar(a or 70), "Shahar ustuni o'sadi: ko'tariluvchi ton"),
+    "fx.ding": ("L3", lambda a=None: ding(a or 932.3), "Tavsiya lampochkasi: 'ding'"),
+})
+FRONT.update({"fx.dart_hit", "fx.breaker", "fx.flicker"})
+
+BB_PENT = [70, 72, 74, 77, 79, 82, 84, 86, 89, 91, 94]
+_dpan = lambda x: round((x - 540) / 540 * 0.6, 2)
+_DARTS_12 = [(1.4, 300), (2.3, 840), (3.2, 470), (4.1, 760), (5.0, 230), (5.9, 640), (6.8, 900), (7.7, 380)]
+
+CUES_12 = [
+    (0.0, "amb.office", 0.08, 0, 0, 0, "Qorong'i xona — sahna 'havosi'", 9.6),
+    (0.2, "fx.switch", 0.16, -0.2, 0.2, 0, "Fonar yoqiladi", None),
+    (0.8, "ui.popup", 0.12, 0, 0.2, 0, "Reklama posti: 'Statistika mavjud emas'", 62),
+    *[(at - 0.35, "fx.dart_throw", 0.14, _dpan(x) * 0.5, 0.15, 0, f"Dart #{i + 1} otildi", None) for i, (at, x) in enumerate(_DARTS_12)],
+    *[(at, "fx.dart_hit", 0.3, _dpan(x), 0.3, 0.15, f"Dart #{i + 1} — qorong'ida tegdi", None) for i, (at, x) in enumerate(_DARTS_12)],
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: NATIJA?", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: KIM KO'RDI?", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: QACHON?", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: chaqmoq oldidan", [56, 60, 63, 68]),
+    (8.5, "fx.thunder", 0.55, 0, 0.3, 0, "CHAQMOQ — strob bilan bir kadrda", None),
+    (8.5, "imp.boom", 0.65, 0, 0.4, 0, "QORONG'IDA — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.3, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.28, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.6, "fx.dart_throw", 0.16, 0.3, 0, 0, "OVOZ VAKUUMI: yana bitta o'q...", None),
+    (9.95, "fx.dart_hit", 0.32, 0.5, 0, 0, "...tegdimi, yo'qmi — noma'lum", None),
+    (9.95, "fx.heartbeat", 0.36, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (Bb-major)", [58, 62, 65, 70]),
+    (10.55, "fx.breaker", 0.5, 0, 0, 0, "Chiroq kaliti: 'KLAK'", None),
+    (10.58, "fx.flicker", 0.3, -0.2, 0, 0, "Lampa miltillashi #1", 0.036),
+    (10.676, "fx.flicker", 0.3, 0.2, 0, 0, "Lampa miltillashi #2", 0.036),
+    (10.772, "fx.flicker", 0.24, 0, 0, 0, "Lampa yonib qoladi", 0.3),
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi — CHIROQ YONDI", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    *[(at, "fx.tick", 0.05, 0.35, 0, 0, "Jonli hisoblagich", None) for at in np.arange(11.5, 18.25, 0.5)],
+    *[(12.0 + k * 1.6 / 18, "fx.blip", 0.07, -0.5 + k / 17, 0.2, 0.2, f"Issiqlik katagi diagonali {k + 1}/18", BB_PENT[k % 11]) for k in range(18)],
+    *[(13.7 + i * 0.12, "imp.glitch", 0.1, 0.3, 0.2, 0, f"Qaynoq katak #{i + 1}", None) for i in range(3)],
+    *[(13.8 + i * 0.14, "fx.bar", 0.14, -0.2, 0.2, 0.15, f"Shahar ustuni #{i + 1}", [70, 74, 77, 79, 82][i]) for i in range(5)],
+    (15.2, "fx.ding", 0.24, 0.1, 0.35, 0.3, "Tavsiya: 20:00 ga ko'chiring", None),
+    (16.0, "ui.tap", 0.35, 0.3, 0, 0, "'Qo'llash' bosildi", None),
+    (16.2, "ui.select", 0.22, 0.3, 0.3, 0.2, "Qo'llandi ✓", 82),
+    *[(16.5 + k * 0.15, "fx.blip", 0.1, 0.4 - 0.08 * k, 0.25, 0.25, f"+ko'rish #{k + 1}", [82, 84, 86, 89, 91, 94][k]) for k in range(6)],
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: CHIROQ YONDI oldidan", [62, 65, 70, 74]),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "CHIROQ YONDI — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 29),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Hammasi ko'z oldingizda oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    *[(at - 0.25, "fx.dart_throw", 0.12, 0, 0.15, 0, f"Nishonga dart #{i + 1}", None) for i, at in enumerate((22.5, 22.8, 23.1, 23.4))],
+    *[(at, "fx.dart_hit", 0.26, 0, 0.3, 0.15, f"Markazga tegdi #{i + 1}", None) for i, at in enumerate((22.5, 22.8, 23.1, 23.4))],
+    *[(at + 0.02, "ui.select", 0.1, 0.2, 0.3, 0.2, f"Tegdi — tasdiq #{i + 1}", [77, 82, 86, 89][i]) for i, at in enumerate((22.5, 22.8, 23.1, 23.4))],
+    *[(23.5 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[(23.7 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [74, 77, 82][i]) for i in range(3)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [65, 70, 74, 77]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 31),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [82, 86, 89][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (Bb tonikada)", 58),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 89),
+]
+
+SCORE_12 = [
+    ("0:00–0:09.5", "Muammo · C-minor, tashvishli minimal", "7-qism aranjirovkasi 4 yarim ton pastda: qorong'i pad, offbeat Rhodes, filtrlangan bas, 5.5 s dan kick. Ustida 8 ta dart — har biri uchish 'fiyyu' + yog'och 'tuk', panorama dart tushgan joyga mos. 8.5 s da chaqmoq strob bilan bir kadrda."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: musiqa o'chadi; qorong'ida yana bitta dart uchadi va tegadi — ko'rinmaydi, faqat eshitiladi ('tegdimi, yo'qmi — noma'lum'). Yurak urishi. Keyin J-cut swell Bb-major'da."),
+    ("0:10.55–0:11", "Chiroq yonishi", "Elektr shiti 'KLAK' → lyuminessent lampa ikki marta miltillab yonadi; ovoz tasvirdagi miltillash kadrlari bilan sinxron (10.58 / 10.68 / 10.77 s)."),
+    ("0:11–0:21.75", "Yechim · Bb-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: jonli hisoblagich tiqillashi, issiqlik xaritasi diagonallari Bb-pentatonik zinapoyada, shahar ustunlari ko'tariluvchi tonlar, tavsiya 'ding', 'Qo'llash' → ko'rishlar o'sishi (yuqoriga yuruvchi blip)."),
+    ("0:22–0:27", "Natija · Bb-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. To'rtta dart nishon markaziga — har tegishda tonallikdagi tasdiq ohangi."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (Bb tonikada), so'nish."),
+]
+
+
+def score_12(M):
+    """7-qism partiturasi, 4 yarim ton pastda."""
+    global KEY_SHIFT
+    KEY_SHIFT = -4
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_12():
+    """12-qism: Shaffof statistika va jonli tahlil. Score + cue-sheet (CUES_12)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # dart in the dark: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_12(M)
+    render_cues(M, CUES_12)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -2032,7 +2177,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)

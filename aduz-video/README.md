@@ -16,6 +16,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 9 | `ADUZ_9-qism.mp4` | Aqlli kampaniya yaratish |
 | 10 | `ADUZ_10-qism.mp4` | Matching algoritmi ishda |
 | 11 | `ADUZ_11-qism.mp4` | Kafolatlangan xavfsizlik (Escrow) |
+| 12 | `ADUZ_12-qism.mp4` | Shaffof statistika va jonli tahlil |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -281,6 +282,37 @@ uchqunlar), muz erishi (tomchilar). Musiqa — 7-qism aranjirovkasi 5 yarim ton 
 | 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
 
 Escrow shartlari (24 soat, avtomatik qaytarish, bot tekshiruvi) ssenariy asosidagi namuna — ADUZ'ning haqiqiy to'lov qoidalari bilan solishtiring.
+
+## 12-qism: "Shaffof statistika va jonli tahlil"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: **chiroq yonishi** (yangi `lightsOn`: qorong'ilik →
+ikki marta miltillab lyuminessent lampa yonadi) va whip-pan.
+
+**G'oya:** muammo — "qorong'ida o'q uzish". Qorong'i xonada faqat fonar nuri yuradi; reklama posti ostida "Statistika mavjud emas".
+Dartlar birin-ketin qorong'ilikka otiladi — qayerga tekkani ko'rinmaydi. 8.5 s da chaqmoq xonani bir lahzaga yoritadi: dartlar
+nishonning hamma joyiga sochilib ketgan — **QORONG'IDA**. Vakuumda yana bitta dart uchadi — faqat eshitiladi ("tegdimi, yo'qmi —
+noma'lum"). Yechim — chiroq yonadi: "Jonli tahlil" ekrani, hozir ko'rayotganlar hisoblagichi, haftalik **issiqlik xaritasi** (kun × soat,
+qaynoq kataklar 20:00 atrofida), shaharlar bo'yicha ulush, tavsiya "postni 20:00 ga ko'chiring ≈ +38% ko'rish" → "Qo'llash" → ko'rishlar
+o'sadi. Natija — yoritilgan nishon, to'rtta dart markazga.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_12.md`](SOUND_ARCHITECTURE_12.md). Yangi tovushlar: dart uchishi, dart tegishi (yog'och "tuk" + dum
+titrashi), chaqmoq, elektr shiti "klak", lyuminessent lampa miltillashi (tasvirdagi miltillash kadrlari bilan sinxron), issiqlik
+xaritasi "blip"lari (Bb-pentatonik zinapoya), shahar ustunlari, tavsiya "ding". Musiqa — 7-qism aranjirovkasi 4 yarim ton pastda
+(C-minor → Bb-major). Sonic logo Bb tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "12-QISM · Jonli tahlil". Qorong'i xona, fonar nuri, "Farg'ona Style — reklama posti · Statistika mavjud emas". Dartlar qorong'ilikka otiladi; hisoblagich: N ta reklama · ? natija · 0 ma'lumot | Reklama berdingiz — lekin kim, qachon, qayerda ko'rdi? Qorong'i. |
+| 0:05–0:10.5 | 1. Muammo | *NATIJA? · KIM KO'RDI? · QACHON?*. 8.5 s: chaqmoq — **QORONG'IDA — natijani ko'rmay reklama**. Keyin to'liq qorong'ilik (ovoz vakuumi) | Har bir reklama — qorong'ida otilgan o'q... tegdimi, yo'qmi — noma'lum. |
+| 0:10.4–0:11 | O'tish | Chiroq yonishi (ikki miltillash) | — |
+| 0:11–0:16 | 2. Yechim | "Jonli tahlil · 1 2xx hozir". Issiqlik xaritasi to'ladi, qaynoq kataklar belgilanadi. "Shaharlar": Farg'ona 31% · Marg'ilon 27% · Qo'qon 18% · Andijon 14% · Namangan 10%. Tavsiya: "postni 20:00 ga ko'chiring ≈ +38% ko'rish" | ADUZ'da hammasi jonli: issiqlik xaritasi qachon va qayerda ko'rishayotganini ko'rsatadi. |
+| 0:16–0:22 | 2. Yechim | "Qo'llash" → "Vaqt: 19:00 → 20:00 ✓", ko'rishlar o'sadi (+N). 18.5 s: **CHIROQ YONDI — har bir ko'rish jonli**. "Hammasi ko'z oldingizda!" | Tavsiyani bir bosishda qo'llaysiz — ko'rishlar darhol oshadi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Har bir reklama — nishonga": yoritilgan nishon, 4 dart markazda. Oldin (qorong'ida otish; qachon? — noma'lum; qayerda? — noma'lum) ↔ ADUZ (jonli tahlil; eng faol: 20:00; eng faol: Farg'ona). Nishonlar: Jonli · Issiqlik xaritasi · Tavsiyalar | Endi har bir reklama — nishonga. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Raqamlar (shaharlar ulushi, ko'rayotganlar soni, "+38% ko'rish", eng faol soat 20:00) — namuna. Tavsiya va "bir bosishda qo'llash"
+funksiyasi ssenariy asosida — ADUZ'ning haqiqiy statistika imkoniyatlari bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 
