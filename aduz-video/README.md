@@ -23,6 +23,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 16 | `ADUZ_16-qism.mp4` | Bot va mutaxassis hamkorligi |
 | 17 | `ADUZ_17-qism.mp4` | Topilgan daromadning erkinligi |
 | 18 | `ADUZ_18-qism.mp4` | Mukammallik formulasi (A/B test) |
+| 19 | `ADUZ_19-qism.mp4` | Mikro-kanallar kuchi |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -504,6 +505,43 @@ A|B chizig'i "zzzip". Poygada A — chapda past, B — o'ngda baland "blip"lar. 
 
 Raqamlar (byudjet, test ulushi 10%, CTR 0.4% / 0.9% / 2.7%, bosishlar, ×6.7) va dizayn matnlari — namuna. A/B test funksiyasi
 (test byudjeti, g'olibni aniqlash, byudjetni bir bosishda ko'chirish) ssenariy asosida — ADUZ'ning haqiqiy imkoniyatlari bilan solishtiring.
+
+## 19-qism: "Mikro-kanallar kuchi"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). **Birinchi qism — foydalanuvchi SFX kutubxonasi
+([`sfx/`](sfx/README.md)) bilan:** barcha UI, o'tish va zarba ovozlari namunalardan; sintez faqat musiqiy qismlarda.
+O'tishlar: tarmoq yonishi → piksel erishi (`pixelDissolve`) va whip-pan.
+
+**G'oya:** muammo — "e'tibordan chetdagi kichik kanallar". "Kanal tanlash · saralash: obunachilar ↓": markazda ulkan
+**Mega UZ** pufagi (250 000 obunachi, 4 000 000 so'm), atrofida o'nlab xira kichik kanallar — ularning faolligi (8–13%)
+goh-goh lipillab ko'rinadi. Butun byudjet gigantga: 31 000 ko'rish, 190 reaksiya, faollik 0.6%, "1 reaksiya ≈ 21 000 so'm".
+*FAQAT GIGANT · QIMMAT · FAOLLIK 0.6%*. 8.5 s: **BITTA GIGANT — qimmat, lekin jonsiz**. Vakuumda gigant pufakning havosi
+chiqadi; keyin kichik nuqtalar birin-ketin yonib, tarmoqqa ulanadi. Yechim — ADUZ "Mikro-tarmoq": 40 ta kanal grafigi →
+filtrlar "2k–15k obunachi" va "Faollik > 8%" → 25 kanal, 201 000 obunachi, o'rtacha faollik 10.7%, byudjet o'sha →
+"Tarmoqqa joylash" → yorug'lik to'lqini tugundan tugunga → 19 700 reaksiya (Mega UZ: 190), "×100 reaksiya".
+Natija — 1 gigant (0.6%) vs 25 mikro (10.7%) oltin to'plam, kassa.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_19.md`](SOUND_ARCHITECTURE_19.md). Kutubxonadan: kliklar va qo'sh klik (tanlash, to'lash,
+filtrlar), pop_swish (tugunlar yonishi — D-pentatonik bo'yicha balandligi o'zgartirilgan, `smp(name, semis)`), swipe,
+whoosh_soft / whoosh_sweep (kirish, whip), riser_click (cho'qqisi kesimga to'g'rilangan), stutter + glitch_short (slamlar),
+glitch_seq, notify_pop / notify_ring, hit_low / hit_chime + boom_sub (zarbalar), tick / tick_roll / ratchet_roll
+(hisoblagichlar). Vakuumda gigantning havosi chiqishi — whoosh_sweep 7 yarim ton pastda. Musiqa — 7-qism aranjirovkasi
+asl tonallikda (E-minor → D-major).
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "19-QISM · Mikro-kanallar kuchi". Katalog: Mega UZ gigant pufagi, atrofida xira kichik kanallar → gigant tanlanadi → "Butun byudjetni berish" | Hamma faqat katta kanalga intiladi — kichiklar e'tibordan chetda. |
+| 0:05–0:10.55 | 1. Muammo | 31 000 ko'rish, 190 reaksiya, 0.6%, "1 reaksiya ≈ 21 000 so'm". *FAQAT GIGANT · QIMMAT · FAOLLIK 0.6%*. 8.5 s: **BITTA GIGANT**. 9.5 s: pufak havosi chiqadi (ovoz vakuumi), kichik nuqtalar tarmoqqa ulanadi | Butun byudjet bitta gigantga — reaksiya esa deyarli yo'q... havosi chiqdi. |
+| 0:10.55–0:11 | O'tish | Piksel erishi (yashil) | — |
+| 0:11–0:16 | 2. Yechim | "Mikro-tarmoq": filtrlar → 25 kanal · 201 000 obunachi · 10.7% → "Tarmoqqa joylash" → yorug'lik to'lqini | ADUZ'da faol mikro-kanallar tarmog'ini tanlaysiz — bir bosishda. |
+| 0:16–0:22 | 2. Yechim | 19 700 reaksiya, "×100 reaksiya". 18.5 s: **MIKRO-KUCH — kichik kanallar, katta faollik**. "Mikro-tarmoq ishda!" | Xuddi shu byudjet — yuz barobar ko'p reaksiya. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | 1 gigant 0.6% vs 25 mikro 10.7% (kassa). Oldin (bitta qimmat gigant; faollik 0.6%; kichiklar e'tiborsiz) ↔ ADUZ (25 ta mikro-kanal; faollik 10.7%; har biri ishda). Nishonlar: Mikro-tarmoq · Faollik · Tejamkor | Kichik kanallar — katta kuch. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Raqamlar (obunachilar, narx, ko'rish va reaksiyalar, faollik foizlari, ×100) — namuna; tarmoq tugunlari kodda tasodifiy
+(lekin har renderda bir xil) yaratiladi. Filtrlar va "tarmoqqa joylash" funksiyasi ssenariy asosida — ADUZ'ning haqiqiy
+imkoniyatlari bilan solishtiring.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 

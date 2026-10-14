@@ -3020,12 +3020,17 @@ SFX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sfx")
 _SMP = {}
 
 
-def smp(name):
+def smp(name, semis=0):
+    """Kutubxona namunasi; semis ≠ 0 bo'lsa — yarim tonlarga siljitilgan (tezlik bilan birga, 'varispeed')."""
     if name not in _SMP:
         with wave.open(os.path.join(SFX_DIR, name + ".wav")) as w:
             assert w.getframerate() == SR and w.getnchannels() == 1
             _SMP[name] = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(float) / 32768
-    return _SMP[name].copy()
+    x = _SMP[name]
+    if not semis:
+        return x.copy()
+    r = 2 ** (semis / 12)
+    return np.interp(np.arange(0, len(x) - 1, r), np.arange(len(x)), x)
 
 
 SFX_LIB = {
@@ -3042,7 +3047,7 @@ SFX_LIB = {
     "stutter": ("L5", "Stutter: 10 ta tez zarb"), "glitch_short": ("L5", "Qisqa yuqori glitch (0.4 s)"),
     "tick": ("L3", "Mayda tik"), "tick_roll": ("L3", "8 ta bir tekis tik (hisoblagich/yozish)"), "boom_sub": ("L5", "Sub-boom (≈58 Hz) + dum"),
 }
-SOUNDS.update({f"sfx.{n}": (lay, (lambda a=None, n=n: smp(n)), d) for n, (lay, d) in SFX_LIB.items()})
+SOUNDS.update({f"sfx.{n}": (lay, (lambda a=None, n=n: smp(n, a or 0)), d) for n, (lay, d) in SFX_LIB.items()})
 CLICKS = ["click_1", "click_2", "click_3", "click_4", "click_5"]
 
 
@@ -3050,7 +3055,116 @@ def sfx_riser(at, end):
     """riser_click shunday joylashtiriladi-ki, uning cho'qqisi `end` ga to'g'ri keladi."""
     return end - 1.12
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18}
+
+# ---------- 19-qism: Mikro-kanallar kuchi (birinchi bo'lib sfx/ kutubxonasi bilan) ----------
+SOUNDS.update({
+    "sfx.deflate": ("L5", lambda a=None: smp("whoosh_sweep", -7), "Gigant pufak havosi chiqadi: whoosh_sweep −7 yarim ton"),
+})
+FRONT.update({"sfx.deflate"})
+_RISE = [0, 2, 4, 7, 9, 12, 9, 12, 14, 16, 19, 21]   # D-pentatonik bo'yicha yarim tonlar (pop_swish uchun)
+_ck = lambda i: f"sfx.{CLICKS[i % 5]}"
+
+CUES_19 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "sfx.whoosh_soft", 0.2, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    (0.6, "sfx.tick_roll", 0.14, -0.3, 0.2, 0, "Katalog: kichik kanallar xira paydo bo'ladi", None),
+    (1.6, _ck(0), 0.7, 0.1, 0, 0, "Gigant tanlandi", None),
+    (1.62, "sfx.pop_swish", 0.25, 0.1, 0.2, 0, "Gigant kattalashadi", None),
+    (2.6, "sfx.click_double_1", 0.7, 0.2, 0, 0, "'Butun byudjetni berish'", None),
+    (2.7, "sfx.notify_ring", 0.3, 0.2, 0.25, 0, "To'landi", None),
+    (3.0, "sfx.ratchet_roll", 0.22, -0.2, 0.1, 0, "Ko'rishlar sanalmoqda", None),
+    *[(3.6 + k * 0.62, "sfx.tick", 0.18, round(((k * 5) % 9 - 4) * 0.15, 2), 0.3, 0.3, f"Kichik kanal faolligi lipillaydi #{k + 1}", 12) for k in range(8)],
+    (6.0, "sfx.notify_pop", 0.32, 0, 0.2, 0, "1 reaksiya ≈ 21 000 so'm", -3),
+    *[x for at, pan, nm in ((5.6, -0.4, "FAQAT GIGANT"), (6.6, 0.4, "QIMMAT"), (7.6, -0.4, "FAOLLIK 0.6%")) for x in [
+        (at, "sfx.stutter", 0.42, pan, 0.2, 0, f"Slam: {nm}", None),
+        (at, "sfx.glitch_short", 0.5, pan, 0.2, 0, "Slam qatlami", None),
+    ]],
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [52, 55, 59, 64]),
+    (8.38, "sfx.riser_click", 0.3, 0, 0, 0, "Riser — cho'qqisi 9.5 s da, gate kesadi", None),
+    (8.5, "sfx.boom_sub", 0.9, 0, 0.35, 0, "BITTA GIGANT — asosiy zarba", None),
+    (8.5, "sfx.hit_low", 0.6, 0, 0.4, 0, "Zarba qatlami: tonal", None),
+    (8.5, "sfx.glitch_seq", 0.28, 0, 0.2, 0, "Zarba qatlami: glitch", None),
+    (9.55, "sfx.deflate", 0.6, 0, 0, 0, "OVOZ VAKUUMI: gigantning havosi chiqadi", None),
+    (9.95, "fx.heartbeat", 0.28, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (D-major)", [62, 66, 69, 74]),
+    *[(10.15 + k * 0.033, "sfx.pop_swish", 0.16, round(-0.6 + k * 0.11, 2), 0.3, 0.2, f"Mikro-kanal yonadi #{k + 1}", _RISE[k]) for k in range(12)],
+    (10.55, "sfx.glitch_seq", 0.26, 0, 0.2, 0, "Piksel eriydi — tarmoq ochiladi", None),
+    (11.0, "sfx.boom_sub", 0.5, 0, 0.35, 0, "Yechim boshlanishi", None),
+    (11.0, "sfx.hit_chime", 0.32, 0, 0.4, 0.2, "Yechim: tonal urg'u", None),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "sfx.whoosh_soft", 0.2, -0.3, 0.2, 0, "Telefon kiradi", None),
+    (11.3, "sfx.tick_roll", 0.22, 0, 0.2, 0.15, "Tarmoq tugunlari paydo bo'ladi", None),
+    *[x for i, at in enumerate((11.9, 12.4)) for x in [
+        (at, _ck(i + 1), 0.7, -0.3 + 0.5 * i, 0, 0, f"Filtr #{i + 1}", None),
+        (at + 0.02, "ui.select", 0.14, -0.3 + 0.5 * i, 0.25, 0.2, "Filtr tasdig'i (tonallikda)", [74, 78][i]),
+        (at + 0.1, "sfx.swipe", 0.28, 0.2, 0.15, 0, "Mos kelmaganlar so'nadi", None),
+    ]],
+    (12.8, "sfx.pop_swish", 0.3, 0, 0.2, 0, "Xulosa: 25 kanal", 4),
+    (12.85, "sfx.ratchet_roll", 0.18, 0.2, 0.1, 0, "Obunachilar sanalmoqda", None),
+    (14.0, "sfx.click_double_2", 0.7, 0.2, 0, 0, "'Tarmoqqa joylash'", None),
+    (14.05, "sfx.whoosh_soft", 0.18, 0, 0.25, 0, "Post tarmoqqa ketdi", None),
+    *[(14.2 + k * 0.1, "sfx.pop_swish", 0.17, round(-0.6 + k * 0.11, 2), 0.3, 0.25, f"Yorug'lik to'lqini: tugun #{k + 1}", _RISE[k]) for k in range(12)],
+    (14.4, "sfx.ratchet_roll", 0.2, -0.2, 0.1, 0, "Reaksiyalar o'smoqda", None),
+    (15.6, "sfx.ratchet_roll", 0.16, 0.2, 0.1, 0, "Reaksiyalar o'smoqda", None),
+    (16.6, "sfx.notify_ring", 0.36, 0.3, 0.25, 0.2, "×100 reaksiya", None),
+    (16.62, "ui.success", 0.2, 0.3, 0.4, 0.2, "Musiqiy tasdiq", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: MIKRO-KUCH oldidan", [66, 69, 74, 78]),
+    (18.5, "sfx.boom_sub", 0.8, 0, 0.35, 0, "MIKRO-KUCH — zarba", None),
+    (18.5, "sfx.hit_chime", 0.5, 0, 0.4, 0.2, "Zarba qatlami: tonal", None),
+    (18.5, "imp.sparkle", 0.35, 0, 0.5, 0, "Oltin uchqunlar", 239),
+    (19.7, "sfx.swipe", 0.3, 0, 0.2, 0, "Oyna ko'tariladi", None),
+    (19.9, "ui.success", 0.26, 0, 0.5, 0.3, "Mikro-tarmoq ishda", None),
+    (20.63, "sfx.riser_click", 0.32, 0, 0, 0, "Riser — cho'qqisi whip'da (21.75 s)", None),
+    (21.75, "sfx.whoosh_sweep", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (21.75, "sfx.swipe", 0.3, 0, 0.2, 0, "Whip qatlami", None),
+    (22.0, "sfx.boom_sub", 0.6, 0, 0.4, 0, "Natija boshlanishi", None),
+    (22.0, "sfx.hit_low", 0.4, 0, 0.4, 0, "Zarba qatlami", None),
+    (22.2, "sfx.pop_swish", 0.3, -0.4, 0.2, 0, "1 gigant", -5),
+    (22.4, "sfx.tick_roll", 0.28, 0.4, 0.2, 0.2, "25 mikro-kanal to'planadi", None),
+    *[(22.45 + k * 0.1, "sfx.pop_swish", 0.14, 0.4, 0.3, 0.2, f"Mikro #{k + 1}", _RISE[k + 2]) for k in range(6)],
+    (23.2, "fx.kassa", 0.32, 0, 0.3, 0.2, "KASSA — 10.7% faollik", None),
+    (23.22, "sfx.notify_ring", 0.24, 0.2, 0.25, 0.2, "Kassa qatlami", None),
+    *[(23.5 + i * 0.35, "sfx.swipe", 0.34, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[x for i in range(3) for x in [
+        (23.7 + i * 0.35, _ck(i + 2), 0.4, 0.4, 0, 0, f"ADUZ qatori #{i + 1}", None),
+        (23.72 + i * 0.35, "ui.select", 0.13, 0.4, 0.3, 0.2, "Tonallikdagi tasdiq", [74, 78, 81][i]),
+    ]],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [66, 71, 74, 78]),
+    (25.0, "sfx.boom_sub", 0.45, 0, 0.4, 0, "Urg'u", None),
+    (25.0, "imp.sparkle", 0.4, 0, 0.5, 0, "Uchqunlar", 241),
+    *[x for i in range(3) for x in [
+        (25.2 + i * 0.25, "sfx.pop_swish", 0.3, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [7, 12, 16][i]),
+        (25.22 + i * 0.25, "ui.select", 0.1, -0.4 + 0.4 * i, 0.3, 0, "Tonallikdagi qo'ng'iroqcha", [81, 86, 90][i]),
+    ]],
+    (26.85, "sfx.whoosh_soft", 0.2, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (D tonikada)", 62),
+    (28.3, _ck(0), 0.35, 0.2, 0.3, 0.3, "CTA tugmasi", None),
+    (28.32, "ui.select", 0.07, 0.2, 0.5, 0.4, "CTA qo'ng'iroqchasi", 90),
+]
+
+SCORE_19 = [
+    ("Ovoz manbai", "Foydalanuvchi SFX kutubxonasi (sfx/)", "Birinchi qism: barcha UI, o'tish va zarba ovozlari foydalanuvchi yuborgan namunalardan (sfx.*): kliklar, qo'sh klik, pop_swish, swipe, whoosh, riser_click, stutter/glitch, notify, hit_low/hit_chime, boom_sub, tik va ratchet. Sintez faqat musiqiy qismlarda: partitura, J-cut swell, tonallikdagi qo'ng'iroqchalar (ui.select), success, uchqunlar, sonic logo, kassa."),
+    ("0:00–0:09.5", "Muammo · E-minor, tashvishli minimal", "7-qism aranjirovkasi asl tonallikda. Ustida: gigant tanlash (klik + pop), 'butun byudjet' (qo'sh klik + ding), hisoblagich (ratchet), kichik kanallar faolligi yuqori tik bilan lipillaydi, slamlar — stutter + qisqa glitch."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: gigant pufakning havosi chiqadi (whoosh_sweep 7 yarim ton pastda), yurak urishi. Keyin J-cut swell D-major'da."),
+    ("0:10.15–0:11", "Tarmoq yonadi", "12 ta pop_swish D-pentatonik zinapoyada chapdan o'ngga — kichik kanallar birin-ketin yonadi; piksel erishida glitch ketma-ketligi."),
+    ("0:11–0:21.75", "Yechim · D-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: filtrlar (klik + tonallik qo'ng'irog'i + swipe), 'Tarmoqqa joylash' (qo'sh klik), yorug'lik to'lqini — 12 ta ko'tariluvchi pop, reaksiya hisoblagichi (ratchet), ×100 — notify_ring."),
+    ("0:22–0:27", "Natija · D-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. Gigant — past pop, mikro-kanallar — tik + ko'tariluvchi poplar, kassa + ding; taqqoslash — swipe + klik."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (D tonikada), so'nish."),
+]
+
+
+def render_19():
+    """19-qism: Mikro-kanallar kuchi. Score (7-qism, asl tonallik) + cue-sheet (CUES_19), SFX — sfx/ kutubxonasi."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # the giant deflates: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_7(M)
+    render_cues(M, CUES_19)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -3058,7 +3172,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
