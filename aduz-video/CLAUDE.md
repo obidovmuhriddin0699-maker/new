@@ -29,7 +29,8 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
 ## Dizayn (24-qismdan): "MOTION REEL" mavzu — foydalanuvchi referens videosi (showreel, 15 s)
 - Foydalanuvchi: "keyingi qism grafik dizaynini shu video dizaynidan tayyorla va bu uslubni saqlab qo'y".
   Sahifada `<script src="lib.js"></script><script src="reel.js"></script>` (neon.js o'rniga). Ikkala mavzu saqlanadi;
-  keyingi qismlar uchun foydalanuvchi boshqasini aytmaguncha — oxirgi so'ralgan uslub (reel).
+  keyingi qismlar uchun foydalanuvchi boshqasini aytmaguncha — oxirgi so'ralgan uslub (reel). 26-qism: foydalanuvchi
+  "24-qism dizaynida" deb so'radi — reel uslubi tasdiqlangan asosiy uslub.
 - Ranglar `R.*`: ink #0e0d0f, warm #1c1311 (identity foni), paper #e9e7e2 (yechim/UI foni), card #f7f6f3,
   off #efece4, orange #f04a1e (asosiy aksent, muammo kesimi, tagchiziq), lime #d6f03a (ijobiy, "javob bor"),
   violet #6a5cf2 (ikkinchi aksent, keyframe kartasi, halftone). Ko'p rang — faqat panjara/konfetti/nishonlarda.
@@ -56,7 +57,7 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   `bounce`, `charsDown`, `letterUp`, `colorBounce`, `flicker`, `typewriter`, `blurUp`, `scale`, `wordRight`.
   Sarlavhalar, oltin slam, natija sarlavhasi va reklama kartalari shu presetlar bilan jonlantiriladi.
 - Ishlatilgan o'tishlar (takrorlamaslik uchun): circleWipe, clockWipe, zoomThrough, pixelDissolve, splitDoors, squeegee,
-  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23), gridWave (24), pocketZoom (25).
+  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23), gridWave (24), pocketZoom (25), stripeWipe (26, reel.js).
 
 ## Ovoz
 - **SFX kutubxonasi** `sfx/` (39 ta, foydalanuvchi yuborgan SFX-to'plam videolaridan kesilgan): UI/o'tish/zarba
@@ -70,4 +71,6 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   original sintezda: `choir()` — "heavenly" xor "aaah" (vahiy/yechim ochilishi, oltin slam, logotip ostida),
   `quirky_pizz()` — Dexter kayfiyatidagi o'ynoqi-sirli pizzicato (muammo sahnasi). Referens tahlili: Dexter ≈108 BPM
   E-major, Romance ≈161 BPM D-minor (vokal), Heavenly — D-minor atrofida xor.
+- FRONT to'plamiga mavjud ovozni qo'shmang (eski qismlar ovozi o'zgaradi) — vakuumda kerak bo'lsa alohida nom bilan
+  nusxa qiling (masalan `fx.chain_snap_v`).
 - Litsenziya eslatmasi: sfx/ namunalari boshqa muallifning SFX to'plami reklamasidan — e'lon qilishdan oldin ruxsat olish.

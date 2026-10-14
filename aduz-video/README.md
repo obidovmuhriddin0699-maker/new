@@ -30,6 +30,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 23 | `ADUZ_23-qism.mp4` | Iliq mijozlarni qaytarish (birinchi neon qism) |
 | 24 | `ADUZ_24-qism.mp4` | Doimiy hamroh — 24/7 yordam (birinchi "motion reel" qism) |
 | 25 | `ADUZ_25-qism.mp4` | Mutlaq erkinlik — mobil boshqaruv (uchala dizayn + butun ovoz kutubxonasi) |
+| 26 | `ADUZ_26-qism.mp4` | Ulashing va daromad ko'ring — referal havola ("motion reel", 24-qism dizayni) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -773,6 +774,41 @@ partiturasi 5 yarim ton yuqorida.
 Namuna — tekshiring: kanal nomlari, 290 000 so'm, 128 000 obunachi, +50 000 byudjet, "ko'rishlar 2x", +18 buyurtma,
 72%, +3 / +50% / 0 kutish va mobil ilova funksiyalari (buyurtmani tasdiqlash, byudjetni o'zgartirish, avto-optimallash,
 avto-javob) — ADUZ mobil ilovasining haqiqiy imkoniyatlari bilan solishtiring.
+
+## 26-qism: "Ulashing va daromad ko'ring"
+
+**"Motion reel" uslubi — 24-qism dizaynida** (foydalanuvchi so'rovi). HUD ramka, to'q sariq / laym / binafsha palitra,
+og'ir grotesk + serif italik + mono, slab-kartalar, butun kadrli rangli kesimlar, qog'oz fonda UI kartalar, binafsha
+keyframe kartasi, identity yakuni. Yangi o'tish: **stripeWipe** — diagonal to'q sariq chiziqlar kengayib kadrni yopadi,
+"Ulashing." so'zi, so'ng ochiladi. Natija boshida — **halftone** fonda "10%".
+
+**G'oya:** siz ADUZ'ni sakkiz do'stingizga tavsiya qilasiz — tavsiya tarmoq bo'ylab qog'oz samolyot bo'lib uchadi,
+har do'st "+1 ro'yxat" bilan yashil bo'ladi, sizning hamyoningiz esa "0 SO'M"da qoladi (har qo'shilishda titraydi).
+*BEPUL REKLAMA · RAHMAT HAM YO'Q · 0 SO'M*; 8.5 s: to'q sariq kadr **BEHUDA. — tavsiyangiz boshqalarga foyda**.
+Vakuum: aloqalar uziladi, "0 SO'M" shovqinga aylanib sochiladi. Yechim: "Referal havola" kartasi (aduz.uz/r/AZIZ24 →
+NUSXA), ULASHISH → beshta do'st, ro'yxatdan o'tganlar (+15 000 so'mdan), daromad 1 240 000 so'm/oy, har to'lovdan 10%,
+oylik ustunlar — "Siz uxlaysiz — havola ishlaydi.". 18.5 s: laym kadr **PASSIV DAROMAD. — bir havola, doimiy foyda**;
+binafsha karta "Ulashing — daromad ko'ring." (HAVOLA → RO'YXAT → TO'LOV → DAROMAD, "HISOBGA TUSHDI"). Natija: "10%",
+TAVSIYA = DAROMAD, Oldin ↔ ADUZ, nishonlar Havola · Referal · Daromad, zarracha sfera.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_26.md`](SOUND_ARCHITECTURE_26.md). 7-qism partiturasi 2 yarim ton yuqorida (F#-minor →
+E-major), pizzicato, xor E-major (`mus.choir_e`); tavsiya — fx.send, qo'shilish — blip_up, ro'yxat — pop_swish + tanga,
+vakuumda aloqalar uziladi (fx.chain_snap).
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:04.5 | 1. Muammo | "26-QISM · ULASHING". Tavsiya tarmog'i: 8 do'st qo'shiladi, hamyon 0 so'm | Do'stlarga tavsiya qildingiz — hammasi ro'yxatdan o'tdi... |
+| 0:04.5–0:10.3 | 1. Muammo | *BEPUL REKLAMA · RAHMAT HAM YO'Q · 0 SO'M*. 8.5 s: **BEHUDA.** Vakuum: aloqalar uziladi | ...sizga esa — nol. Rahmat ham yo'q. ...behuda mehnat. |
+| 0:10.3–0:11 | O'tish | stripeWipe + "Ulashing." + xor | — |
+| 0:11–0:16 | 2. Yechim | Referal havola → nusxa → ulashish → ro'yxatlar (+15 000) | ADUZ referal havolasi: ulashing — har ro'yxatdan foiz oling. |
+| 0:16–0:21.75 | 2. Yechim | 1 240 000 so'm/oy, 10%, oylik ustunlar. 18.5 s: **PASSIV DAROMAD.** Keyframe kartasi | Siz uxlaysiz — havola ishlaydi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | Halftone "10%". Oldin (bepul tavsiya; rahmat ham yo'q; bir martalik) ↔ ADUZ (har tavsiyadan foiz; hisobga pul; passiv, har oy). Nishonlar | Tavsiya — endi daromad. |
+| 0:27–0:32 | Yakun | Identity "ADUZ", orbita, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Namuna — tekshiring: referal dasturining o'zi va shartlari (10% komissiya, ro'yxat uchun +15 000 so'm, "har oy"
+passiv to'lov), havola formati (aduz.uz/r/…), 1 240 000 so'm/oy va do'st ismlari — ADUZ'ning haqiqiy referal shartlari
+bilan almashtiring.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 

@@ -278,3 +278,17 @@ function gridWave(t, a, b, drawA, drawB, word = '') {
   if (word) { const wp = Math.sin(Math.PI * clamp((p - .32) / .4)); if (wp > 0) withAlpha(wp, () => {
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 30; serif(word, W / 2 - 6, H / 2, 210, R.violet); serif(word, W / 2 + 6, H / 2, 210, R.orange); serif(word, W / 2, H / 2, 210, R.off); ctx.restore(); }); }
 }
+
+// Transition (26-qism): diagonal orange stripes widen until they cover A (ink between them), a serif word flashes,
+// then they thin out over B. word: optional.
+function stripeWipe(t, a, b, drawA, drawB, word = '') {
+  const p = prog(t, a, b), cover = Math.sin(Math.PI * p), period = 180;
+  (p < .5 ? drawA : drawB)(t);
+  withAlpha(clamp(cover * 1.4) ** 3, () => { ctx.fillStyle = R.ink; ctx.fillRect(0, 0, W, H); });
+  const w = period * .5 * eInOut(clamp(cover * 1.15)), off = (p * 900) % period;
+  ctx.save(); ctx.fillStyle = R.orange;
+  for (let x = -H - period + off; x < W + H; x += period) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + w, 0); ctx.lineTo(x + w + H, H); ctx.lineTo(x + H, H); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+  if (word) { const wp = clamp((cover - .6) / .4); if (wp > 0) withAlpha(wp, () => {
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 40; serif(word, W / 2 + 6, H / 2, 200, R.violet); serif(word, W / 2, H / 2, 200, R.off); ctx.restore(); }); }
+}

@@ -4055,7 +4055,146 @@ def render_25():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20, 21: render_21, 22: render_22, 23: render_23, 24: render_24, 25: render_25}
+
+# ---------- 26-qism: Ulashing va daromad ko'ring — "motion reel" uslubi (24-qism dizayni) ----------
+SOUNDS.update({
+    "mus.choir_e": ("L1", lambda a=None: choir([64, 68, 71, 76], a or 2.5), "Xor 'aaah' E-major (heavenly uslub, original sintez)"),
+    "mus.choir_e_hi": ("L1", lambda a=None: choir([76, 80, 83], a or 1.8, "o"), "Baland xor 'ooo' E-major"),
+})
+SOUNDS["fx.chain_snap_v"] = ("L5", SOUNDS["fx.chain_snap"][1], "Zanjir uziladi (vakuum ichida eshitiladigan nusxa)")
+FRONT.update({"fx.chain_snap_v"})
+_SEND26 = [1.0 + i * 0.55 for i in range(8)]
+_JOIN26 = [13.6, 14.2, 14.8, 15.4]
+_KEYS26 = sorted({20.2 + 1.2 * _ease_inv(k) for k in (0, .06, .24, .3, .36, .5, .56, .62, .74, .8, .86, .92)})
+
+CUES_26 = [
+    (0.0, "amb.office", 0.07, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.1, "sfx.type_burst", 0.3, 0, 0.15, 0, "'26-QISM' dekodlanadi", None),
+    (0.12, "sfx.swoosh_text", 0.25, 0, 0.2, 0, "To'q sariq chiziq + shkala", None),
+    (0.45, "sfx.bass_drop", 0.45, 0, 0.3, 0, "'ULASHING' — og'ir grotesk slam", 3),
+    *[(0.5 + i * 0.06, "sfx.pop_short", 0.14, round(-0.6 + 0.17 * i, 2), 0.2, 0, f"Do'st tuguni #{i + 1}", [0, 2, 4, 7, 9, 12, 14, 16][i]) for i in range(8)],
+    *[x for i, a in enumerate(_SEND26) for x in [
+        (a, "fx.send", 0.16, round(-0.6 + 0.17 * i, 2), 0.15, 0, f"Tavsiya yuborildi #{i + 1}", None),
+        (a + 0.55, "sfx.blip_up", 0.16, round(-0.6 + 0.17 * i, 2), 0.2, 0.1, f"Do'st ro'yxatdan o'tdi #{i + 1}", i),
+        (a + 0.6, "sfx.click_soft", 0.25, 0.5, 0.1, 0, "Hamyon: hamon 0 so'm", None),
+    ]],
+    *[x for at, pan, nm in ((5.6, -0.4, "BEPUL REKLAMA"), (6.6, 0.4, "RAHMAT HAM YO'Q"), (7.6, -0.4, "0 SO'M")) for x in [
+        (at, "sfx.stutter", 0.42, pan, 0.2, 0, f"Slab-karta: {nm}", None),
+        (at, "sfx.glitch_short", 0.5, pan, 0.2, 0, "Slam qatlami", None),
+    ]],
+    (7.6, "fx.nope", 0.25, -0.4, 0.15, 0, "0 so'm — rad", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [54, 57, 61, 66]),
+    (8.38, "sfx.riser_click", 0.3, 0, 0, 0, "Riser — cho'qqisi 9.5 s da", None),
+    (8.45, "sfx.whoosh_low", 0.35, 0, 0.2, 0, "To'q sariq karta butun kadrga", None),
+    (8.5, "sfx.boom_sub", 0.9, 0, 0.35, 0, "BEHUDA. — asosiy zarba", None),
+    (8.5, "sfx.bass_drop", 0.6, 0, 0.3, 0, "Zarba qatlami: bass drop", None),
+    (8.5, "sfx.glitch_seq", 0.26, 0, 0.2, 0, "Zarba qatlami: glitch", None),
+    (8.62, "fx.coin", 0.2, 0.4, 0.2, 0, "Chizib tashlangan tanga", None),
+    (9.6, "fx.chain_snap_v", 0.3, 0, 0, 0, "OVOZ VAKUUMI: aloqalar uziladi", None),
+    (9.8, "sfx.letters_fall", 0.35, 0, 0, 0, "'0 SO'M' shovqinga aylanadi", None),
+    (10.0, "sfx.dust", 0.3, 0.2, 0, 0, "...va sochiladi", None),
+    (9.95, "fx.heartbeat", 0.26, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: yechim akkordi (E-major)", [64, 68, 71, 76]),
+    (10.2, "mus.choir_e", 1.2, 0, 0.6, 0.2, "HEAVENLY XOR 'aaah' — 'Ulashing.'", 2.8),
+    (10.3, "sfx.whoosh_sweep", 0.35, 0, 0.25, 0, "Chiziqlar kadrni yopadi", 3),
+    (10.62, "sfx.shimmer", 0.3, 0, 0.4, 0.2, "'Ulashing.' serif so'zi", None),
+    (10.7, "sfx.whoosh_sweep", 0.25, 0, 0.25, 0, "Chiziqlar ochiladi", 7),
+    (11.0, "sfx.boom_sub", 0.45, 0, 0.35, 0, "Yechim boshlanishi", None),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit", 10.7),
+    *[(11.25 + i * 0.12, "sfx.swoosh_text", 0.16, round(-0.4 + 0.2 * i, 2), 0.15, 0, f"UI-karta #{i + 1}", None) for i in range(5)],
+    (12.3, "sfx.click_1", 0.7, 0.3, 0, 0, "'NUSXA' — havola nusxalandi", None),
+    (12.32, "sfx.tick_hi", 0.25, 0.3, 0.25, 0.2, "Nusxalandi", 12),
+    (12.95, "sfx.click_double_2", 0.6, 0.3, 0, 0, "'ULASHISH'", None),
+    *[(13.0 + i * 0.06, "fx.send", 0.12, round(-0.5 + 0.2 * i, 2), 0.15, 0, f"Havola do'stga #{i + 1}", None) for i in range(5)],
+    *[x for i, a in enumerate(_JOIN26) for x in [
+        (a, "sfx.pop_swish", 0.28, 0.3, 0.15, 0, f"Ro'yxatdan o'tdi #{i + 1}", [0, 2, 4, 7][i]),
+        (a + 0.12, "fx.coin", 0.22, 0.4, 0.2, 0, "+15 000 so'm", None),
+    ]],
+    (15.6, "sfx.ratchet_roll", 0.2, -0.3, 0.15, 0, "Daromad sanaladi → 1 240 000", None),
+    (15.62, "fx.transfer", 0.22, -0.3, 0.2, 0, "Hisobga tushmoqda", None),
+    (16.1, "sfx.whoosh_sweep", 0.15, 0.3, 0.2, 0, "Donut 10%", 9),
+    (16.6, "sfx.tick_roll", 0.18, 0, 0.2, 0.1, "Oylik ustunlar o'sadi", 5),
+    (17.0, "mus.choir_e_hi", 0.45, 0, 0.6, 0.2, "Xor 'ooo' — 'havola ishlaydi'", 1.4),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: PASSIV DAROMAD oldidan", [68, 71, 76, 80]),
+    (18.45, "sfx.whoosh_low", 0.3, 0, 0.3, 0, "Laym karta butun kadrga", None),
+    (18.5, "sfx.boom_sub", 0.8, 0, 0.35, 0, "PASSIV — zarba", None),
+    (18.5, "sfx.bass_drop", 0.5, 0, 0.3, 0, "Og'ir grotesk", None),
+    (18.6, "sfx.thump", 0.45, 0, 0.25, 0, "DAROMAD. — ikkinchi zarba", None),
+    (18.5, "mus.choir_e", 0.8, 0, 0.6, 0.2, "Xor 'aaah' zarba ostida", 1.8),
+    (18.5, "imp.sparkle", 0.3, 0, 0.5, 0, "Uchqunlar", 331),
+    (18.8, "sfx.swoosh_text", 0.3, 0, 0.2, 0, "'bir havola — doimiy foyda'", None),
+    (19.7, "sfx.swipe", 0.3, 0, 0.2, 0, "Binafsha karta", None),
+    (20.0, "sfx.shimmer", 0.22, 0, 0.3, 0.2, "'Ulashing — daromad ko'ring.'", None),
+    *[(k, "sfx.tick_hi", 0.18, round(-0.45 + 0.9 * i / max(1, len(_KEYS26) - 1), 2), 0.25, 0.2, f"Keyframe #{i + 1}", [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26][i % 12]) for i, k in enumerate(_KEYS26)],
+    (21.35, "fx.kassa", 0.2, 0, 0.3, 0.2, "HISOBGA TUSHDI", None),
+    (20.63, "sfx.riser_click", 0.32, 0, 0, 0, "Riser — whip'ga", None),
+    (21.75, "sfx.whoosh_sweep", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (21.75, "sfx.swipe", 0.3, 0, 0.2, 0, "Whip qatlami", None),
+    (22.0, "sfx.boom_sub", 0.5, 0, 0.4, 0, "Natija boshlanishi", None),
+    (22.1, "sfx.bass_drop", 0.45, 0, 0.3, 0, "'10%' halftone fonda", 5),
+    (22.1, "sfx.shimmer", 0.18, 0, 0.3, 0.2, "Halftone to'lqinlari", None),
+    (22.95, "sfx.type_burst", 0.25, 0, 0.15, 0, "'NATIJA' dekodlanadi", None),
+    (23.0, "sfx.bass_drop", 0.3, 0, 0.3, 0, "'TAVSIYA = DAROMAD'", 7),
+    (23.2, "fx.kassa", 0.32, 0, 0.3, 0.2, "KASSA", None),
+    (23.22, "sfx.notify_ring", 0.22, 0.2, 0.25, 0.2, "Kassa qatlami", None),
+    *[(23.5 + i * 0.35, "sfx.swipe", 0.34, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[x for i in range(3) for x in [
+        (23.7 + i * 0.35, f"sfx.{CLICKS[(i + 4) % 5]}", 0.4, 0.4, 0, 0, f"ADUZ qatori #{i + 1}", None),
+        (23.72 + i * 0.35, "ui.select", 0.13, 0.4, 0.3, 0.2, "Tonallikdagi tasdiq", [76, 80, 83][i]),
+    ]],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [68, 73, 76, 80]),
+    (25.0, "sfx.boom_sub", 0.45, 0, 0.4, 0, "Urg'u", None),
+    (25.0, "imp.sparkle", 0.35, 0, 0.5, 0, "Uchqunlar", 337),
+    *[x for i in range(3) for x in [
+        (25.2 + i * 0.25, "sfx.pop_short", 0.32, -0.4 + 0.4 * i, 0.3, 0, f"Rangli nishon #{i + 1}", [4, 9, 13][i]),
+        (25.22 + i * 0.25, "ui.select", 0.1, -0.4 + 0.4 * i, 0.3, 0, "Qo'ng'iroqcha", [80, 85, 88][i]),
+    ]],
+    (25.6, "sfx.shimmer", 0.25, 0, 0.4, 0.2, "Zarrachalar sferaga yig'iladi", None),
+    (26.85, "sfx.whoosh_soft", 0.2, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (E tonikada)", 64),
+    (27.0, "mus.choir_e", 0.5, 0, 0.6, 0.2, "Xor logotip ostida", 3.5),
+    *[(27.45 + i * 0.1, "sfx.thump", 0.28, round(-0.45 + 0.3 * i, 2), 0.2, 0, f"'{'ADUZ'[i]}' harfi tushadi", None) for i in range(4)],
+    (27.7, "sfx.whoosh_soft", 0.16, 0, 0.3, 0, "Orbita", 7),
+    (27.8, "sfx.swoosh_text", 0.22, 0, 0.2, 0, "Tagchiziq", None),
+    (28.0, "sfx.type_burst", 0.22, 0, 0.15, 0, "'BIZNESINGIZ HIMOYACHISI'", None),
+    (28.6, "sfx.pop_short", 0.3, 0.2, 0.3, 0.2, "CTA", 7),
+    (28.62, "ui.select", 0.07, 0.2, 0.5, 0.4, "CTA qo'ng'iroqchasi", 88),
+]
+
+SCORE_26 = [
+    ("Ovoz manbai", "sfx/ kutubxonasi + reel uslubi (24-qism dizayni)", "Reel grafik qurilmalarining ovozlari 24-qismdagidek (scramble — type_burst, og'ir grotesk — bass_drop, keyframe — tick_hi, harflar — thump); mavzuga xos: tavsiya yuborish — fx.send, do'st qo'shilishi — blip_up (har safar yuqoriroq), hamyon — 'bo'sh' click_soft; yechimda har ro'yxat — pop_swish + fx.coin, daromad — ratchet + fx.transfer."),
+    ("0:00–0:09.5", "Muammo · F#-minor + pizzicato", "7-qism aranjirovkasi 2 yarim ton yuqorida + pizzicato. Sakkiz tavsiya, sakkiz 'qo'shildi' — har biriga hamyondan bo'sh klik javob beradi. Slab-kartalar — stutter + glitch, '0 SO'M' — fx.nope; 8.5 s to'q sariq kadr."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: aloqalar uziladi (fx.chain_snap), '0 SO'M' shovqinga aylanib sochiladi; yurak urishi."),
+    ("0:10.15–0:11", "Vahiy · stripeWipe", "HEAVENLY XOR E-major'da; chiziqlar kadrni yopadi/ochadi (whoosh_sweep ×2), 'Ulashing.' — shimmer."),
+    ("0:11–0:21.75", "Yechim · E-major, siyrak", "Nusxa — klik + tick, ulashish — qo'sh klik + beshta fx.send, har ro'yxat — pop_swish + tanga, daromad hisoblagichi — ratchet + transfer, xor 'ooo'. 18.5 s: PASSIV / DAROMAD. — ikki zarba. Keyframe'lar — ko'tariluvchi tick_hi, 'HISOBGA TUSHDI' — kassa."),
+    ("0:22–0:27", "Natija · E-major, to'liq", "'10%' halftone fonda — bass_drop + shimmer; to'liq baraban; kassa."),
+    ("0:27–0:32", "Yakun · brend", "Sonic logo (E tonikada) + xor; harflar tushishi, orbita, scramble, CTA."),
+]
+
+
+def score_26(M):
+    """7-qism partiturasi, 2 yarim ton yuqorida (F#-minor → E-major)."""
+    global KEY_SHIFT
+    KEY_SHIFT = 2
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_26():
+    """26-qism: Ulashing va daromad ko'ring. Score (+2) + pizzicato + xor + cue-sheet (CUES_26)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # the links snap: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_26(M)
+    quirky_pizz(M, 1.0, 9.45, root=66, gain=0.38)
+    render_cues(M, CUES_26)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20, 21: render_21, 22: render_22, 23: render_23, 24: render_24, 25: render_25, 26: render_26}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -4063,7 +4202,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20), 21: (CUES_21, SCORE_21), 22: (CUES_22, SCORE_22), 23: (CUES_23, SCORE_23), 24: (CUES_24, SCORE_24), 25: (CUES_25, SCORE_25)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20), 21: (CUES_21, SCORE_21), 22: (CUES_22, SCORE_22), 23: (CUES_23, SCORE_23), 24: (CUES_24, SCORE_24), 25: (CUES_25, SCORE_25), 26: (CUES_26, SCORE_26)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
