@@ -24,6 +24,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 17 | `ADUZ_17-qism.mp4` | Topilgan daromadning erkinligi |
 | 18 | `ADUZ_18-qism.mp4` | Mukammallik formulasi (A/B test) |
 | 19 | `ADUZ_19-qism.mp4` | Mikro-kanallar kuchi |
+| 20 | `ADUZ_20-qism.mp4` | Qonuniy va oq savdo (B2B) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -542,6 +543,39 @@ asl tonallikda (E-minor → D-major).
 Raqamlar (obunachilar, narx, ko'rish va reaksiyalar, faollik foizlari, ×100) — namuna; tarmoq tugunlari kodda tasodifiy
 (lekin har renderda bir xil) yaratiladi. Filtrlar va "tarmoqqa joylash" funksiyasi ssenariy asosida — ADUZ'ning haqiqiy
 imkoniyatlari bilan solishtiring.
+
+## 20-qism: "Qonuniy va oq savdo (B2B)"
+
+7-qism uslubida; ovoz — [`sfx/`](sfx/README.md) kutubxonasi. O'tishlar: **varaq ag'darilishi** (`cardFlip`) va whip-pan.
+
+**G'oya:** muammo — "buxgalteriya va qonuniy hujjatlar". Bosh buxgalter Nodira bilan chat: "Reklama xarajatlari bo'yicha
+hujjatlar qani?" — "Adminlarga kartadan o'tkazganman..." — "Shartnoma? Hisob-faktura? Dalolatnoma?" → ro'yxat: uchalasi ham
+"✕ yo'q" → "Bu xarajatni hisobdan chiqarib bo'lmaydi". Soliq xizmati xabari: "3 kun ichida hujjatlarni taqdim eting". Fonda
+g'ijimlangan cheklar yog'iladi. *SHARTNOMA YO'Q · FAKTURA YO'Q · NAQD · KARTA*. 8.5 s: **QORA XARAJAT — buxgalteriyada teshik**.
+Vakuumda kadrga qizil **"RAD ETILDI"** muhri uriladi. Yechim — ADUZ "Hujjatlar": "Vodiy Textile MChJ · STIR" → "Yuridik shaxs
+sifatida to'lash" → avtomatik: Shartnoma (oferta) ✓, Hisob-varaq ✓, Elektron hisob-faktura (ESF) — **E-IMZO** muhri ✓,
+Bajarilgan ishlar dalolatnomasi ✓ → "Buxgalteriyaga eksport (1C)" → hujjatlar buxgalterga uchadi, javob: "Rahmat! Hammasi
+joyida, hisobga oldim." Natija — to'rt hujjat kartasi va yashil **TASDIQLANDI** muhri, kassa.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_20.md`](SOUND_ARCHITECTURE_20.md). Kutubxonadan: chat (notify_pop / pop_swish), "✕" lar
+(pastga tushuvchi glitch_short), soliq xabari (notify_ring pastroq), slamlar (stutter + glitch_short), zarbalar (boom_sub,
+hit_low, hit_chime, glitch_seq), riser_click, varaq ag'darilishi (ikki swipe), hujjatlar (pop → klik), eksport (qo'sh klik +
+ko'tariluvchi whoosh_sweep). Yangi yig'ma ovoz: **sfx.stamp_big** — boom_sub + hit_low (−5) + qo'sh klik (−12), vakuumdagi
+"RAD ETILDI" uchun. Musiqa — 7-qism aranjirovkasi 6 yarim ton yuqorida (Bb-minor → Ab-major). Sonic logo Ab tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "20-QISM · Oq savdo". Buxgalter chati, hujjatlar ro'yxati: Shartnoma ✕, Hisob-faktura (ESF) ✕, Dalolatnoma ✕ | Reklamaga pul to'ladingiz — lekin hujjat yo'q. Buxgalter so'raydi... |
+| 0:05–0:10.4 | 1. Muammo | "Hisobdan chiqarib bo'lmaydi", soliq xabari. *SHARTNOMA YO'Q · FAKTURA YO'Q · NAQD · KARTA*. 8.5 s: **QORA XARAJAT**. 9.55 s: "RAD ETILDI" muhri (ovoz vakuumi) | Shartnoma yo'q, hisob-faktura yo'q — xarajat «qora»da qoladi... va soliq savollari boshlanadi. |
+| 0:10.4–0:11 | O'tish | Varaq ag'dariladi | — |
+| 0:11–0:16 | 2. Yechim | "Hujjatlar": MChJ profili → "Yuridik shaxs sifatida to'lash" → Shartnoma ✓, Hisob-varaq ✓, ESF + E-IMZO ✓, Dalolatnoma ✓ → eksport (1C) | ADUZ'da yuridik shaxs sifatida to'laysiz — hujjatlar o'zi tayyorlanadi. |
+| 0:16–0:22 | 2. Yechim | Buxgalter: "Rahmat! Hammasi joyida". 18.5 s: **OQ SAVDO — har bir so'm hujjat bilan**. "Hujjatlar tayyor!" | Shartnoma, hisob-faktura, dalolatnoma — E-imzo bilan, bir bosishda buxgalterga. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Oq savdo — tinch biznes": 4 hujjat + TASDIQLANDI (kassa). Oldin (karta, chek yo'q; hujjat yo'q; soliq xavfi) ↔ ADUZ (bank orqali, rasmiy; shartnoma, ESF, dalolatnoma; to'liq hisobot). Nishonlar: Qonuniy · E-hujjat · Hisobot | Oq savdo — tinch biznes. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Kompaniya nomi, STIR, summa, "Didox", "1C" eksporti va hujjatlar ro'yxati — namuna. Qaysi hujjatlar avtomatik yaratilishi,
+qaysi ESF operatori va E-imzo ishlatilishi — ADUZ'ning haqiqiy B2B imkoniyatlari va O'zbekiston qonunchiligi bilan solishtiring.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 

@@ -3164,7 +3164,127 @@ def render_19():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19}
+
+# ---------- 20-qism: Qonuniy va oq savdo (B2B) — sfx/ kutubxonasi bilan ----------
+SOUNDS.update({
+    "sfx.stamp_big": ("L5", lambda a=None: layer(smp("boom_sub") * 0.9, smp("hit_low", -5) * 0.7, smp("click_double_1", -12) * 0.6), "Katta muhr 'RAD ETILDI': boom_sub + hit_low −5 + qo'sh klik −12"),
+})
+FRONT.update({"sfx.stamp_big"})
+AB_PENT = [68, 70, 72, 75, 77, 80, 82, 84, 87, 89]
+
+CUES_20 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Ofis — sahna 'havosi'", 9.6),
+    (0.05, "sfx.whoosh_soft", 0.2, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    (0.8, "sfx.notify_pop", 0.3, -0.3, 0.2, 0, "Buxgalter: 'Hujjatlar qani?'", None),
+    (1.6, "sfx.pop_swish", 0.28, 0.3, 0.2, 0, "Siz: 'Kartadan o'tkazganman...'", None),
+    (2.4, "sfx.notify_pop", 0.3, -0.3, 0.2, 0, "Buxgalter: 'Shartnoma? Faktura? Dalolatnoma?'", 2),
+    *[(2.4 + k * 0.3, "fx.paper", 0.1, round(((k * 3) % 7 - 3) * 0.2, 2), 0.25, 0, f"Cheklar uchib tushadi #{k + 1}", None) for k in range(0, 20, 3)],
+    (3.1, "sfx.swipe", 0.26, 0, 0.15, 0, "Hujjatlar ro'yxati ochiladi", None),
+    *[(at, "sfx.glitch_short", 0.3, -0.2 + 0.2 * i, 0.15, 0, f"✕ yo'q #{i + 1}", -3 - 2 * i) for i, at in enumerate((3.3, 3.6, 3.9))],
+    (4.6, "sfx.notify_pop", 0.3, -0.3, 0.2, 0, "Buxgalter: 'Hisobdan chiqarib bo'lmaydi'", -2),
+    (5.4, "sfx.notify_ring", 0.34, 0.2, 0.25, 0, "Soliq xizmati xabari", -5),
+    (7.0, "sfx.pop_swish", 0.24, 0.3, 0.2, 0, "Siz: '???'", -3),
+    *[x for at, pan, nm in ((5.6, -0.4, "SHARTNOMA YO'Q"), (6.6, 0.4, "FAKTURA YO'Q"), (7.6, -0.4, "NAQD · KARTA")) for x in [
+        (at, "sfx.stutter", 0.42, pan, 0.2, 0, f"Slam: {nm}", None),
+        (at, "sfx.glitch_short", 0.5, pan, 0.2, 0, "Slam qatlami", None),
+    ]],
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [58, 61, 65, 70]),
+    (8.38, "sfx.riser_click", 0.3, 0, 0, 0, "Riser — cho'qqisi 9.5 s da, gate kesadi", None),
+    (8.5, "sfx.boom_sub", 0.9, 0, 0.35, 0, "QORA XARAJAT — asosiy zarba", None),
+    (8.5, "sfx.hit_low", 0.6, 0, 0.4, 0, "Zarba qatlami: tonal", None),
+    (8.5, "sfx.glitch_seq", 0.28, 0, 0.2, 0, "Zarba qatlami: glitch", None),
+    (9.62, "sfx.stamp_big", 0.45, 0, 0, 0, "OVOZ VAKUUMI: 'RAD ETILDI' muhri", None),
+    (9.95, "fx.heartbeat", 0.28, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (Ab-major)", [68, 72, 75, 80]),
+    (10.4, "sfx.swipe", 0.4, -0.3, 0.2, 0, "Varaq ag'dariladi (1-yarmi)", -4),
+    (10.7, "sfx.swipe", 0.4, 0.3, 0.2, 0, "Varaq ag'dariladi (2-yarmi)", 3),
+    (11.0, "sfx.boom_sub", 0.5, 0, 0.35, 0, "Yechim boshlanishi", None),
+    (11.0, "sfx.hit_chime", 0.32, 0, 0.4, 0.2, "Yechim: tonal urg'u", 6),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "sfx.whoosh_soft", 0.2, -0.3, 0.2, 0, "Telefon kiradi", None),
+    (12.0, "sfx.click_1", 0.7, 0.3, 0, 0, "'Yuridik shaxs sifatida to'lash' tumbleri", None),
+    (12.05, "ui.select", 0.15, 0.3, 0.25, 0.2, "Tumbler yoqildi (tonallikda)", 80),
+    *[x for i, at in enumerate((12.6, 13.0, 13.4)) for x in [
+        (at - 0.3, "sfx.pop_swish", 0.2, -0.2 + 0.2 * i, 0.2, 0, f"Hujjat #{i + 1} yaratilmoqda", 2 * i),
+        (at, f"sfx.{CLICKS[i + 1]}", 0.55, 0.3, 0.1, 0, f"Hujjat #{i + 1} ✓", None),
+        (at + 0.02, "ui.select", 0.14, 0.3, 0.25, 0.2, "Tonallikdagi tasdiq", [75, 80, 84][i]),
+    ]],
+    (13.9, "fx.stamp", 0.3, 0.2, 0.2, 0, "E-IMZO muhri", None),
+    (13.9, "sfx.hit_chime", 0.26, 0.2, 0.3, 0.2, "E-imzo — tonal urg'u", 11),
+    (14.3, "sfx.pop_swish", 0.2, 0.2, 0.2, 0, "Dalolatnoma yaratilmoqda", 6),
+    (14.6, "sfx.click_5", 0.55, 0.3, 0.1, 0, "Dalolatnoma ✓", None),
+    (14.62, "ui.select", 0.14, 0.3, 0.25, 0.2, "Tonallikdagi tasdiq", 87),
+    (15.2, "sfx.click_double_2", 0.7, 0.2, 0, 0, "'Buxgalteriyaga eksport'", None),
+    *[(15.35 + k * 0.12, "sfx.whoosh_sweep", 0.12, 0.5, 0.2, 0, f"Hujjat #{k + 1} buxgalterga uchadi", 5 + k * 2) for k in range(4)],
+    (15.25, "sfx.pop_swish", 0.25, 0.6, 0.2, 0, "Buxgalter avatari", -2),
+    (16.4, "sfx.notify_ring", 0.36, 0.1, 0.25, 0.2, "Buxgalter: 'Rahmat! Hammasi joyida'", 3),
+    (16.42, "ui.success", 0.2, 0.1, 0.4, 0.2, "Musiqiy tasdiq", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: OQ SAVDO oldidan", [72, 75, 80, 84]),
+    (18.5, "sfx.boom_sub", 0.8, 0, 0.35, 0, "OQ SAVDO — zarba", None),
+    (18.5, "sfx.hit_chime", 0.5, 0, 0.4, 0.2, "Zarba qatlami: tonal", 6),
+    (18.5, "imp.sparkle", 0.35, 0, 0.5, 0, "Oltin uchqunlar", 263),
+    (19.7, "sfx.swipe", 0.3, 0, 0.2, 0, "Oyna ko'tariladi", None),
+    (19.9, "ui.success", 0.26, 0, 0.5, 0.3, "Hujjatlar tayyor", None),
+    (20.63, "sfx.riser_click", 0.32, 0, 0, 0, "Riser — cho'qqisi whip'da (21.75 s)", None),
+    (21.75, "sfx.whoosh_sweep", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (21.75, "sfx.swipe", 0.3, 0, 0.2, 0, "Whip qatlami", None),
+    (22.0, "sfx.boom_sub", 0.6, 0, 0.4, 0, "Natija boshlanishi", None),
+    (22.0, "sfx.hit_low", 0.4, 0, 0.4, 0, "Zarba qatlami", 6),
+    *[(22.35 + i * 0.18, "sfx.pop_swish", 0.22, round(-0.45 + 0.3 * i, 2), 0.25, 0.15, f"Hujjat kartasi #{i + 1}", [0, 2, 4, 7][i]) for i in range(4)],
+    (23.15, "fx.stamp", 0.4, 0, 0.2, 0, "TASDIQLANDI muhri", None),
+    (23.2, "fx.kassa", 0.32, 0, 0.3, 0.2, "KASSA — hujjatlar tasdiqlandi", None),
+    (23.22, "sfx.notify_ring", 0.22, 0.2, 0.25, 0.2, "Kassa qatlami", 6),
+    *[(23.5 + i * 0.35, "sfx.swipe", 0.34, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[x for i in range(3) for x in [
+        (23.7 + i * 0.35, f"sfx.{CLICKS[(i + 2) % 5]}", 0.4, 0.4, 0, 0, f"ADUZ qatori #{i + 1}", None),
+        (23.72 + i * 0.35, "ui.select", 0.13, 0.4, 0.3, 0.2, "Tonallikdagi tasdiq", [80, 84, 87][i]),
+    ]],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [72, 77, 80, 84]),
+    (25.0, "sfx.boom_sub", 0.45, 0, 0.4, 0, "Urg'u", None),
+    (25.0, "imp.sparkle", 0.4, 0, 0.5, 0, "Uchqunlar", 269),
+    *[x for i in range(3) for x in [
+        (25.2 + i * 0.25, "sfx.pop_swish", 0.3, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [7, 12, 16][i]),
+        (25.22 + i * 0.25, "ui.select", 0.1, -0.4 + 0.4 * i, 0.3, 0, "Tonallikdagi qo'ng'iroqcha", [87, 92, 96][i]),
+    ]],
+    (26.85, "sfx.whoosh_soft", 0.2, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (Ab tonikada)", 68),
+    (28.3, "sfx.click_1", 0.35, 0.2, 0.3, 0.3, "CTA tugmasi", None),
+    (28.32, "ui.select", 0.07, 0.2, 0.5, 0.4, "CTA qo'ng'iroqchasi", 96),
+]
+
+SCORE_20 = [
+    ("Ovoz manbai", "Foydalanuvchi SFX kutubxonasi (sfx/)", "UI, o'tish va zarba ovozlari — sfx.* namunalari (kliklar, qo'sh klik, pop_swish, swipe, whoosh, riser_click, stutter/glitch, notify, hit_low/hit_chime, boom_sub). Sintez: partitura, J-cut swell, tonallikdagi qo'ng'iroqchalar, success, uchqunlar, kassa, qog'oz shitirlashi, kichik muhr (fx.stamp), sonic logo."),
+    ("0:00–0:09.5", "Muammo · Bb-minor, tashvishli minimal", "7-qism aranjirovkasi 6 yarim ton yuqorida. Ustida: buxgalter xabarlari (notify_pop), sizning javoblaringiz (pop_swish), cheklar shitirlashi, hujjatlar ro'yxati (swipe) va uchta '✕' — pastga tushib boruvchi qisqa glitchlar, soliq xabari (notify_ring pastroq), slamlar — stutter + glitch."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: 'RAD ETILDI' muhri kadrga uriladi — boom_sub + hit_low (−5) + qo'sh klik (−12) bitta og'ir zarbaga yig'ilgan; yurak urishi. Keyin J-cut swell Ab-major'da."),
+    ("0:10.4–0:11", "Varaq ag'dariladi", "Ikki swipe (pastroq va balandroq) — varaqning ikki yarmi."),
+    ("0:11–0:21.75", "Yechim · Ab-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: tumbler (klik + qo'ng'iroqcha), har hujjat — pop (yaratilmoqda) → klik + tonallikdagi tasdiq, E-imzo muhri + hit_chime, eksport (qo'sh klik + 4 ta ko'tariluvchi whoosh), buxgalter javobi (notify_ring)."),
+    ("0:22–0:27", "Natija · Ab-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. To'rt hujjat kartasi (ko'tariluvchi pop), TASDIQLANDI muhri + kassa (ssenariydagi 'kassa ovozi')."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (Ab tonikada), so'nish."),
+]
+
+
+def score_20(M):
+    """7-qism partiturasi, 6 yarim ton yuqorida."""
+    global KEY_SHIFT
+    KEY_SHIFT = 6
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_20():
+    """20-qism: Qonuniy va oq savdo (B2B). Score + cue-sheet (CUES_20), SFX — sfx/ kutubxonasi."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # "RAD ETILDI" stamp: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_20(M)
+    render_cues(M, CUES_20)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -3172,7 +3292,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
