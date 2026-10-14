@@ -1872,7 +1872,159 @@ def render_10():
     return out
 
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10}
+# ---------- 11-qism: Kafolatlangan xavfsizlik (Escrow) ----------
+def fx_transfer():
+    return layer(whoosh(0.45, 800, 6000) * 0.7, np.concatenate([np.zeros(int(0.3 * SR)), coin() * 0.8]))
+
+
+def fx_blocked():
+    x = seconds(0.9)
+    slam_ = np.sin(2 * np.pi * np.cumsum(70 * 2 ** (-x * 2)) / SR) * np.exp(-x / 0.18)
+    door = filt(rng.standard_normal(len(x)), "lowpass", 600) * np.exp(-x / 0.05) * 0.8
+    return np.tanh((slam_ + door) * 1.4) * 0.9
+
+
+def fx_fail():
+    return layer(tone(m(57), 0.12, "sine", 0.002, 0.04) * 0.7, np.concatenate([np.zeros(int(0.07 * SR)), tone(m(52), 0.16, "sine", 0.002, 0.06) * 0.7]))
+
+
+def fx_vault_lock():
+    x = seconds(1.6)
+    ring = sum(np.sin(2 * np.pi * f * x) * np.exp(-x / d) for f, d in ((410, 0.6), (1083, 0.35), (1731, 0.22), (2950, 0.12))) * 0.25
+    thunk = tone(58, 0.4, "sine", 0.001, 0.12) * 1.2
+    latch = np.zeros(len(x))
+    for k, at in enumerate((0.0, 0.07, 0.16)):
+        c = fx_detent(55 + 4 * k) * 1.4
+        i = int(at * SR)
+        latch[i : i + len(c)] += c
+    return np.tanh(layer(ring, thunk, latch) * 1.2)
+
+
+def fx_freeze(dur=0.7):
+    out = np.zeros(int(dur * SR))
+    gg = np.random.default_rng(31)
+    for k in range(60):
+        at = dur * (k / 60) ** 0.6
+        b = bell(gg.uniform(3500, 9000), 0.05, 0.4, 0.012) * gg.uniform(0.2, 0.6)
+        i = int(at * SR)
+        out[i : i + len(b)] += b[: len(out) - i]
+    x = seconds(dur)
+    out += np.sin(2 * np.pi * np.cumsum(2000 * 2 ** (1.5 * x / dur)) / SR) * (x / dur) * 0.15
+    return out
+
+
+def fx_melt(dur=0.6):
+    out = np.zeros(int(dur * SR))
+    for k, at in enumerate((0.0, 0.12, 0.22, 0.36, 0.45)):
+        x = seconds(0.12)
+        drip = np.sin(2 * np.pi * np.cumsum(1600 * 2 ** (-3 * x / 0.12) + 300) / SR) * np.exp(-x / 0.04)
+        i = int(at * SR)
+        out[i : i + len(drip)] += drip[: len(out) - i] * (0.7 - 0.08 * k)
+    return out
+
+
+SOUNDS.update({
+    "fx.transfer": ("L3", lambda a=None: fx_transfer(), "Pul o'tkazmasi: whoosh + tanga"),
+    "fx.coin": ("L3", lambda a=None: coin(), "Tanga jiringlashi"),
+    "fx.blocked": ("L5", lambda a=None: fx_blocked(), "'Sizni blokladi': og'ir eshik yopilishi"),
+    "fx.fail": ("L3", lambda a=None: fx_fail(), "Xabar yetib bormadi: qizil '!'"),
+    "fx.vault_lock": ("L5", lambda a=None: fx_vault_lock(), "Seyf qulflanishi: og'ir thunk + uch zinali latch + metall jarang"),
+    "fx.freeze": ("L3", lambda a=None: fx_freeze(), "Muzlatish: kristallanayotgan muz — zichlashib boruvchi shisha uchqunlar"),
+    "fx.melt": ("L3", lambda a=None: fx_melt(), "Muz eriydi: tomchilar"),
+})
+FRONT.update({"fx.blocked", "fx.fail"})
+
+CUES_11 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    *[(at, "ui.select", 0.1, -0.3, 0.2, 0, f"Admin: xabar", 66) for at in (0.9, 2.2, 3.6)],
+    *[(at, "ui.select", 0.1, 0.3, 0.2, 0, "Siz: xabar", 71) for at in (1.6, 4.7, 5.5, 6.3)],
+    (2.9, "fx.transfer", 0.3, 0.3, 0.2, 0, "500 000 so'm o'tkazildi", None),
+    (4.3, "tr.slide", 0.1, 0, 0.2, 0, "'Ertasi kuni'", None),
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: OLDINDAN TO'LOV", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: POST YO'Q", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: JAVOB YO'Q", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [57, 60, 64, 69]),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "500 000 → 0 — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.55, "fx.blocked", 0.5, 0, 0, 0, "OVOZ VAKUUMI: admin blokladi", None),
+    *[(9.7 + k * 0.08, "fx.fail", 0.22, 0.4, 0, 0, f"Xabar yetmadi #{k + 1}", None) for k in range(3)],
+    (9.95, "fx.heartbeat", 0.4, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (G-major)", [67, 71, 74, 79]),
+    (10.55, "tr.whoosh", 0.3, 0, 0.3, 0, "Oltin doira o'tishi", None),
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    (11.6, "ui.popup", 0.14, 0, 0.2, 0, "Buyurtma kartasi", 79),
+    (12.6, "ui.tap", 0.35, 0.2, 0, 0, "Kafolat bilan to'lash", None),
+    (12.8, "tr.slide", 0.14, 0.5, 0.1, 0, "Kafolat hisobi ekrani", None),
+    (12.8, "fx.knob", 0.18, 0, 0.2, 0, "Seyf disk-qulfi aylanadi", 0.8),
+    (13.0, "fx.transfer", 0.24, -0.4, 0.2, 0, "Tanga seyfga uchadi", None),
+    (13.6, "fx.vault_lock", 0.5, 0, 0.35, 0, "SEYF QULFLANDI", None),
+    (13.7, "fx.freeze", 0.3, 0, 0.4, 0.2, "MUZLATILDI", None),
+    (13.8, "ui.select", 0.16, -0.2, 0.3, 0, "1. Pul muzlatildi", 79),
+    *[(14.3 + 0.7 * (1 - (1 - k / 12) ** 1.6), "fx.tick", 0.08, 0.3, 0, 0, "Vaqt tez o'tadi (18:52 → 19:00)", None) for k in range(12)],
+    (15.0, "ui.next", 0.2, 0, 0.3, 0.2, "2. Post chiqdi — bot tekshirdi", None),
+    (15.8, "ui.select", 0.16, 0, 0.3, 0, "3. 24 soat turdi", 83),
+    (16.0, "fx.melt", 0.3, 0, 0.3, 0.2, "Muz eriydi", None),
+    (16.2, "fx.transfer", 0.24, 0.4, 0.2, 0, "Tanga adminga o'tadi", None),
+    (16.7, "ui.select", 0.18, 0.4, 0.3, 0.2, "4. Pul adminga o'tdi", 86),
+    (16.95, "ui.popup", 0.14, 0, 0.2, 0, "Post chiqmasa — pul qaytadi", 74),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: PUL HIMOYADA oldidan", [71, 74, 79, 83]),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "PUL HIMOYADA — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 23),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Pulingiz himoyada oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    *[(22.8 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(4)],
+    *[(23.0 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [79, 83, 86, 91][i]) for i in range(4)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [74, 79, 83, 86]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 25),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [86, 91, 95][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (G tonikada)", 55),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 98),
+]
+SOUNDS.setdefault("fx.tick", ("L3", lambda a=None: tick(True), "Soat tiqillashi"))
+
+SCORE_11 = [
+    ("0:00–0:09.5", "Muammo · A-minor, tashvishli minimal", "7-qism aranjirovkasi 5 yarim ton yuqorida: qorong'i pad, offbeat Rhodes, filtrlangan bas, 5.5 s dan kick. Chat xabarlari tonallikdagi qo'ng'iroqchalar; 2.9 s da pul o'tkazmasi."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: admin 'blokladi' — og'ir eshik yopilishi, uchta yetib bormagan xabar ('!'), yurak urishi. Keyin J-cut swell G-major'da."),
+    ("0:11–0:21.75", "Yechim · G-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida seyf hikoyasi: disk-qulf aylanadi → tanga kiradi → og'ir qulflanish → muz kristallanadi → vaqt tezlashadi → bot tasdig'i → muz eriydi → tanga adminga."),
+    ("0:22–0:27", "Natija · G-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (G tonikada), so'nish."),
+]
+
+
+def score_11(M):
+    """7-qism partiturasi, 5 yarim ton yuqorida."""
+    global KEY_SHIFT
+    KEY_SHIFT = 5
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_11():
+    """11-qism: Kafolatlangan xavfsizlik (Escrow). Score + cue-sheet (CUES_11)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # blocked: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_11(M)
+    render_cues(M, CUES_11)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -1880,7 +2032,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)

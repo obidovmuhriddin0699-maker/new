@@ -15,6 +15,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 8 | `ADUZ_8-qism.mp4` | Yagona Marketplace yechimi |
 | 9 | `ADUZ_9-qism.mp4` | Aqlli kampaniya yaratish |
 | 10 | `ADUZ_10-qism.mp4` | Matching algoritmi ishda |
+| 11 | `ADUZ_11-qism.mp4` | Kafolatlangan xavfsizlik (Escrow) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -254,6 +255,32 @@ Musiqa — 7-qism aranjirovkasi 2 yarim ton pastda (D-minor → C-major). Sonic 
 | 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
 
 Kanal nomlari, moslik foizlari va mijozlar soni namuna (radar o'qlari o'rtachasi = 94%). Matching mezonlarini mahsulotdagi haqiqiy algoritm bilan solishtiring.
+
+## 11-qism: "Kafolatlangan xavfsizlik (Escrow)"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: oltin doira ("seyf eshigi") va whip-pan.
+
+**G'oya:** muammo — admin bilan chatda "avval to'lov, keyin post": 500 000 so'm o'tkaziladi, post chiqmaydi, xabarlar o'qilmaydi va
+sukunat ichida admin **bloklaydi** ("Deleted Account", xabarlar yonida qizil "!"). Yechim — pul **seyfga** tushadi: disk-qulf aylanadi,
+seyf qulflanadi, ustini **muz qoplaydi** ("MUZLATILDI"), vaqt tez o'tadi (18:52 → 19:00 → ertasi), bot postni tekshiradi, muz eriydi va
+tanga adminga o'tadi. Pastda qoida: "Post chiqmasa — pul avtomatik qaytadi".
+
+**Ovoz:** [`SOUND_ARCHITECTURE_11.md`](SOUND_ARCHITECTURE_11.md). Yangi tovushlar: pul o'tkazmasi, tanga, "blokladi" (og'ir eshik),
+yetib bormagan xabar "!", seyf qulflanishi (thunk + uch zinali latch + metall jarang), muz kristallanishi (zichlashib boruvchi shisha
+uchqunlar), muz erishi (tomchilar). Musiqa — 7-qism aranjirovkasi 5 yarim ton yuqorida (A-minor → G-major). Sonic logo G tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "11-QISM · Kafolatlangan xavfsizlik". Chat: "Reklama 500 000. Avval to'lov, keyin post." → karta raqami → bank o'tkazmasi "−500 000 so'm · Bajarildi" (tanga uchib ketadi) → "Ko'rdim. Bugun 19:00 da chiqadi" | Admin: «Avval to'lov, keyin post». Pulni o'tkazdingiz... |
+| 0:05–0:10.5 | 1. Muammo | "Ertasi kuni": "Post chiqmadi-ku?", "Javob bering!", "???" — o'qilmagan. *OLDINDAN TO'LOV · POST YO'Q · JAVOB YO'Q*. 8.5 s: **500 000 → 0 — pul ham, reklama ham yo'q**. 9.55 s: "Deleted Account", "Bu foydalanuvchi sizni blokladi" (ovoz vakuumi) | Post chiqmadi. Admin javob bermaydi... va sizni bloklaydi. |
+| 0:10.5–0:11 | O'tish | Oltin doira | — |
+| 0:11–0:16 | 2. Yechim | "Buyurtma: Vodiy Live · 500 000 so'm · To'lov ADUZ kafolatida" → "Kafolat bilan to'lash". "Kafolat hisobi": Siz → seyf → Admin. Tanga seyfga uchadi, seyf qulflanadi, muz qoplaydi: **MUZLATILDI**. Vaqt tez o'tadi, "Post chiqdi — ADUZ bot tekshirdi" | ADUZ'da pul to'g'ridan-to'g'ri adminga emas — kafolat hisobida muzlatiladi. |
+| 0:16–0:22 | 2. Yechim | "24 soat turdi" → muz eriydi → tanga adminga o'tadi → "Pul adminga o'tdi". "Post chiqmasa — pul avtomatik qaytadi". 18.5 s: **PUL HIMOYADA — post chiqmaguncha admin olmaydi** | Post chiqib, tekshiruvdan o'tgach pul adminga o'tadi. Chiqmasa — qaytadi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Pulingiz himoyada": Oldin (oldindan to'lov, post yo'q — pul ketdi, admin bloklaydi, qo'rquv) ↔ ADUZ (kafolatli to'lov, post yo'q — pul qaytadi, ADUZ nazorat qiladi, xotirjamlik). Nishonlar: Kafolat · Muzlatish · Qaytarish | Pulingiz har doim himoyada. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Escrow shartlari (24 soat, avtomatik qaytarish, bot tekshiruvi) ssenariy asosidagi namuna — ADUZ'ning haqiqiy to'lov qoidalari bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 
