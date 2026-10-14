@@ -3903,7 +3903,159 @@ def render_24():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20, 21: render_21, 22: render_22, 23: render_23, 24: render_24}
+
+# ---------- 25-qism: Mutlaq erkinlik (mobil boshqaruv) — UCHALA dizayn va BUTUN ovoz kutubxonasi bitta qismda ----------
+SOUNDS.update({
+    "mus.choir_g_hi": ("L1", lambda a=None: choir([74, 79, 83], a or 1.8, "o"), "Baland xor 'ooo' G-major"),
+})
+_NOTIF25 = [1.4, 2.3, 3.1, 3.9, 4.6, 5.3, 6.0, 6.7, 7.3, 7.9]
+
+CUES_25 = [
+    # --- 1. Muammo (klassik dunyo): ofis, kompyuter, kabel ---
+    (0.0, "amb.office", 0.1, 0, 0, 0, "Ofis — ventilyatsiya, 50 Hz g'uvullash", 9.6),
+    (0.05, "tr.whoosh", 0.2, 0.3, 0.2, 0, "Monitor va xarita kiradi", None),
+    (0.15, "sfx.tick_hi", 0.22, 0, 0.2, 0.2, "'25-QISM' harflari", None),
+    (0.3, "sfx.swoosh_text", 0.28, 0, 0.2, 0, "'Mutlaq erkinlik' blur-up", None),
+    *[(a, "sfx.notify_pop", 0.3, round(-0.3 + 0.06 * i, 2), 0.15, 0, f"Monitorda yangi buyurtma #{i + 1}", [0, 2, 3, 5, 7, 8, 10, 12, 13, 15][i]) for i, a in enumerate(_NOTIF25)],
+    *[(1.0 + k * 0.5, "fx.tick", 0.07, -0.4, 0, 0, "Devor soati", None) for k in range(8)],
+    (1.0, "sfx.whoosh_soft", 0.12, 0.4, 0.2, 0, "Egasi ofisdan chiqib ketadi", 3),
+    (4.0, "fx.twang", 0.3, 0.3, 0.2, 0, "Kabel taranglashdi", None),
+    (4.05, "fx.chain", 0.25, 0.3, 0.2, 0, "Kabel — zanjirday", 0.4),
+    *[(a + 0.08, "fx.twang", 0.22, 0.4, 0.15, 0, "Kabel egasini orqaga tortadi", None) for a in (5.6, 6.6, 7.6)],
+    *[x for at, pan, nm in ((5.6, -0.4, "OFISGA BOG'LIQ"), (6.6, 0.4, "BUYURTMA KUTMOQDA"), (7.6, -0.4, "KECH QOLDINGIZ")) for x in [
+        (at, "sfx.stutter", 0.4, pan, 0.2, 0, f"Slam: {nm}", None),
+        (at, "imp.glitch", 0.35, pan, 0.2, 0, "Klassik slam qatlami", None),
+    ]],
+    (7.0, "fx.alarm", 0.16, 0, 0.2, 0, "Javobsiz buyurtmalar — ogohlantirish", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [57, 60, 64, 69]),
+    (8.38, "sfx.riser_click", 0.3, 0, 0, 0, "Riser — cho'qqisi 9.5 s da", None),
+    (8.5, "sfx.boom_sub", 0.85, 0, 0.35, 0, "QARAMLIK — asosiy zarba", None),
+    (8.5, "imp.boom", 0.4, 0, 0.3, 0, "Klassik boom qatlami", None),
+    (8.5, "fx.chain", 0.5, 0, 0.3, 0, "Zanjirlar monitorni o'raydi", 0.6),
+    (8.7, "sfx.swoosh_text", 0.25, 0, 0.2, 0, "Taglavha blur-up", None),
+    # --- vakuum ---
+    (9.6, "fx.padlock", 0.32, 0, 0, 0, "OVOZ VAKUUMI: qulf yopildi", None),
+    (9.8, "tr.crt_off", 0.26, 0, 0.1, 0, "Monitor eski televizorday o'chadi", None),
+    (9.95, "fx.heartbeat", 0.26, 0, 0, 0, "Yurak urishi", None),
+    # --- pocketZoom: ofis cho'ntakka sig'adi ---
+    (10.15, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: yechim akkordi (G-major)", [55, 59, 62, 67]),
+    (10.2, "mus.choir_g", 1.2, 0, 0.6, 0.2, "HEAVENLY XOR 'aaah' — ofis cho'ntakka sig'adi", 2.8),
+    (10.3, "tr.implode", 0.35, 0, 0.2, 0, "Butun ofis telefon ekraniga so'riladi", None),
+    (10.85, "tr.boot", 0.3, 0, 0.3, 0.2, "Telefon yonadi", 67),
+    (10.95, "sfx.shimmer", 0.3, 0, 0.4, 0.2, "Flare", None),
+    (11.0, "sfx.boom_sub", 0.45, 0, 0.35, 0, "Yechim boshlanishi", None),
+    # --- dunyo 1: bozor (klassik) ---
+    (11.0, "amb.air", 0.03, 0, 0, 0, "Ochiq havo", 10.7),
+    (11.05, "fx.birds", 0.12, -0.5, 0.3, 0.2, "Bozor ertalabi: qushlar", (3, 5)),
+    (11.5, "ui.popup", 0.25, 0, 0.2, 0, "Buyurtma kartasi", 72),
+    (11.9, "fx.vibrate", 0.18, 0, 0, 0, "Telefon titraydi", 0.5),
+    (11.92, "sfx.notify_ring", 0.32, 0.2, 0.25, 0.2, "Yangi buyurtma!", None),
+    (12.6, "sfx.click_1", 0.7, 0.2, 0, 0, "'Tasdiqlash'", None),
+    (12.62, "fx.stamp", 0.3, 0, 0.2, 0, "Tasdiqlandi — muhr", None),
+    (12.75, "ui.success", 0.2, 0, 0.5, 0.3, "Yashil tasdiq", None),
+    (12.8, "sfx.sparkle_hit", 0.25, 0, 0.3, 0.2, "Uchqunlar", None),
+    # --- dunyo 2: tungi yo'l (neon) ---
+    (14.3, "sfx.whoosh_sweep", 0.35, 0, 0.25, 0, "Neon halqa — dunyo almashadi", 3),
+    (14.45, "sfx.glitch_short", 0.25, 0, 0.2, 0, "RGB glitch", None),
+    *[(14.6 + k * 0.75, "sfx.whoosh_low", 0.12, (-0.6, 0.6)[k % 2], 0.3, 0, f"O'tib ketayotgan mashina #{k + 1}", 2 * (k % 3)) for k in range(4)],
+    (14.6, "fx.flicker", 0.12, 0.4, 0.2, 0, "Neon vivesqa g'uvullashi", 0.05),
+    (15.3, "sfx.notify_pop", 0.3, -0.2, 0.2, 0.1, "Andijon Savdo: ko'rish 2x", 2),
+    (15.9, "sfx.click_2", 0.7, 0.2, 0, 0, "'Byudjet +50 000'", None),
+    (15.95, "fx.transfer", 0.28, 0.2, 0.2, 0, "Byudjet o'tkazildi", None),
+    (16.0, "sfx.ratchet_roll", 0.18, 0, 0.15, 0, "Byudjet chizig'i o'sadi", None),
+    (16.6, "fx.switch", 0.35, 0.3, 0.1, 0, "Avto-optimallash yoqildi", None),
+    (16.62, "sfx.blip_up", 0.28, 0.3, 0.25, 0.2, "Toggle firuza", None),
+    # --- dunyo 3: choyxona (reel) ---
+    (17.6, "sfx.pop_short", 0.2, -0.4, 0.2, 0, "Plitkalar to'lqini #1", 0),
+    (17.68, "sfx.pop_short", 0.2, 0.0, 0.2, 0, "Plitkalar to'lqini #2", 4),
+    (17.76, "sfx.pop_short", 0.2, 0.4, 0.2, 0, "Plitkalar to'lqini #3", 7),
+    (17.75, "sfx.type_burst", 0.28, 0, 0.15, 0, "'CHOYXONA 13:05' dekodlanadi", None),
+    (17.9, "sfx.tick_roll", 0.16, 0, 0.2, 0.1, "+18 buyurtma sanaladi", 5),
+    (18.15, "sfx.click_3", 0.7, 0.2, 0, 0, "'Avto-javob' toggle", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: ISTALGAN JOYDAN oldidan", [59, 62, 67, 71]),
+    (18.45, "sfx.whoosh_low", 0.3, 0, 0.3, 0, "Laym karta butun kadrga", None),
+    (18.5, "sfx.boom_sub", 0.8, 0, 0.35, 0, "ISTALGAN — zarba", None),
+    (18.5, "sfx.bass_drop", 0.5, 0, 0.3, 0, "Og'ir grotesk", None),
+    (18.5, "imp.crash", 0.25, 0, 0.4, 0, "Klassik crash", None),
+    (18.6, "sfx.thump", 0.45, 0, 0.25, 0, "JOYDAN. — ikkinchi zarba", None),
+    (18.5, "mus.choir_g", 0.8, 0, 0.6, 0.2, "Xor 'aaah' zarba ostida", 1.8),
+    (18.5, "imp.sparkle", 0.3, 0, 0.5, 0, "Uchqunlar", 331),
+    (18.8, "sfx.swoosh_text", 0.3, 0, 0.2, 0, "'bir telefon — butun biznes'", None),
+    (19.7, "sfx.swipe", 0.3, 0, 0.2, 0, "Binafsha karta", None),
+    (20.0, "sfx.shimmer", 0.22, 0, 0.3, 0.2, "'Ofis — endi cho'ntagingizda.'", None),
+    *[(20.2 + 1.2 * _ease_inv(k), "sfx.tick_hi", 0.2, round(-0.4 + 0.1 * i, 2), 0.25, 0.2, f"Kun keyframe #{i + 1}", [0, 4, 7, 9, 12, 16, 19, 21][i]) for i, k in enumerate((.04, .12, .36, .44, .52, .7, .78, .86))],
+    (21.35, "ui.success", 0.24, 0, 0.5, 0.3, "HAMMASI NAZORATDA", None),
+    (20.63, "sfx.riser_click", 0.32, 0, 0, 0, "Riser — whip'ga", None),
+    (21.75, "tr.whip", 0.4, 0, 0.25, 0, "Whip-pan (klassik)", None),
+    (21.75, "sfx.whoosh_sweep", 0.3, 0, 0.25, 0, "Whip qatlami", None),
+    # --- 3. Natija: uchala dunyo ---
+    (22.0, "sfx.boom_sub", 0.5, 0, 0.4, 0, "Natija boshlanishi", None),
+    (22.2, "sfx.tick_hi", 0.25, 0, 0.2, 0.2, "'NATIJA'", None),
+    (22.3, "sfx.swoosh_text", 0.3, 0.2, 0.2, 0, "Sarlavha word-right", None),
+    (22.15, "fx.snap", 0.3, -0.5, 0.2, 0, "Panel: BOZOR (klassik)", None),
+    (22.3, "fx.lcd", 0.25, 0, 0.2, 0, "Panel: YO'L (neon)", None),
+    (22.45, "sfx.bass_drop", 0.3, 0.5, 0.25, 0, "Panel: CHOYXONA (reel)", 7),
+    (23.2, "fx.kassa", 0.32, 0, 0.3, 0.2, "KASSA", None),
+    (23.22, "fx.coin", 0.12, 0.3, 0.2, 0, "Tanga", None),
+    *[(23.5 + i * 0.35, "fx.strike", 0.3, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[x for i in range(3) for x in [
+        (23.7 + i * 0.35, f"sfx.{CLICKS[(i + 2) % 5]}", 0.4, 0.4, 0, 0, f"ADUZ qatori #{i + 1}", None),
+        (23.72 + i * 0.35, "ui.select", 0.13, 0.4, 0.3, 0.2, "Tonallikdagi tasdiq", [79, 83, 86][i]),
+    ]],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [59, 64, 67, 71]),
+    (25.0, "sfx.boom_sub", 0.45, 0, 0.4, 0, "Urg'u", None),
+    (25.0, "imp.sparkle", 0.35, 0, 0.5, 0, "Oltin uchqunlar", 337),
+    *[x for i in range(3) for x in [
+        (25.2 + i * 0.25, "sfx.pop_short", 0.32, -0.4 + 0.4 * i, 0.3, 0, f"Oltin nishon #{i + 1}", [5, 9, 12][i]),
+        (25.22 + i * 0.25, "ui.select", 0.1, -0.4 + 0.4 * i, 0.3, 0, "Qo'ng'iroqcha", [83, 86, 91][i]),
+    ]],
+    (26.6, "sfx.whoosh_soft", 0.2, 0, 0.4, 0, "Yakunga", None),
+    # --- yakun: uch logotip "stutter" + reel identity ---
+    *[(27.0 + i * 0.15, s, 0.32, (-0.4, 0.4, 0)[i], 0.2, 0, f"Logotip #{i + 1} ({nm})", None) for i, (s, nm) in enumerate((("sfx.hit_chime", "klassik"), ("sfx.hit_tone", "neon"), ("sfx.hit_low", "reel")))],
+    (27.45, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (G tonikada)", 67),
+    (27.45, "mus.choir_g", 0.5, 0, 0.6, 0.2, "Xor logotip ostida", 3.5),
+    *[(27.9 + i * 0.1, "sfx.thump", 0.26, round(-0.45 + 0.3 * i, 2), 0.2, 0, f"'{'ADUZ'[i]}' harfi tushadi", None) for i in range(4)],
+    (28.15, "sfx.whoosh_soft", 0.16, 0, 0.3, 0, "Orbita", 7),
+    (28.25, "sfx.swoosh_text", 0.22, 0, 0.2, 0, "Tagchiziq", None),
+    (28.45, "sfx.type_burst", 0.22, 0, 0.15, 0, "'BIZNESINGIZ HIMOYACHISI'", None),
+    (29.05, "sfx.pop_short", 0.3, 0.2, 0.3, 0.2, "CTA", 7),
+    (29.07, "ui.select", 0.07, 0.2, 0.5, 0.4, "CTA qo'ng'iroqchasi", 91),
+]
+
+SCORE_25 = [
+    ("Ovoz manbai", "BUTUN kutubxona: sfx/ + 1–21-qism sintez ovozlari + xor + pizzicato", "Foydalanuvchi: 'barcha dizayn va ovozlardan foydalan'. Har dunyo o'z ovoz palitrasida: ofis — amb.office, soat, notify_pop, kabel (fx.twang + fx.chain), klassik imp.glitch/imp.boom; vakuum — fx.padlock + tr.crt_off; o'tish — tr.implode + tr.boot; bozor — qushlar, vibratsiya, fx.stamp; tungi yo'l — o'tayotgan mashinalar (whoosh_low), neon g'uvullashi, fx.transfer, fx.switch; choyxona — reel ovozlari (pop kaskadi, type_burst, tick_hi keyframe'lar)."),
+    ("0:00–0:09.5", "Muammo · A-minor + pizzicato", "7-qism aranjirovkasi 5 yarim ton yuqorida + pizzicato (A). Har yangi buyurtma — notify_pop (pentatonik ko'tariladi: bosim o'sadi), devor soati, 4.0 s dan kabel taranglashadi (twang + chain); slamlar — stutter + klassik imp.glitch; 7.0 s ogohlantirish."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: qulf yopiladi (fx.padlock), monitor eski televizorday o'chadi (tr.crt_off), yurak urishi."),
+    ("0:10.15–0:11", "Vahiy · pocketZoom", "HEAVENLY XOR G-major'da; ofis telefonga so'riladi (tr.implode), telefon yonadi (tr.boot, G)."),
+    ("0:11–0:21.75", "Yechim · G-major, uch dunyo", "Bozor (qushlar, buyurtma — vibratsiya + ring, tasdiq — klik + muhr + success) → neon halqa (whoosh_sweep + glitch) → tungi yo'l (mashinalar, byudjet — transfer, toggle — switch) → plitkalar to'lqini → choyxona (scramble, +18, avto-javob). 18.5 s: ISTALGAN / JOYDAN. — ikki zarba + crash + xor. Kun keyframe'lari — tick_hi."),
+    ("0:22–0:27", "Natija · G-major, to'liq", "Uch panel — har biri o'z dunyosi ovozida (snap / lcd / bass_drop), kassa + tanga, 'Oldin' qatorlari — fx.strike."),
+    ("0:27–0:32", "Yakun · brend", "Uch logotip stutter (hit_chime / hit_tone / hit_low), sonic logo (G) + xor, harflar tushishi, CTA."),
+]
+
+
+def score_25(M):
+    """7-qism partiturasi, 5 yarim ton yuqorida (A-minor → G-major)."""
+    global KEY_SHIFT
+    KEY_SHIFT = 5
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_25():
+    """25-qism: Mutlaq erkinlik. Score (+5) + pizzicato + xor + cue-sheet (CUES_25)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # padlock + CRT off: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_25(M)
+    quirky_pizz(M, 1.0, 9.45, root=69, gain=0.36)
+    render_cues(M, CUES_25)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20, 21: render_21, 22: render_22, 23: render_23, 24: render_24, 25: render_25}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -3911,7 +4063,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20), 21: (CUES_21, SCORE_21), 22: (CUES_22, SCORE_22), 23: (CUES_23, SCORE_23), 24: (CUES_24, SCORE_24)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20), 21: (CUES_21, SCORE_21), 22: (CUES_22, SCORE_22), 23: (CUES_23, SCORE_23), 24: (CUES_24, SCORE_24), 25: (CUES_25, SCORE_25)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)

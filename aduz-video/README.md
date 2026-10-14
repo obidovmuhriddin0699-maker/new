@@ -29,6 +29,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 22 | `ADUZ_22-qism.mp4` | Jalb qiluvchi kontent |
 | 23 | `ADUZ_23-qism.mp4` | Iliq mijozlarni qaytarish (birinchi neon qism) |
 | 24 | `ADUZ_24-qism.mp4` | Doimiy hamroh — 24/7 yordam (birinchi "motion reel" qism) |
+| 25 | `ADUZ_25-qism.mp4` | Mutlaq erkinlik — mobil boshqaruv (uchala dizayn + butun ovoz kutubxonasi) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -733,6 +734,45 @@ muammoda pizzicato, xor B-major'da (`mus.choir_b`). Har yuborilgan xabar yarim t
 
 Namuna — tekshiring: 47 soniya javob vaqti, 98% hal qilish, "24/7, bayramda ham", menejer ismi (Dilnoza) va chatdagi
 vaqtlar/matnlar — ADUZ yordam xizmatining haqiqiy ko'rsatkichlari va ish tartibi bilan almashtiring.
+
+## 25-qism: "Mutlaq erkinlik (mobil boshqaruv)"
+
+**Uchala dizayn va butun ovoz kutubxonasi bitta qismda** (foydalanuvchi: "barcha dizayn va ovozlardan foydalan, o'z
+intellektingni ishga sol"). G'oya — dizayn tizimlari "dunyolar": muammo — klassik ADUZ uslubida (navy → qizil, 1–22-qismlar),
+yechimda bitta telefon uch joydan o'tadi va har joy o'z dizaynida: **bozor** — klassik yashil, **tungi yo'l** — neon,
+**choyxona** — motion reel (HUD bilan). Natijada uch dunyo yonma-yon, yakunda uch logotip ketma-ket "stutter" qilib,
+reel identity kadriga tushadi. Texnik: sahifa `lib.js` → `neon.js` → `reel.js` ni ketma-ket yuklaydi va har biridan keyin
+mavzuni "suratga oladi"; `useTheme()` har chizishda kerakli mavzuni almashtiradi (subtitr ham joyga qarab uslubini oladi).
+Yangi o'tish: **pocketZoom** — butun ofis kadri kichrayib telefon ekraniga sig'adi.
+
+**G'oya:** buyurtmalar ofisdagi kompyuterga yog'iladi ("javobsiz 0:12…"), egasi esa xaritada — bozorga, to'yga ketadi;
+monitordan unga kabel cho'zilgan, 4 s da taranglashib qizaradi va har slamda uni orqaga tortadi. *OFISGA BOG'LIQ ·
+BUYURTMA KUTMOQDA · KECH QOLDINGIZ*, 8.5 s: monitor zanjirlar bilan o'raladi — **QARAMLIK — biznes stolga zanjirband**.
+Vakuum: qulf, monitor eski televizorday o'chadi. Yechim: Marg'ilon bozori 10:15 — "Yangi buyurtma!" → Tasdiqlash →
+muhr; neon halqa → Farg'ona–Toshkent yo'li 22:40 — kampaniya grafigi, "Andijon Savdo: ko'rish 2x", byudjet +50 000,
+avto-optimallash; plitkalar to'lqini → choyxona 13:05 — +18 buyurtma, byudjet 72%, avto-javob. 18.5 s: laym kadr
+**ISTALGAN JOYDAN. — bir telefon, butun biznes**; binafsha karta "Ofis — endi cho'ntagingizda." (kun keyframe'lari).
+Natija: BOZOR +3 · YO'L +50% · CHOYXONA 0 kutish; Oldin ↔ ADUZ; oltin nishonlar Mobil · Istalgan joy · Nazorat.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_25.md`](SOUND_ARCHITECTURE_25.md). Butun kutubxona: sfx/ namunalari + oldingi qismlarning
+sintez ovozlari (kabel — fx.twang + fx.chain, qulf, tr.crt_off, tr.implode, tr.boot, qushlar, vibratsiya, muhr,
+fx.transfer, fx.switch, fx.strike, klassik imp.glitch / imp.boom / imp.crash) + xor G-major + pizzicato (A). 7-qism
+partiturasi 5 yarim ton yuqorida.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:04.5 | 1. Muammo (klassik) | "25-QISM · Mutlaq erkinlik". Monitorda buyurtmalar, xaritada egasi uzoqlashadi, kabel | Buyurtmalar kelyapti — lekin hammasi ofisdagi kompyuterda. |
+| 0:04.5–0:10.3 | 1. Muammo | Kabel taranglashadi. *OFISGA BOG'LIQ · BUYURTMA KUTMOQDA · KECH QOLDINGIZ*. 8.5 s: **QARAMLIK** (zanjirlar). Vakuum: qulf, monitor o'chadi | Siz tashqaridasiz — biznes esa stolga bog'langan. ...ofis qulf. |
+| 0:10.3–0:11 | O'tish | pocketZoom: ofis telefonga sig'adi + xor | — |
+| 0:11–0:14.3 | 2. Yechim — bozor (klassik) | Yangi buyurtma → Tasdiqlash → muhr | ADUZ — biznesingiz cho'ntagingizda. Bozorda ham. |
+| 0:14.3–0:17.6 | 2. Yechim — tungi yo'l (neon) | Kampaniya grafigi, byudjet +50 000, avto-optimallash | Yo'lda, kechasi ham. |
+| 0:17.6–0:21.75 | 2. Yechim — choyxona (reel) | +18 buyurtma, 72%, avto-javob. 18.5 s: **ISTALGAN JOYDAN.** Kun keyframe'lari | Choy ustida ham. Bir telefon — butun biznes. |
+| 0:22–0:27 | 3. Natija | Uch dunyo paneli, Oldin (faqat ofisda 9–18; kompyutersiz — hech narsa; javob ertaga) ↔ ADUZ (istalgan joydan 24/7; bir telefon yetarli; javob hoziroq), nishonlar | Mutlaq erkinlik: istalgan joydan boshqaring. |
+| 0:27–0:32 | Yakun | Uch logotip stutter → reel identity "ADUZ", CTA | ADUZ — biznesingiz himoyachisi! |
+
+Namuna — tekshiring: kanal nomlari, 290 000 so'm, 128 000 obunachi, +50 000 byudjet, "ko'rishlar 2x", +18 buyurtma,
+72%, +3 / +50% / 0 kutish va mobil ilova funksiyalari (buyurtmani tasdiqlash, byudjetni o'zgartirish, avto-optimallash,
+avto-javob) — ADUZ mobil ilovasining haqiqiy imkoniyatlari bilan solishtiring.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 

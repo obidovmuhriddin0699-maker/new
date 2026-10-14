@@ -41,6 +41,13 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   butun kadrni egallovchi rangli kesim (to'q sariq / laym) + og'ir so'z + serif izoh.
 - Subtitr: siyoh plashka, chapda to'q sariq chiziq, y≈1700 (HUD shkalasidan yuqorida).
 
+## Aralash rejim (25-qismdan): uchala dizayn bitta qismda
+- Sahifa: `lib.js` → `const TH_CLASSIC = snapTheme()` → `neon.js` → `TH_NEON` → `reel.js` → `FD = null; TH_REEL`.
+  `useTheme(TH_*)` — lib yordamchilari, `C`, `F`/`FD`, konfetti ranglarini almashtiradi; har sahna/qism chizishdan
+  oldin chaqiriladi, overlay oxirida subtitr uchun `useTheme(capTheme(t))`. Namuna: `episode25.html`.
+- Foydalanuvchi "barcha dizayn va ovozlar" so'rasa — shu rejim + butun ovoz kutubxonasi (sfx/ + oldingi qismlarning
+  fx./tr./imp. sintez ovozlari + xor + pizzicato).
+
 ## Vizual effektlar (foydalanuvchi: "juda yoqdi, yanada efekt qil")
 - **FX v2** (`lib.js`, 20-qismdan): `rgbGlitch`, `punch`, `shine`, `inkSplat`, `flare`, `trail`, `pulseVignette`,
   `godRays`, `disintegrate`. Har qismda ko'p ishlatiladi: slamlarda glitch, voqealarda punch, tayyor kartalarda shine,
@@ -49,7 +56,7 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   `bounce`, `charsDown`, `letterUp`, `colorBounce`, `flicker`, `typewriter`, `blurUp`, `scale`, `wordRight`.
   Sarlavhalar, oltin slam, natija sarlavhasi va reklama kartalari shu presetlar bilan jonlantiriladi.
 - Ishlatilgan o'tishlar (takrorlamaslik uchun): circleWipe, clockWipe, zoomThrough, pixelDissolve, splitDoors, squeegee,
-  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23), gridWave (24).
+  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23), gridWave (24), pocketZoom (25).
 
 ## Ovoz
 - **SFX kutubxonasi** `sfx/` (39 ta, foydalanuvchi yuborgan SFX-to'plam videolaridan kesilgan): UI/o'tish/zarba
