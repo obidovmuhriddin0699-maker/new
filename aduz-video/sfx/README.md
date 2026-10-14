@@ -1,7 +1,7 @@
 # ADUZ — SFX kutubxonasi
 
-Foydalanuvchi yuborgan ikki namunaviy videodan (premium UI sound effects to'plami reklamasi, 14-oktabr) kesib olingan
-26 ta haqiqiy ovoz. 19-qismdan boshlab barcha motion roliklarda shu ovozlar ishlatiladi (`audio.py` → `sfx.<nom>`).
+Foydalanuvchi yuborgan namunaviy videolardan kesib olingan 39 ta haqiqiy ovoz: 26 tasi — ikki SFX to'plami reklamasidan,
+13 tasi — ikki "Text Animation Presets" videosidan (matn animatsiyalari ovozlari, 22-qismdan). 19-qismdan boshlab barcha motion roliklarda shu ovozlar ishlatiladi (`audio.py` → `sfx.<nom>`).
 
 - Format: mono WAV, 44.1 kHz, 16-bit; boshidagi jimlik kesilgan, oxirida 30 ms fade, cho'qqi −1 dBFS.
 - Har bir ovozni eshitib ko'rish: [`PREVIEW.mp4`](PREVIEW.mp4) — ekranda nomi va tavsifi bilan ketma-ket.
@@ -31,6 +31,19 @@ Foydalanuvchi yuborgan ikki namunaviy videodan (premium UI sound effects to'plam
 | `tick` | L3 UI | Mayda tik |
 | `tick_roll` | L3 UI | 8 ta bir tekis tik — hisoblagich/yozish |
 | `boom_sub` | L5 zarba | Sub-boom (≈58 Hz) + dum |
+| `bass_drop` | L5 zarba | Past bass-zarba — matn chiqishi (bounce) |
+| `tick_hi` | L3 UI | Yuqori matn tiki (≈6.5 kHz) — harflar |
+| `shimmer` | L3 UI | Yaltiroq shimmer (≈8.7 kHz tonal) — flicker, flare |
+| `type_burst` | L3 UI | Yozish shitirlashi — typewriter |
+| `blip_up` | L3 UI | Ko'tariluvchi bliplar — letter-up |
+| `sparkle_hit` | L5 zarba | Sparkle-zarba |
+| `swoosh_text` | L4 o'tish | Matn whoosh'i — blur-fade, word-right |
+| `whoosh_low` | L4 o'tish | Past whoosh / swell |
+| `thump` | L5 zarba | Qisqa thump |
+| `pluck_tone` | L3 UI | Tonal pluck (0.75 s) |
+| `pop_short` | L3 UI | Qisqa pop |
+| `click_soft` | L3 UI | Yumshoq klik |
+| `chime_swell` | L3 UI | Chime-swell |
 
 **Litsenziya:** bu ovozlar boshqa muallifning SFX to'plami reklamasidan olingan. Tijoriy reklamada ishlatishdan oldin
 to'plamning litsenziyasini (yoki muallif ruxsatini) tekshiring.

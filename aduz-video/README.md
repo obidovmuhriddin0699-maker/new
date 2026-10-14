@@ -26,6 +26,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 19 | `ADUZ_19-qism.mp4` | Mikro-kanallar kuchi |
 | 20 | `ADUZ_20-qism.mp4` | Qonuniy va oq savdo (B2B) |
 | 21 | `ADUZ_21-qism.mp4` | Raqamli adolat (Arbitraj) |
+| 22 | `ADUZ_22-qism.mp4` | Jalb qiluvchi kontent |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -619,6 +620,42 @@ ratchet_roll. Musiqa — 7-qism aranjirovkasi 3 yarim ton yuqorida (G-minor → 
 
 Vaqtlar, summa, "har 5 daqiqada", reyting o'zgarishi — namuna. Avtomatik nazorat, dalil yig'ish, arbitraj qarori va refund
 tartibi ssenariy asosida — ADUZ'ning haqiqiy arbitraj qoidalari bilan solishtiring.
+
+## 22-qism: "Jalb qiluvchi kontent"
+
+7-qism uslubi + FX v2 + **kinetik matn presetlari** (`kText`: bounce, charsDown, letterUp, colorBounce, flicker,
+typewriter, blurUp, scale, wordRight — foydalanuvchi yuborgan "Text Animation Presets" videolari asosida); ovoz —
+[`sfx/`](sfx/README.md) + yangi musiqa uslubi (original "heavenly" xor va o'ynoqi-sirli pizzicato). O'tishlar:
+zoom-through (flare bilan) va whip-pan. Loyiha qoidalari endi [`CLAUDE.md`](CLAUDE.md) da saqlanadi.
+
+**G'oya:** muammo — "zerikarli matnlar va o'tib ketiladigan reklama". Telegram lentasi tez aylanadi; "Vodiy Textile"ning
+uzun kulrang matnli posti har safar ko'rinadi va o'tib ketiladi (flick + RGB glitch); "Diqqat: 1.5 s → 0.6 s → 0.4 s";
+hisoblagich: ko'rish o'sadi, bosish 4, CTR 0.1%. *ZERIKARLI · UZUN MATN · O'TIB KETILDI*. 8.5 s: **KO'RINMAS — matn bor,
+e'tibor yo'q**. Vakuumda postning harflari birin-ketin tushib ketadi. Yechim — ADUZ "Reklama konstruktori": animatsiyali
+shablonlar galereyasi (−30%, YANGI, 1+1, STORY — har biri o'z presetida jonli) → "−30%" → jonli ko'rinish: "−30%" bounce,
+"YANGI KOLLEKSIYA" letter-up, "Faqat 3 kun!" typewriter, "Buyurtma berish" → animatsiya "Flicker"ga almashadi → brend rangi
+(firuza) → "Kanallarga yuborish" → lenta aylanadi va **sizning reklamangizda to'xtaydi** ("Ko'z to'xtadi"): diqqat 2.8 s,
+184 bosish, CTR 3.8%. Natija — oldingi kulrang post (0.1%) → jonli karta (3.8%), kassa.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_22.md`](SOUND_ARCHITECTURE_22.md). Har kinetik presetning o'z ovozi (yangi namunalar):
+bounce — bass_drop + sparkle_hit, letter-up — blip_up, typewriter — type_burst, flicker — shimmer + glitch, sarlavhalar —
+tick_hi / swoosh_text. Vakuumda harflar tushishi — 20 ta tick_hi turli balandlikda (sfx.letters_fall). Musiqa: 7-qism
+partiturasi + muammoda **o'ynoqi-sirli pizzicato** (Karplus-Strong, original motiv), vahiy lahzasida (10.2 s), oltin slamda
+va logotip ostida **"heavenly" xor "aaah"** (formant sintez). Referens meme treklarining o'zi ishlatilmagan.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "22-QISM · Jalb qiluvchi kontent" (kinetik). Lenta: uzun kulrang matnli post → 1.5 s diqqat → flick | Uzun, zerikarli matn — lenta tez aylanadi, hech kim to'xtamaydi. |
+| 0:05–0:10.45 | 1. Muammo | Yana o'tib ketishadi (0.6 s, 0.4 s). *ZERIKARLI · UZUN MATN · O'TIB KETILDI*. 8.5 s: **KO'RINMAS**. 9.55 s: harflar tushadi (ovoz vakuumi) | Har safar — o'tib ketishadi. Diqqat bir soniyaga ham yetmaydi... harflar ham qochib ketdi. |
+| 0:10.45–0:11 | O'tish | Zoom-through + xor "aaah" | — |
+| 0:11–0:16 | 2. Yechim | Shablonlar → "−30%" → jonli ko'rinish (bounce, letter-up, typewriter) → Flicker → firuza rang → "Kanallarga yuborish" | ADUZ konstruktori: tayyor shablon, jonli animatsiya — bir bosishda. |
+| 0:16–0:22 | 2. Yechim | Lenta to'xtaydi — "Ko'z to'xtadi", 2.8 s · 184 bosish · 3.8%. 18.5 s: **KO'Z TO'XTAYDI — shablon + animatsiya, bir daqiqada**. "Reklama tayyor!" | Endi lenta aylanadi — va aynan sizning reklamangizda to'xtaydi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | Kulrang post 0.1% → jonli karta 3.8% (kassa). Oldin (uzun, zerikarli matn; o'tib ketiladi; CTR 0.1%) ↔ ADUZ (tayyor shablon; ko'z to'xtaydi; CTR 3.8%). Nishonlar: Shablonlar · Animatsiya · Konstruktor | Jalb qiluvchi kontent — ko'z to'xtaydigan reklama. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo (xor bilan), shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Raqamlar (diqqat soniyalari, bosishlar, CTR 0.1% → 3.8%, "120+ shablon") va konstruktor imkoniyatlari (presetlar, rang,
+"bir daqiqada") — namuna. ADUZ'ning haqiqiy reklama konstruktori bilan solishtiring.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 

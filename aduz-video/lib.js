@@ -731,3 +731,42 @@ function disintegrate(x, y, w, h, p, bg = '#05070d', seed = 1, cell = 14) {
   }
   ctx.restore();
 }
+
+// ======================= Kinetik matn presetlari (foydalanuvchi referenslari: v1/v4, 22-qismdan boshlab) =======================
+// kText(t, at, str, x, y, size, color, preset, o): centred line of text animated in by `preset`; o.hold → fades out after.
+// Presets: bounce · charsDown · letterUp · colorBounce · flicker · typewriter · blurUp · scale · wordRight
+function kText(t, at, str, x, y, size, color, preset = 'bounce', o = {}) {
+  const { weight = 900, hold = 99, accent = '#ffc83d', stagger = null, glow = null, out = .25 } = o;
+  const d = t - at; if (d < 0) return;
+  const fade = 1 - clamp((d - hold) / out); if (fade <= 0) return;
+  ctx.save(); ctx.font = `${weight} ${size}px ${F}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 30; }
+  const words = preset === 'blurUp' || preset === 'scale' || preset === 'wordRight';
+  const units = words ? str.split(/(\s+)/) : [...str];
+  const ws = units.map(u => ctx.measureText(u).width), total = ws.reduce((a, b) => a + b, 0);
+  const st = stagger ?? (words ? .09 : .028);
+  let cx = x - total / 2, k = 0;
+  units.forEach((u, i) => {
+    const w = ws[i]; if (!u.trim()) { cx += w; return; }
+    const p = clamp((d - k * st) / (preset === 'typewriter' ? .01 : .38)); k++;
+    if (p <= 0) { cx += w; return; }
+    const e = eOut(p), b = eBack(p); let dx = 0, dy = 0, sc = 1, a = clamp(p * 2.5), col = color, blur = 0;
+    if (preset === 'bounce') { dy = (1 - b) * -size * 1.2; sc = .6 + .4 * b; }
+    else if (preset === 'charsDown') { dy = (1 - e) * -size * .8; }
+    else if (preset === 'letterUp') { dy = (1 - e) * size; }
+    else if (preset === 'colorBounce') { dy = (1 - b) * size * .9; col = p < 1 ? accent : color; }
+    else if (preset === 'flicker') { const r = Math.sin((k * 91.7 + Math.floor(d * 30)) * 12.9898) * 43758.5453 % 1; a = p < 1 ? (Math.abs(r) > .45 ? 1 : .15) : 1; }
+    else if (preset === 'typewriter') { a = 1; }
+    else if (preset === 'blurUp') { dy = (1 - e) * size * .6; blur = (1 - e) * 14; }
+    else if (preset === 'scale') { sc = b; }
+    else if (preset === 'wordRight') { dx = (1 - e) * -size * 1.1; }
+    ctx.save(); ctx.globalAlpha *= a * fade;
+    if (blur > .3) ctx.filter = `blur(${blur.toFixed(1)}px)`;
+    if (preset === 'letterUp') { ctx.beginPath(); ctx.rect(cx - 4, y - size * .75, w + 8, size * 1.5); ctx.clip(); }
+    ctx.translate(cx + w / 2 + dx, y + dy); ctx.scale(sc, sc); ctx.fillStyle = col; ctx.fillText(u, -w / 2, 0);
+    ctx.restore(); cx += w;
+  });
+  if (preset === 'typewriter' && fade > 0) { const typed = Math.min(k, Math.floor(d / st)); let tw = 0; for (let i = 0, c = 0; i < units.length && c < typed; i++) { tw += ws[i]; if (units[i].trim()) c++; }
+    if (Math.floor(d * 2.5) % 2 === 0 || typed < k) { ctx.fillStyle = accent; ctx.fillRect(x - total / 2 + tw + 4, y - size * .5, Math.max(3, size * .07), size); } }
+  ctx.restore();
+}
