@@ -21,6 +21,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 14 | `ADUZ_14-qism.mp4` | Vaqt mashinasi (Rejalashtirish) |
 | 15 | `ADUZ_15-qism.mp4` | Ochiq haqiqat (Reyting tizimi) |
 | 16 | `ADUZ_16-qism.mp4` | Bot va mutaxassis hamkorligi |
+| 17 | `ADUZ_17-qism.mp4` | Topilgan daromadning erkinligi |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -439,6 +440,37 @@ Kod yozish va "@aduz_bot" — klaviatura. Musiqa — 7-qism aranjirovkasi 1 yari
 
 Bot nomi (@aduz_bot), huquqlar ro'yxati, mutaxassis ismi va "bir necha daqiqa" — namuna. Ulanish jarayoni ssenariy asosida ("botni
 admin qilish orqali oson ulanish") — ADUZ'ning haqiqiy bot nomi, kerakli huquqlar va qo'llab-quvvatlash xizmati bilan solishtiring.
+
+## 17-qism: "Topilgan daromadning erkinligi"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: **zanjir uzilishi** (vakuumda ikki zanjir kadrni
+X shaklida o'raydi va markazga qulf osiladi; 10.3 s da zanjirlar uzilib sochiladi, qulf pastga tushadi) → oltin doira (`circleWipe`) va whip-pan.
+
+**G'oya:** muammo — "pullarni yechib olishdagi bahonalar". Admin hamyonida 2 450 000 so'm, lekin "Yechib bo'lmaydi" (qulf belgisi).
+Har "Pulni yechish" bosilishida yangi bahona kartasi yopishadi: faqat oyning 1-sanasida · minimal summa 3 000 000 · komissiya 15% ·
+ko'rib chiqish 14 kun · operator: «Ertaga albatta...» · texnik ishlar. Kutish hisoblagichi 0 → 14 kun. *BAHONA · YANA BAHONA ·
+14 KUN KUTING*. 8.5 s: **QULFDA — o'z pulingiz o'zingizga berilmaydi**. Yechim — ADUZ "Daromad": balans va oxirgi tushumlar →
+"Kartaga yechish" → Uzcard •••• 4417 → "Hammasi" → "Muddat: darhol · istalgan vaqtda" → "Tasdiqlash". Telefon kichrayadi, pastda
+bank kartasi paydo bo'ladi va 16 ta tanga unga oqib tushadi (balans 2 450 000 → 0, karta 0 → 2 450 000), SMS: "+2 450 000 so'm
+kelib tushdi". Natija — tanga yomg'iri kartaga, kassa.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_17.md`](SOUND_ARCHITECTURE_17.md). Yangi tovushlar: zanjir shaldirashi, qulf (og'ir klak), zanjir
+uzilishi (chars + jarang + halqalar sochilishi), SMS signali. Bahona kartalari — stiker "shap" + rad signali; tangalar — har biri
+alohida. Musiqa — 7-qism aranjirovkasi 4 yarim ton yuqorida (G#-minor → F#-major). Sonic logo F# tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "17-QISM · Daromad erkinligi". "Daromadim · Balans 2 450 000 so'm" → "Pulni yechish" → bahonalar: 1-sana, minimal summa, komissiya 15% | Daromad bor — lekin yechib bo'lmaydi. Har safar yangi bahona. |
+| 0:05–0:10.3 | 1. Muammo | "14 kun", «Ertaga albatta...», "Texnik ishlar". *BAHONA · YANA BAHONA · 14 KUN KUTING*. 8.5 s: **QULFDA**. 9.5 s: zanjir + qulf (ovoz vakuumi) | Minimal summa, komissiya, «14 kun kuting»... pulingiz — qulf ostida. |
+| 0:10.3–0:11 | O'tish | Zanjir uziladi → oltin doira | — |
+| 0:11–0:16 | 2. Yechim | "Daromad" → "Kartaga yechish" → Uzcard → "Hammasi" → "Tasdiqlash" → tangalar kartaga | ADUZ'da daromadni istalgan vaqtda kartaga yechasiz. |
+| 0:16–0:22 | 2. Yechim | SMS "+2 450 000 so'm kelib tushdi". 18.5 s: **PUL — SIZNIKI — istalgan vaqtda, kartaga**. "Pul kartangizda!" | Bir necha bosish — pul kartangizda. Bahonasiz. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Topgan pulingiz — sizniki": tanga yomg'iri, karta 2 450 000 so'm (kassa). Oldin (14 kun kutish; bahona va «ertaga»; pul qulf ostida) ↔ ADUZ (bir necha daqiqa; istalgan vaqtda; pul kartangizda). Nishonlar: Tezkor · Kartaga · 24/7 | Topgan pulingiz — sizniki. Istalgan payt. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Summalar, karta raqamlari, "darhol", "bir necha daqiqa" va "24/7" — namuna. Yechib olish shartlari (muddat, komissiya, minimal summa,
+qo'llab-quvvatlanadigan kartalar) — ADUZ'ning haqiqiy to'lov qoidalari bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

@@ -2748,7 +2748,132 @@ def render_16():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16}
+
+# ---------- 17-qism: Topilgan daromadning erkinligi ----------
+def fx_chain(dur=0.7):
+    out = np.zeros(int(dur * SR))
+    gg = np.random.default_rng(17)
+    for k in range(26):
+        at = dur * 0.8 * (k / 26) ** 0.7
+        b = layer(bell(gg.uniform(1800, 4200), 0.12, 2.5, gg.uniform(0.02, 0.05)), fx_detent(int(gg.integers(70, 84))) * 0.8) * gg.uniform(0.3, 0.8)
+        i = int(at * SR)
+        out[i : i + len(b)] += b[: len(out) - i]
+    x = seconds(dur)
+    return np.tanh((out + np.sin(2 * np.pi * 70 * x) * np.exp(-x / 0.08) * 0.8) * 1.2) * 0.8
+
+
+def fx_snap():
+    x = seconds(0.9)
+    crack = filt(rng.standard_normal(len(x)), "highpass", 1500) * np.exp(-x / 0.015)
+    ring = sum(np.sin(2 * np.pi * f * x) * np.exp(-x / d) for f, d in ((620, 0.4), (1570, 0.25), (2890, 0.15))) * 0.3
+    return np.tanh(layer(crack + ring, np.concatenate([np.zeros(int(0.08 * SR)), fx_chain(0.6) * 0.6])) * 1.2) * 0.85
+
+
+def fx_sms():
+    return layer(tone(m(85), 0.09, "sine", 0.002, 0.04) * 0.5, np.concatenate([np.zeros(int(0.12 * SR)), tone(m(90), 0.14, "sine", 0.002, 0.07) * 0.5]))
+
+
+SOUNDS.update({
+    "fx.chain": ("L5", lambda a=None: fx_chain(a or 0.7), "Zanjir: metall halqalar shaldirashi + zarba"),
+    "fx.padlock": ("L5", lambda a=None: fx_vault_lock(), "Qulf: og'ir 'klak' + metall jarang"),
+    "fx.chain_snap": ("L5", lambda a=None: fx_snap(), "Zanjir uziladi: keskin 'chars' + jarang + halqalar sochilishi"),
+    "fx.sms": ("L3", lambda a=None: fx_sms(), "SMS: ikki notali signal"),
+})
+FRONT.update({"fx.chain", "fx.padlock"})
+
+FS_PENT = [66, 68, 70, 73, 75, 78, 80, 82, 85, 87, 90]
+
+CUES_17 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    *[x for i, at in enumerate((1.2, 2.6, 4.0, 5.4, 6.6, 7.6)) for x in [
+        (at, "ui.tap", 0.26, 0.2, 0, 0, f"'Pulni yechish' #{i + 1}", None),
+        (at + 0.2, "fx.sticky", 0.2, round(-0.3 + 0.12 * i, 2), 0.15, 0, f"Bahona kartasi #{i + 1}", None),
+        (at + 0.22, "ui.error", 0.12, round(-0.3 + 0.12 * i, 2), 0.2, 0, "Rad etildi", None),
+    ]],
+    (1.45, "fx.detent", 0.2, 0.4, 0.1, 0, "Balansga qulf belgisi", 60),
+    *[(at, "fx.tick", 0.035, -0.4, 0.1, 0, "Kutish kunlari o'tmoqda", None) for at in np.arange(1.0, 9.0, 0.5)],
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: BAHONA", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: YANA BAHONA", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: 14 KUN KUTING", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [56, 59, 63, 68]),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "QULFDA — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.5, "fx.chain", 0.45, 0, 0, 0, "OVOZ VAKUUMI: zanjirlar kadrni o'raydi", 0.6),
+    (9.62, "fx.padlock", 0.45, 0, 0, 0, "Qulf yopildi", None),
+    (9.95, "fx.heartbeat", 0.3, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (F#-major)", [66, 70, 73, 78]),
+    (10.3, "fx.chain_snap", 0.5, 0, 0.35, 0.15, "ZANJIR UZILADI", None),
+    (10.5, "tr.whoosh", 0.3, 0, 0.3, 0, "Oltin doira ochiladi", None),
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    (12.4, "ui.tap", 0.3, 0.2, 0, 0, "'Kartaga yechish'", None),
+    (12.5, "tr.slide", 0.14, 0, 0.1, 0, "Yechish oynasi chiqadi", None),
+    (12.9, "ui.select", 0.2, 0.2, 0.2, 0, "Uzcard tanlandi", 78),
+    (13.3, "ui.select", 0.22, 0.3, 0.2, 0, "'Hammasi' — 2 450 000", 82),
+    (14.0, "ui.tap", 0.36, 0.2, 0, 0, "'Tasdiqlash' bosildi", None),
+    (14.1, "tr.whoosh", 0.16, 0, 0.2, 0, "Bank kartasi kadrga kiradi", None),
+    (14.3, "tr.riser", 0.16, 0, 0.2, 0, "Tangalar oqimi", 1.1),
+    *[(14.3 + k * 0.06 + 0.5, "fx.coin", 0.06, round((k % 5 - 2) * 0.2, 2), 0.2, 0, f"Tanga #{k + 1} kartaga", None) for k in range(16)],
+    (15.4, "ui.success", 0.28, 0, 0.4, 0.2, "O'tkazildi ✓", None),
+    (15.6, "fx.sms", 0.24, 0.3, 0.2, 0.15, "SMS: +2 450 000 so'm", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: PUL — SIZNIKI oldidan", [70, 73, 78, 82]),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "PUL — SIZNIKI — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 71),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Pul kartangizda oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    *[(22.85 + k * 0.05, "fx.coin", 0.05, round(((k * 7) % 11 - 5) * 0.1, 2), 0.2, 0, f"Tanga yomg'iri #{k + 1}", None) for k in range(10)],
+    (23.2, "fx.kassa", 0.38, 0, 0.3, 0.2, "KASSA — 2 450 000 kartada", None),
+    *[(23.5 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[(23.7 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [78, 82, 87][i]) for i in range(3)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [70, 75, 78, 82]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 73),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [87, 90, 94][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (F# tonikada)", 66),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 94),
+]
+
+SCORE_17 = [
+    ("0:00–0:09.5", "Muammo · G#-minor, tashvishli minimal", "7-qism aranjirovkasi 4 yarim ton yuqorida: qorong'i pad, offbeat Rhodes, filtrlangan bas, 5.5 s dan kick. Ustida: har 'Pulni yechish' bosilishiga bahona kartasi 'shap' etib yopishadi + rad signali; kutish kunlari tiqillaydi."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: zanjirlar kadrni o'raydi (metall shaldirash), og'ir qulf 'klak', yurak urishi. Keyin J-cut swell F#-major'da."),
+    ("0:10.3–0:11", "Zanjir uziladi", "Keskin 'chars' + metall jarang + halqalar sochilishi; oltin doira whoosh bilan ochiladi."),
+    ("0:11–0:21.75", "Yechim · F#-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: 'Kartaga yechish', karta va 'Hammasi' tanlovi, 'Tasdiqlash' → riser + 16 ta tanga kartaga tushadi → 'O'tkazildi' → SMS signali."),
+    ("0:22–0:27", "Natija · F#-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. Tanga yomg'iri kartaga, kassa ovozi (ssenariydagi 'kassa ovozi')."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (F# tonikada), so'nish."),
+]
+
+
+def score_17(M):
+    """7-qism partiturasi, 4 yarim ton yuqorida."""
+    global KEY_SHIFT
+    KEY_SHIFT = 4
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_17():
+    """17-qism: Topilgan daromadning erkinligi. Score + cue-sheet (CUES_17)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # chained and locked: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_17(M)
+    render_cues(M, CUES_17)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -2756,7 +2881,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
