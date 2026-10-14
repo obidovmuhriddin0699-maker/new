@@ -17,6 +17,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 10 | `ADUZ_10-qism.mp4` | Matching algoritmi ishda |
 | 11 | `ADUZ_11-qism.mp4` | Kafolatlangan xavfsizlik (Escrow) |
 | 12 | `ADUZ_12-qism.mp4` | Shaffof statistika va jonli tahlil |
+| 13 | `ADUZ_13-qism.mp4` | Ommaviy qamrov |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -313,6 +314,36 @@ xaritasi "blip"lari (Bb-pentatonik zinapoya), shahar ustunlari, tavsiya "ding". 
 
 Raqamlar (shaharlar ulushi, ko'rayotganlar soni, "+38% ko'rish", eng faol soat 20:00) — namuna. Tavsiya va "bir bosishda qo'llash"
 funksiyasi ssenariy asosida — ADUZ'ning haqiqiy statistika imkoniyatlari bilan solishtiring.
+
+## 13-qism: "Ommaviy qamrov"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: **plitkalar ag'darilishi** (yangi `tileFlip`:
+kadr 6×10 plitkaga bo'linadi va ular diagonal to'lqin bo'lib ag'dariladi — muammodagi "50 ta chat devori" g'oyasining davomi) va whip-pan.
+
+**G'oya:** muammo — 50 ta kanal = 50 ta alohida chat. Har biriga bir xil marosim: chatni ochish → "Nusxa olish" → "Joylash" →
+"Yuborish"; ba'zi adminlar "Narx boshqacha, qayta yozing" deydi (qizil "!"). Soat 09:00 dan 13:40 gacha yuguradi, batareya tugaydi.
+8.5 s: **14 / 50 — yarim kun, hali 36 ta qoldi**. Ovoz vakuumida telefon o'chadi ("1%"). Yechim — "Ommaviy joylash": ikki filtr
+(Kiyim-kechak · Farg'ona vodiysi) → 54 kanal kaskad bilan belgilanadi → "Qamrov ≈ 186 000 obunachi" → **bitta tugma** → postlar
+54 kanalga to'lqin bo'lib ketadi, telefondan qog'oz samolyotchalar uchadi. Natija — qamrov hisoblagichi o'sish grafigi bilan, kassa ovozi.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_13.md`](SOUND_ARCHITECTURE_13.md). Yangi tovushlar: plitka ag'darilishi (qog'oz "shirt", 15 ta
+diagonal bilan sinxron), telefon o'chishi, "batareya 1%" ogohlantirishi, post yuborish "fiyt", kassa (tugma + quti + "ding" + tanga).
+Muammoda bir xil uch bosish qayta-qayta takrorlanadi va soat tiqillashi tobora balandlashadi. Musiqa — 7-qism aranjirovkasi
+2 yarim ton yuqorida (F#-minor → E-major). Sonic logo E tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "13-QISM · Ommaviy qamrov". "Kanallar · 50 ta chat" devori; 3 marta to'liq marosim: Nusxa olish → Joylash → Yuborish (2-sida admin: «Narx boshqacha»). Hisoblagich: N/50 kanal · soat · xato | 50 ta kanal — 50 ta chat. Har biriga nusxa, joylash, yuborish... |
+| 0:05–0:10.5 | 1. Muammo | Tezlashgan montaj: plitkalar birin-ketin (ba'zilari qizil). *50 TA CHAT · 50 MARTA NUSXA · YANA 36 TA...*. 8.5 s: **14 / 50 — yarim kun, hali 36 ta qoldi**. 9.55 s: telefon o'chadi, "1%" | Yarim kun o'tdi — hali 14 tasi ham tayyor emas... telefon ham charchadi. |
+| 0:10.35–0:11 | O'tish | Plitkalar ag'darilishi | — |
+| 0:11–0:16 | 2. Yechim | "Ommaviy joylash": filtrlar → 54 kanal belgilanadi → "Qamrov ≈ 186 000 obunachi" → "54 kanalga yuborish" | ADUZ'da kanallarni tanlaysiz — 54 tasi bir zumda belgilanadi. |
+| 0:16–0:22 | 2. Yechim | "Yuborilmoqda... N / 54" → "54 / 54 yuborildi". 18.5 s: **BITTA TUGMA — butun vodiyga bir bosishda**. "54 kanalga yuborildi!" | Bitta tugma — reklama hammasiga birdan yuboriladi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Bir bosishda — butun vodiy": Qamrov 0 → 186 000 (o'sish grafigi, kassa). Oldin (50 marta nusxa-joylash; yarim kun; 14/50 kanal) ↔ ADUZ (bitta tugma; 2 daqiqa; 54/54 kanal). Nishonlar: Ommaviy · Tejamkor · Qamrov | Bir bosishda — butun vodiy qamrovi. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Raqamlar (54 kanal, 186 000 obunachi, "2 daqiqa", "har bir kanal — alohida tasdiq", "bitta hisobot") — namuna; ssenariyda faqat
+"50+ kanal" deyilgan. ADUZ'ning haqiqiy ommaviy joylash imkoniyatlari bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

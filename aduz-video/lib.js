@@ -488,6 +488,22 @@ function lightsOn(t, a, b, drawA, drawB) {
   const k = 1 - clamp((p - seg[0]) / .06);
   withAlpha(.6 * k, () => { ctx.fillStyle = '#f0fff8'; ctx.fillRect(0, 0, W, H); });
 }
+// Transition: tile flip — the frame splits into a 6×10 wall of tiles that flip over in a diagonal wave.
+const TILE_C = 6, TILE_R = 10, TILE_EDGE = 'rgba(255,255,255,.55)';
+function tileFlip(t, a, b, drawA, drawB) {
+  const p = prog(t, a, b), tw = W / TILE_C, th = H / TILE_R, cells = [];
+  for (let r = 0; r < TILE_R; r++) for (let c = 0; c < TILE_C; c++) {
+    const q = clamp((p - (c + r) / (TILE_C + TILE_R - 2) * .55) / .45), w = tw * Math.abs(Math.cos(Math.PI * eInOut(q)));
+    cells.push([c * tw + tw / 2, r * th, w, q]);
+  }
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  for (const [side, draw] of [[0, drawA], [1, drawB]]) {
+    ctx.save(); ctx.beginPath();
+    for (const [cx, y, w, q] of cells) if ((q >= .5) === !!side) ctx.rect(cx - w / 2, y + 2, w, th - 4);
+    ctx.clip(); draw(t); ctx.restore();
+  }
+  for (const [cx, y, w, q] of cells) if (q > 0 && q < 1) withAlpha(Math.sin(Math.PI * q) * .8, () => { ctx.strokeStyle = TILE_EDGE; ctx.lineWidth = 3; ctx.strokeRect(cx - w / 2, y + 2, w, th - 4); });
+}
 // Film grain + vignette, frame-stable for rendering.
 let GRAIN = null;
 function filmLook(t, grain = .07, vignette = .38) {

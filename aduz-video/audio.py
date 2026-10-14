@@ -2169,7 +2169,143 @@ def render_12():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12}
+
+# ---------- 13-qism: Ommaviy qamrov ----------
+def fx_flick():
+    x = seconds(0.07)
+    return filt(rng.standard_normal(len(x)), "bandpass", [1200, 5000]) * np.exp(-x / 0.012) * 0.8 + np.sin(2 * np.pi * 520 * x) * np.exp(-x / 0.01) * 0.3
+
+
+def fx_power_down():
+    x = seconds(0.9)
+    sweep = np.sin(2 * np.pi * np.cumsum(880 * 2 ** (-x * 4)) / SR) * np.exp(-x / 0.35) * 0.5
+    return layer(sweep, ui_click() * 0.6)
+
+
+def fx_low_battery():
+    return layer(tone(m(76), 0.11, "sine", 0.002, 0.04) * 0.6, np.concatenate([np.zeros(int(0.13 * SR)), tone(m(69), 0.2, "sine", 0.002, 0.08) * 0.6]))
+
+
+def fx_send():
+    return whoosh(0.22, 2500, 9000) * 0.7
+
+
+def fx_kassa():
+    x = seconds(0.25)
+    drawer = filt(rng.standard_normal(len(x)), "bandpass", [300, 2500]) * np.exp(-x / 0.06) * 0.6
+    return layer(fx_detent(70) * 1.2, np.concatenate([np.zeros(int(0.05 * SR)), drawer]), np.concatenate([np.zeros(int(0.12 * SR)), ding(1318.5) * 0.7]), np.concatenate([np.zeros(int(0.2 * SR)), coin() * 0.7]))
+
+
+SOUNDS.update({
+    "fx.flick": ("L4", lambda a=None: fx_flick(), "Plitka ag'dariladi: qog'oz 'shirt'"),
+    "fx.power_down": ("L5", lambda a=None: fx_power_down(), "Telefon o'chadi: pastga tushuvchi ton + klik"),
+    "fx.low_battery": ("L3", lambda a=None: fx_low_battery(), "Batareya 1%: ikki notali ogohlantirish"),
+    "fx.send": ("L3", lambda a=None: fx_send(), "Post yuborildi: qisqa 'fiyt'"),
+    "fx.kassa": ("L5", lambda a=None: fx_kassa(), "Kassa: tugma + quti + 'ding' + tanga"),
+})
+FRONT.update({"fx.power_down", "fx.low_battery"})
+
+E_PENT = [64, 66, 68, 71, 73, 76, 78, 80, 83, 85, 88, 90]
+_RIT_13 = [(1.0, 0, False), (2.3, 1, True), (3.6, 2, False)]
+_MONT_13 = [(4.8 + k * 0.32 + (k % 3) * 0.04, 3 + k, k in (2, 6, 9)) for k in range(11)]
+_tpan = lambda i: round(((i % 5) - 2) * 0.22, 2)
+
+CUES_13 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    *[x for at, i, err in _RIT_13 for x in [
+        (at - 0.15, "ui.tap", 0.24, _tpan(i), 0, 0, f"Chat #{i + 1} ochildi", None),
+        (at, "tr.slide", 0.1, 0, 0.1, 0, "Chat kartasi chiqadi", None),
+        (at + 0.3, "ui.tap", 0.2, -0.3, 0, 0, "Nusxa olish", None),
+        (at + 0.52, "ui.tap", 0.2, 0, 0, 0, "Joylash", None),
+        (at + 0.74, "ui.tap", 0.2, 0.3, 0, 0, "Yuborish", None),
+        (at + 0.76, "fx.send", 0.14, 0.4, 0.15, 0, "Post ketdi", None),
+        (at + 1.0, "fx.fail" if err else "ui.select", 0.18 if err else 0.1, 0, 0.2, 0, "Admin: «Narx boshqacha»" if err else "Yuborildi", None if err else 59),
+    ]],
+    *[(at - 0.12, "ui.tap", 0.14, _tpan(i), 0, 0, f"Chat #{i + 1}", None) for at, i, err in _MONT_13],
+    *[(at, "fx.fail" if err else "ui.select", 0.14 if err else 0.07, _tpan(i), 0.15, 0, f"Chat #{i + 1}: " + ("xato" if err else "yuborildi"), None if err else 59) for at, i, err in _MONT_13],
+    *[(at, "fx.tick", 0.04 + 0.04 * (at - 4.5) / 5, 0.35, 0, 0, "Soat yuguradi", None) for at in np.arange(4.5, 9.45, 0.25)],
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: 50 TA CHAT", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: 50 MARTA NUSXA", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: YANA 36 TA...", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [54, 57, 61, 66]),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "14 / 50 — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.55, "fx.power_down", 0.45, 0, 0, 0, "OVOZ VAKUUMI: telefon o'chdi", None),
+    (9.6, "fx.low_battery", 0.26, 0, 0, 0, "Batareya 1%", None),
+    (9.95, "fx.heartbeat", 0.36, 0, 0, 0, "Yurak urishi", None),
+    (10.1, "fx.low_battery", 0.18, 0, 0, 0, "Batareya 1% (so'nggi)", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (E-major)", [64, 68, 71, 76]),
+    *[(10.35 + 0.65 * (d / 14 * 0.55 + 0.225), "fx.flick", 0.16, round(-0.5 + d / 14, 2), 0.15, 0, f"Plitkalar ag'dariladi — diagonal {d + 1}/15", None) for d in range(15)],
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    (12.1, "ui.select", 0.2, -0.3, 0.2, 0, "Filtr: Kiyim-kechak", 76),
+    (12.6, "ui.select", 0.2, 0.1, 0.2, 0, "Filtr: Farg'ona vodiysi", 80),
+    *[(12.9 + k / 18, "fx.blip", 0.07, round(-0.5 + (k % 6) / 5, 2), 0.2, 0.2, f"Kanallar belgilanmoqda {3 * (k + 1)}/54", E_PENT[k % 12]) for k in range(18)],
+    (13.95, "ui.success", 0.18, 0, 0.4, 0.2, "54 kanal tanlandi", None),
+    *[(14.0 + k * 0.11, "ui.slider", 0.06, 0.2, 0.1, 0, f"Qamrov hisoblanmoqda {k + 1}/8", [64, 66, 68, 71, 73, 76, 78, 80][k]) for k in range(8)],
+    (15.2, "ui.tap", 0.38, 0.2, 0, 0, "'54 kanalga yuborish' bosildi", None),
+    (15.25, "ui.launch", 0.22, 0, 0.3, 0.2, "Yuborish boshlandi", None),
+    *[(15.4 + k * 0.07, "fx.send", 0.1, round((k / 13 - 0.5) * 1.4, 2), 0.2, 0.15, f"Post #{k + 1} uchib ketdi", None) for k in range(14)],
+    *[(15.4 + k * 0.08, "fx.blip", 0.06, round(-0.5 + k / 12, 2), 0.25, 0.25, f"Kanal to'lqini {k + 1}/13", E_PENT[k % 12]) for k in range(13)],
+    (16.6, "ui.success", 0.3, 0, 0.5, 0.3, "54 / 54 yuborildi", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: BITTA TUGMA oldidan", [68, 71, 76, 80]),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "BITTA TUGMA — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 37),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "54 kanalga yuborildi oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    *[(22.45 + k * 0.17, "ui.slider", 0.07, -0.3, 0.1, 0, f"Qamrov o'smoqda {k + 1}/9", [64, 66, 68, 71, 73, 76, 78, 80, 83][k]) for k in range(9)],
+    (24.0, "fx.kassa", 0.4, 0, 0.3, 0.2, "KASSA — 186 000 qamrov", None),
+    *[(23.5 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[(23.7 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [76, 80, 83][i]) for i in range(3)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [71, 76, 80, 83]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 41),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [83, 88, 92][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (E tonikada)", 64),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 95),
+]
+
+SCORE_13 = [
+    ("0:00–0:09.5", "Muammo · F#-minor, tashvishli minimal", "7-qism aranjirovkasi 2 yarim ton yuqorida: qorong'i pad, offbeat Rhodes, filtrlangan bas, 5.5 s dan kick. Ustida 'nusxa → joylash → yuborish' marosimi: bir xil uch bosish qayta-qayta (zerikarli takror — ataylab). 4.5 s dan soat tiqillashi tobora balandlashadi."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: telefon o'chadi (pastga tushuvchi ton), 'batareya 1%' ogohlantirishi, yurak urishi. Keyin J-cut swell E-major'da."),
+    ("0:10.35–0:11", "Plitkalar ag'darilishi", "15 ta qog'oz 'shirt' — har biri plitkalar devorining bitta diagonali bilan sinxron; panorama chapdan o'ngga yuradi."),
+    ("0:11–0:21.75", "Yechim · E-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: ikki filtr tanlovi, 54 kanal belgilanishi (E-pentatonik zinapoya), qamrov hisoblagichi, 'yuborish' bosilishi va 14 ta post stereo maydon bo'ylab uchib ketadi."),
+    ("0:22–0:27", "Natija · E-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. Qamrov hisoblagichi ko'tariluvchi qadamlar bilan 186 000 ga yetadi — kassa ovozi (ssenariydagi 'kassa ovozi')."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (E tonikada), so'nish."),
+]
+
+
+def score_13(M):
+    """7-qism partiturasi, 2 yarim ton yuqorida."""
+    global KEY_SHIFT
+    KEY_SHIFT = 2
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_13():
+    """13-qism: Ommaviy qamrov. Score + cue-sheet (CUES_13)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # phone dies: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_13(M)
+    render_cues(M, CUES_13)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -2177,7 +2313,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
