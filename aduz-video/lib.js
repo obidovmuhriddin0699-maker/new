@@ -620,3 +620,19 @@ function slitOpen(t, a, b, drawA, drawB, color = '#22e39a', at = .4) {
   withAlpha(1 - q * .8, () => { ctx.fillRect(0, H / 2 - h - 5, W, 10); ctx.fillRect(0, H / 2 + h - 5, W, 10); });
   ctx.restore();
 }
+// Transition: A|B split — a glowing vertical line draws down the centre, then drawB opens sideways from it.
+function splitOpen(t, a, b, drawA, drawB, color = '#22e39a', at = .4) {
+  const p = prog(t, a, b);
+  if (p < at) {
+    drawA(t);
+    const q = eOut(p / at);
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 40; ctx.fillStyle = color; ctx.fillRect(W / 2 - 5, 0, 10, H * q); ctx.restore();
+    return;
+  }
+  const q = eOut((p - at) / (1 - at)), w = (W / 2 + 40) * q;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.beginPath(); ctx.rect(W / 2 - w, 0, 2 * w, H); ctx.clip(); drawB(t); ctx.restore();
+  ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 40; ctx.fillStyle = color;
+  withAlpha(1 - q * .8, () => { ctx.fillRect(W / 2 - w - 5, 0, 10, H); ctx.fillRect(W / 2 + w - 5, 0, 10, H); });
+  ctx.restore();
+}

@@ -22,6 +22,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 15 | `ADUZ_15-qism.mp4` | Ochiq haqiqat (Reyting tizimi) |
 | 16 | `ADUZ_16-qism.mp4` | Bot va mutaxassis hamkorligi |
 | 17 | `ADUZ_17-qism.mp4` | Topilgan daromadning erkinligi |
+| 18 | `ADUZ_18-qism.mp4` | Mukammallik formulasi (A/B test) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -471,6 +472,38 @@ alohida. Musiqa — 7-qism aranjirovkasi 4 yarim ton yuqorida (G#-minor → F#-m
 
 Summalar, karta raqamlari, "darhol", "bir necha daqiqa" va "24/7" — namuna. Yechib olish shartlari (muddat, komissiya, minimal summa,
 qo'llab-quvvatlanadigan kartalar) — ADUZ'ning haqiqiy to'lov qoidalari bilan solishtiring.
+
+## 18-qism: "Mukammallik formulasi (A/B test)"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: **A|B chizig'i** (yangi `splitOpen`: markazdan
+pastga oltin chiziq tortiladi va kadr ikki tomonga ochiladi) va whip-pan.
+
+**G'oya:** muammo — "tavakkal va samarasiz dizayn". "Reklama yaratish": ikki dizayn — A "Yangi kolleksiya · 30% chegirma" va
+B "Bepul yetkazib berish · 24 soat". Kursor ikkilanadi ("?"), qaror **tanga tashlab** qilinadi — A tushadi. "Butun byudjet → A",
+"Ishga tushirish": byudjet 2 000 000 → 120 000 oqib ketadi, bosishlar 37, CTR 0.4%, grafik tekis. *TAXMIN · TAVAKKAL · BYUDJET
+KETDI*. 8.5 s: **LOTEREYA — butun byudjet bitta taxminga**. Vakuumda tanga qorong'ilikka tushib, aylanib to'xtaydi ("A").
+Yechim — ADUZ "A/B test": ikkala dizayn, "Test byudjeti: 10% · 200 000 so'm" → "A/B testni boshlash" → jonli poyga
+(A 0.9% / 18 bosish, B 2.7% / 54 bosish) → **G'olib: B** (toj) → "Qolgan 1 800 000 so'm B ga yo'naltirilsinmi?" → "Ha, B ga" →
+tangalar A dan B ga o'tadi, byudjet chizig'i 50/50 → 0/100. Natija — CTR ustunlari 0.4% ↔ 2.7%, "×6.7", kassa.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_18.md`](SOUND_ARCHITECTURE_18.md). Yangi tovushlar: tanga tashlash ("ting" + havoda aylanish),
+tanganing aylanib to'xtashi (tezlashuvchi metall chiqillash va keskin jimlik — vakuum ichida), byudjet oqishi (pasayuvchi hushtak),
+A|B chizig'i "zzzip". Poygada A — chapda past, B — o'ngda baland "blip"lar. Musiqa — 7-qism aranjirovkasi 5 yarim ton pastda
+(B-minor → A-major). Sonic logo A tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "18-QISM · A/B test". Ikki dizayn, "?" → tanga tashlanadi → A → "Butun byudjet → A" → "Ishga tushirish" | Ikki dizayn — qaysi biri ishlaydi? Bilmaysiz... tanga tashlaysiz. |
+| 0:05–0:10.3 | 1. Muammo | Byudjet oqadi, CTR 0.4%. *TAXMIN · TAVAKKAL · BYUDJET KETDI*. 8.5 s: **LOTEREYA**. 9.5 s: tanga aylanib to'xtaydi (ovoz vakuumi) | Butun byudjet bitta taxminga ketadi — natija yo'q... omad kulib boqmadi. |
+| 0:10.3–0:11 | O'tish | A\|B chizig'i → kadr ikki tomonga ochiladi | — |
+| 0:11–0:16 | 2. Yechim | "A/B test": test byudjeti 10% → boshlash → poyga A 0.9% / B 2.7% → G'olib: B | ADUZ'da ikkalasini kichik byudjetda sinaysiz — g'olib raqamda ko'rinadi. |
+| 0:16–0:22 | 2. Yechim | "Qolgan 1 800 000 so'm B ga?" → "Ha, B ga" → tangalar B ga. 18.5 s: **G'OLIB — B — byudjet eng yaxshisiga**. "Byudjet g'olibda!" | Qolgan byudjet bir bosishda g'olibga o'tadi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Taxmin emas — formula": CTR 0.4% ↔ 2.7%, ×6.7 (kassa). Oldin (taxmin va tavakkal; butun byudjet bittaga; CTR 0.4%) ↔ ADUZ (real A/B sinov; byudjet g'olibga; CTR 2.7%). Nishonlar: A/B test · G'olib · Samara | Taxmin emas — formula. Byudjet eng yaxshisiga. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Raqamlar (byudjet, test ulushi 10%, CTR 0.4% / 0.9% / 2.7%, bosishlar, ×6.7) va dizayn matnlari — namuna. A/B test funksiyasi
+(test byudjeti, g'olibni aniqlash, byudjetni bir bosishda ko'chirish) ssenariy asosida — ADUZ'ning haqiqiy imkoniyatlari bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

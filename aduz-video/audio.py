@@ -2873,7 +2873,145 @@ def render_17():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17}
+
+# ---------- 18-qism: Mukammallik formulasi (A/B test) ----------
+def fx_flip(dur=1.0):
+    x = seconds(dur)
+    ping = bell(2600, 0.5, 1.5, 0.12)[: len(x)] * 0.6
+    whirr = np.sin(2 * np.pi * 3100 * x) * (0.5 + 0.5 * np.sin(2 * np.pi * 18 * x)) * np.sin(np.pi * x / dur) * 0.12
+    out = whirr.copy()
+    out[: len(ping)] += ping
+    return out
+
+
+def fx_wobble(dur=0.75):
+    # spinning-disk wobble: metallic clicks accelerating, then sudden stop
+    out = np.zeros(int((dur + 0.15) * SR))
+    at, k = 0.0, 0
+    while at < dur:
+        rate = 7 * (60 / 7) ** (at / dur)
+        c = layer(fx_detent(84) * 0.7, bell(3200 + 300 * (k % 3), 0.06, 1.2, 0.02) * 0.25)
+        i = int(at * SR)
+        out[i : i + len(c)] += c[: len(out) - i] * (0.5 + 0.5 * at / dur)
+        at += 1 / rate
+        k += 1
+    return out
+
+
+def fx_drain(dur=1.4):
+    x = seconds(dur)
+    return np.sin(2 * np.pi * np.cumsum(m(69) * 2 ** (-1.2 * x / dur)) / SR) * np.sin(np.pi * x / dur) * 0.3
+
+
+def fx_zip(dur=0.28):
+    x = seconds(dur)
+    tone_ = np.sin(2 * np.pi * np.cumsum(400 * 2 ** (4 * x / dur)) / SR) * 0.35
+    n = filt(rng.standard_normal(len(x)), "bandpass", [2000, 7000]) * 0.3
+    return (tone_ + n) * np.clip(x / 0.02, 0, 1) * np.clip((dur - x) / 0.03, 0, 1)
+
+
+SOUNDS.update({
+    "fx.flip": ("L3", lambda a=None: fx_flip(a or 1.0), "Tanga tashlandi: 'ting' + havoda aylanish"),
+    "fx.wobble": ("L5", lambda a=None: fx_wobble(a or 0.75), "Tanga aylanib to'xtaydi: tezlashuvchi metall chiqillash, keskin jimlik"),
+    "fx.drain": ("L3", lambda a=None: fx_drain(a or 1.4), "Byudjet oqib ketmoqda: pasayuvchi hushtak"),
+    "fx.zip": ("L4", lambda a=None: fx_zip(a or 0.28), "A|B chizig'i tortiladi: ko'tariluvchi 'zzzip'"),
+})
+FRONT.update({"fx.wobble"})
+
+A_PENT = [69, 71, 73, 76, 78, 81, 83, 85, 88, 90]
+
+CUES_18 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    (1.4, "ui.popup", 0.1, -0.3, 0.2, 0, "Kursor A ustida — '?'", 64),
+    (1.9, "ui.popup", 0.1, 0.3, 0.2, 0, "Kursor B ustida — '?'", 62),
+    (2.4, "fx.flip", 0.3, 0, 0.25, 0.15, "TANGA TASHLANDI", 1.0),
+    (3.4, "fx.coin", 0.3, 0, 0.2, 0, "Tanga tushdi: A", None),
+    (3.7, "ui.tap", 0.28, -0.3, 0, 0, "A tanlandi", None),
+    (4.2, "ui.tap", 0.3, 0.2, 0, 0, "Ishga tushirish — 100% → A", None),
+    (4.25, "ui.launch", 0.18, 0, 0.3, 0.2, "Butun byudjet ketdi", None),
+    *[(at, "fx.drain", 0.14, 0.2, 0.2, 0.2, f"Byudjet oqmoqda #{i + 1}", 1.3) for i, at in enumerate((4.6, 6.0, 7.4))],
+    *[(4.6 + k * 0.5, "fx.tick", 0.03, 0.3, 0.1, 0, "Siyrak bosishlar", None) for k in range(9)],
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: TAXMIN", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: TAVAKKAL", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: BYUDJET KETDI", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [54, 57, 61, 66]),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "LOTEREYA — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.62, "fx.wobble", 0.42, 0, 0, 0, "OVOZ VAKUUMI: tanga aylanib to'xtaydi", 0.7),
+    (9.9, "fx.heartbeat", 0.26, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (A-major)", [57, 61, 64, 69]),
+    (10.3, "fx.zip", 0.3, 0, 0.2, 0.15, "A|B chizig'i tortiladi", 0.28),
+    (10.58, "tr.whoosh", 0.3, 0, 0.3, 0, "Kadr ikki tomonga ochiladi", None),
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    (11.9, "ui.popup", 0.14, 0, 0.2, 0, "Test byudjeti: 10%", 76),
+    (12.6, "ui.tap", 0.34, 0.2, 0, 0, "'A/B testni boshlash'", None),
+    (12.65, "ui.launch", 0.2, 0, 0.3, 0.2, "Test boshlandi", None),
+    *[(13.0 + k * 0.2, "fx.blip", 0.06, -0.4 if k % 2 == 0 else 0.4, 0.2, 0.15, f"Poyga: {'A' if k % 2 == 0 else 'B'}", (A_PENT[min(k // 2, 3)] if k % 2 == 0 else A_PENT[min(k // 2 + 2, 9)])) for k in range(12)],
+    (15.6, "ui.success", 0.28, 0.3, 0.4, 0.2, "G'OLIB: B", None),
+    (15.6, "imp.sparkle", 0.22, 0.3, 0.4, 0, "G'olib toji", 79),
+    (16.2, "fx.ding", 0.2, 0, 0.3, 0.2, "Tavsiya: qolgan byudjet B ga", 880.0),
+    (16.8, "ui.tap", 0.3, 0.3, 0, 0, "'Ha, B ga'", None),
+    *[(16.95 + k * 0.08 + 0.4, "fx.coin", 0.06, round(-0.3 + 0.08 * k, 2), 0.2, 0, f"Byudjet tangasi #{k + 1} → B", None) for k in range(8)],
+    (17.75, "ui.select", 0.2, 0.3, 0.3, 0.2, "Byudjet g'olibda ✓", 81),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: G'OLIB — B oldidan", [61, 64, 69, 73]),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "G'OLIB — B — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 83),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Byudjet g'olibda oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (22.4, "tr.riser", 0.16, 0.3, 0.2, 0, "CTR ustuni o'sadi", 0.8),
+    (23.2, "fx.kassa", 0.38, 0, 0.3, 0.2, "KASSA — ×6.7", None),
+    *[(23.5 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[(23.7 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [76, 81, 85][i]) for i in range(3)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [69, 73, 76, 81]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 89),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [85, 88, 93][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (A tonikada)", 57),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 93),
+]
+
+SCORE_18 = [
+    ("0:00–0:09.5", "Muammo · B-minor, tashvishli minimal", "7-qism aranjirovkasi 5 yarim ton pastda: qorong'i pad, offbeat Rhodes, filtrlangan bas, 5.5 s dan kick. Ustida: ikki dizayn ustida ikkilanish, tanga tashlash ('ting' + aylanish + tushish), 'Ishga tushirish', byudjet oqib ketishi — pasayuvchi hushtaklar."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: tanga qorong'ilikka tushib, aylanib to'xtaydi — tezlashuvchi metall chiqillash va keskin jimlik; yurak urishi. Keyin J-cut swell A-major'da."),
+    ("0:10.3–0:11", "A|B chizig'i", "Markazdan pastga yorug' chiziq tortiladi ('zzzip'), kadr ikki tomonga whoosh bilan ochiladi."),
+    ("0:11–0:21.75", "Yechim · A-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: test byudjeti, 'boshlash', A (chapda, past) va B (o'ngda, baland) navbatma-navbat 'blip' — poyga, g'olib B, tavsiya 'ding', byudjet tangalari B ga."),
+    ("0:22–0:27", "Natija · A-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. CTR ustuni o'sadi, ×6.7 da kassa ovozi (ssenariydagi 'kassa ovozi')."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (A tonikada), so'nish."),
+]
+
+
+def score_18(M):
+    """7-qism partiturasi, 5 yarim ton pastda."""
+    global KEY_SHIFT
+    KEY_SHIFT = -5
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_18():
+    """18-qism: Mukammallik formulasi (A/B test). Score + cue-sheet (CUES_18)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # the coin wobbles to rest: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_18(M)
+    render_cues(M, CUES_18)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -2881,7 +3019,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
