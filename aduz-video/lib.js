@@ -573,3 +573,39 @@ function eyelidOpen(t, a, b, drawA, drawB) {
   withAlpha(.5 * (1 - o), () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
   lids(o);
 }
+// Glass: a crack web around (GX, GY) — rays + jagged rings; shards are the cells between them.
+const GX = W / 2, GY = 900, GLASS_RINGS = [0, 150, 360, 700, 2600];
+const GLASS_RAYS = (() => { const r = rnd(77), n = 11; return Array.from({ length: n }, (_, i) => (i + .2 + r() * .6) / n * Math.PI * 2); })();
+const GLASS_JIT = (() => { const r = rnd(78); return GLASS_RAYS.map(() => GLASS_RINGS.map(() => (r() - .5) * 60)); })();
+const gpt = (i, j) => { const k = i % GLASS_RAYS.length, a = GLASS_RAYS[k], R = GLASS_RINGS[j] + (j ? GLASS_JIT[k][j] : 0); return [GX + Math.cos(a) * R, GY + Math.sin(a) * R]; };
+function cracks(p, color = 'rgba(255,255,255,.85)') {
+  if (p <= 0) return;
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = color; ctx.shadowColor = 'rgba(255,255,255,.6)'; ctx.shadowBlur = 8;
+  const reach = 2600 * eOut(p);
+  for (let i = 0; i < GLASS_RAYS.length; i++) {
+    ctx.beginPath(); ctx.moveTo(GX, GY);
+    for (let j = 1; j < GLASS_RINGS.length; j++) { const [x, y] = gpt(i, j); if (Math.hypot(x - GX, y - GY) > reach) { const [px, py] = gpt(i, j - 1), u = clamp((reach - Math.hypot(px - GX, py - GY)) / Math.hypot(x - px, y - py)); ctx.lineTo(lerp(px, x, u), lerp(py, y, u)); break; } ctx.lineTo(x, y); }
+    ctx.lineWidth = 4; ctx.stroke();
+  }
+  for (let j = 1; j < 3; j++) { const q = clamp((p - .25 * j) / .3); if (q <= 0) continue;
+    ctx.beginPath(); for (let i = 0; i <= GLASS_RAYS.length * q; i++) { const [x, y] = gpt(i, j); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.lineWidth = 3; ctx.stroke(); }
+  ctx.beginPath(); ctx.arc(GX, GY, 14, 0, 7); ctx.fillStyle = color; ctx.fill();
+  ctx.restore();
+}
+// Transition: shatter — drawA (cracked) breaks along the crack web; shards fall and spin away, revealing drawB.
+const SHARDS = (() => { const r = rnd(79), out = []; for (let j = 0; j < GLASS_RINGS.length - 1; j++) for (let i = 0; i < GLASS_RAYS.length; i++) out.push({ i, j, d: j * .05 + r() * .06, vx: (r() - .5) * 1400, spin: (r() - .5) * 3 }); return out; })();
+function shatter(t, a, b, drawA, drawB) {
+  const p = prog(t, a, b), T = p * (b - a);
+  drawB(t);
+  for (const s of SHARDS) {
+    const u = Math.max(0, T - s.d * (b - a)); if (u > 1.2) continue;
+    const pts = [gpt(s.i, s.j), gpt(s.i + 1, s.j), gpt(s.i + 1, s.j + 1), gpt(s.i, s.j + 1)];
+    const cx = pts.reduce((a_, q) => a_ + q[0], 0) / 4, cy = pts.reduce((a_, q) => a_ + q[1], 0) / 4;
+    ctx.save();
+    ctx.translate(cx + s.vx * u, cy + 7000 * u * u - 300 * u); ctx.rotate(s.spin * u); ctx.scale(1 - .3 * u, 1 - .3 * u); ctx.translate(-cx, -cy);
+    ctx.beginPath(); pts.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.clip();
+    drawA(t); cracks(1);
+    withAlpha(clamp(u * 1.5) * .35, () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); });
+    ctx.restore();
+  }
+}

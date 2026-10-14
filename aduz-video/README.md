@@ -19,6 +19,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 12 | `ADUZ_12-qism.mp4` | Shaffof statistika va jonli tahlil |
 | 13 | `ADUZ_13-qism.mp4` | Ommaviy qamrov |
 | 14 | `ADUZ_14-qism.mp4` | Vaqt mashinasi (Rejalashtirish) |
+| 15 | `ADUZ_15-qism.mp4` | Ochiq haqiqat (Reyting tizimi) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -376,6 +377,36 @@ Sonic logo B tonikada.
 
 Kanal nomlari, vaqtlar va post matni ("30% chegirma") — namuna. Rejalashtirish interfeysi (kun, soat barabani, navbat) ssenariy
 asosida — ADUZ'ning haqiqiy rejalashtirish imkoniyatlari bilan solishtiring.
+
+## 15-qism: "Ochiq haqiqat (Reyting tizimi)"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: **shisha sinishi** (yangi `cracks()` + `shatter`:
+vakuumda kadr shishadek yoriladi va to'xtab turadi, keyin yoriqlar bo'ylab parchalanib tushadi — ortidan yechim ochiladi) va whip-pan.
+
+**G'oya:** muammo — "soxta skrinshotlar va isbotlar". Admin chatda "isbot" yuboradi: statistika skrinshoti "50 000 ko'rish" va
+"340 ta buyurtma!" + besh yulduzli sharh. Kadrga **lupa** kiradi: uning ichida asl holat ko'rinadi — "4 200", "3 ta buyurtma",
+sharh muallifi "@user8812 · bot · 0 obunachi", qizil "TAHRIRLANGAN" belgilari. *SOXTA SKRIN · KO'PAYTIRILGAN · BOT SHARH*.
+8.5 s: **SOXTA ISBOT — skrinshot isbot emas**; vakuumda ishonch "sinadi". Yechim — "Kanal profili": reyting 4.6 (1 248 ta baho),
+yulduzlar taqsimoti, qoida "Baho — faqat buyurtma bergan mijozdan", uchta sharh (5, 4 va halol 3 yulduz) — har biriga
+"Tasdiqlangan buyurtma #…" muhri; "Buyurtma berish". Natija — beshta oltin yulduz (4.6), kassa.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_15.md`](SOUND_ARCHITECTURE_15.md). Yangi tovushlar: skrinshot (kamera zatvori), lupa foshi
+(shisha shimmer + pastga tushuvchi "vuuu"), shisha yorilishi va g'ichirlashi (vakuum ichida), shisha sinishi (70 ta parcha jarangi),
+"Tasdiqlangan" muhri. Musiqa — 7-qism aranjirovkasi 1 yarim ton yuqorida (F-minor → Eb-major). Sonic logo Eb tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "15-QISM · Ochiq haqiqat". Chat "Super Kanal UZ · admin": "Mana isbot:" → skrinshot "50 000 ko'rish" → skrinshot "340 ta buyurtma!" ★★★★★ «Zo'r kanal!!!» → "Narxi 800 000. Bugun band qiling!" | Admin «isbot» yuboradi: 50 000 ko'rish, 340 ta buyurtma... |
+| 0:05–0:10.3 | 1. Muammo | Lupa: 50 000 → 4 200, 340 → 3, @aziza_shop → bot. *SOXTA SKRIN · KO'PAYTIRILGAN · BOT SHARH*. 8.5 s: **SOXTA ISBOT**. 9.5 s: kadr yoriladi (ovoz vakuumi) | Lekin skrinshotni tahrirlash — bir daqiqalik ish... ishonch sinadi. |
+| 0:10.3–0:11 | O'tish | Shisha parchalanadi | — |
+| 0:11–0:16 | 2. Yechim | "Kanal profili · Vodiy Live": 4.6 ★, 1 248 ta baho, taqsimot; "Baho — faqat buyurtma bergan mijozdan"; sharhlar + "Tasdiqlangan buyurtma" | ADUZ'da reyting ochiq: baho faqat haqiqiy buyurtmadan keyin. |
+| 0:16–0:22 | 2. Yechim | "Buyurtma berish" → "Ishonch bilan buyurtma ✓". 18.5 s: **OCHIQ HAQIQAT — har bir baho haqiqiy buyurtmadan**. "Ishonch bilan tanlang!" | Sharhlarni haqiqiy mijozlar yozadi — tahrirlab bo'lmaydi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Haqiqat — ko'z oldingizda": 5 yulduz (4.6 · 1 248 ta haqiqiy baho), kassa. Oldin (soxta skrinshot; bot sharhlar; ko'r-ko'rona ishonch) ↔ ADUZ (ADUZ statistikasi; tasdiqlangan sharh; ochiq reyting). Nishonlar: Reyting · Tasdiqlangan · Shaffof | Ishonch — skrinshotda emas, ochiq reytingda. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Raqamlar (4.6, 1 248 ta baho, taqsimot foizlari, obunachilar, buyurtma raqamlari) va sharh matnlari — namuna. "Baho faqat
+buyurtmadan keyin" va "sharhlar tahrirlanmaydi" qoidalari ssenariy asosida — ADUZ'ning haqiqiy reyting qoidalari bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

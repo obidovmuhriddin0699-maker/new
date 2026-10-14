@@ -2457,7 +2457,162 @@ def render_14():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14}
+
+# ---------- 15-qism: Ochiq haqiqat (Reyting tizimi) ----------
+def fx_shutter():
+    x = seconds(0.12)
+    a = filt(rng.standard_normal(len(x)), "bandpass", [1500, 7000]) * np.exp(-x / 0.008)
+    b = np.concatenate([np.zeros(int(0.06 * SR)), filt(rng.standard_normal(int(0.06 * SR)), "bandpass", [1000, 5000]) * np.exp(-seconds(0.06) / 0.01)])
+    return layer(a, b * 0.7) * 0.8
+
+
+def fx_xray():
+    x = seconds(0.6)
+    shimmer = sum(np.sin(2 * np.pi * f * x + 3 * np.sin(2 * np.pi * 6 * x)) for f in (1800, 2410, 3150)) / 3 * np.exp(-x / 0.25) * 0.35
+    wob = np.sin(2 * np.pi * np.cumsum(220 * 2 ** (-x * 1.5) * (1 + 0.04 * np.sin(2 * np.pi * 9 * x))) / SR) * np.exp(-x / 0.3) * 0.5
+    return shimmer + wob
+
+
+def _tinkles(dur, n, seed, f0=2500, f1=9000):
+    gg = np.random.default_rng(seed)
+    out = np.zeros(int((dur + 0.4) * SR))
+    for k in range(n):
+        at = dur * (k / n) ** 1.6
+        b = bell(gg.uniform(f0, f1), 0.25, 0.5, gg.uniform(0.02, 0.08)) * gg.uniform(0.2, 0.7)
+        i = int(at * SR)
+        out[i : i + len(b)] += b[: len(out) - i]
+    return out
+
+
+def fx_crack():
+    x = seconds(0.5)
+    snap = filt(rng.standard_normal(len(x)), "highpass", 2500) * np.exp(-x / 0.012)
+    body = np.sin(2 * np.pi * 140 * x) * np.exp(-x / 0.05) * 0.6
+    return np.tanh(layer(snap + body, _tinkles(0.25, 10, 41) * 0.5) * 1.3) * 0.85
+
+
+def fx_creak(dur=0.5):
+    x = seconds(dur)
+    f = 900 + 500 * x / dur
+    return np.sin(2 * np.pi * np.cumsum(f + 40 * rng.standard_normal(len(x))) / SR) * np.sin(np.pi * x / dur) * 0.25
+
+
+def fx_shatter():
+    x = seconds(0.9)
+    burst = filt(rng.standard_normal(len(x)), "highpass", 1200) * np.exp(-x / 0.08) * 0.9
+    low = np.sin(2 * np.pi * 90 * x) * np.exp(-x / 0.12) * 0.7
+    return np.tanh(layer(burst + low, _tinkles(0.8, 70, 43) * 0.8) * 1.1) * 0.85
+
+
+def fx_stamp():
+    x = seconds(0.25)
+    return np.tanh((np.sin(2 * np.pi * np.cumsum(160 * 2 ** (-x * 8) + 60) / SR) * np.exp(-x / 0.05) + filt(rng.standard_normal(len(x)), "bandpass", [600, 3000]) * np.exp(-x / 0.01) * 0.6) * 1.4) * 0.8
+
+
+SOUNDS.update({
+    "fx.shutter": ("L3", lambda a=None: fx_shutter(), "Skrinshot: kamera zatvori 'chiq-chiq'"),
+    "fx.xray": ("L3", lambda a=None: fx_xray(), "Lupa fosh qiladi: shisha shimmer + pastga tushuvchi 'vuuu'"),
+    "fx.crack": ("L5", lambda a=None: fx_crack(), "Shisha yoriladi: keskin 'chars' + mayda jaranglar"),
+    "fx.creak": ("L3", lambda a=None: fx_creak(a or 0.5), "Yoriq shisha zo'riqishi: ingichka g'ichirlash"),
+    "fx.shatter": ("L5", lambda a=None: fx_shatter(), "Shisha sinadi: portlash + 70 ta parcha jarangi"),
+    "fx.stamp": ("L3", lambda a=None: fx_stamp(), "'Tasdiqlangan' muhri"),
+})
+FRONT.update({"fx.crack", "fx.creak"})
+
+EB_PENT = [63, 65, 67, 70, 72, 75, 77, 79, 82, 84, 87]
+
+CUES_15 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    (0.8, "ui.select", 0.1, -0.3, 0.2, 0, "Admin: 'Mana isbot'", 68),
+    (1.3, "fx.shutter", 0.22, -0.2, 0.15, 0, "Skrinshot #1: 50 000 ko'rish", None),
+    (1.35, "ui.popup", 0.12, -0.2, 0.2, 0, "Skrinshot ochiladi", 75),
+    (2.5, "fx.shutter", 0.22, 0.2, 0.15, 0, "Skrinshot #2: 340 buyurtma, 5 yulduz", None),
+    (2.55, "ui.popup", 0.12, 0.2, 0.2, 0, "Skrinshot ochiladi", 79),
+    (3.6, "ui.select", 0.1, -0.3, 0.2, 0, "Admin: 'Narxi 800 000'", 68),
+    (4.3, "tr.whoosh", 0.18, 0.5, 0.25, 0, "Lupa kadrga kiradi", None),
+    (5.0, "fx.xray", 0.26, -0.2, 0.3, 0.2, "Fosh: 50 000 → 4 200", None),
+    (6.6, "fx.xray", 0.26, 0, 0.3, 0.2, "Fosh: 340 → 3", None),
+    (7.6, "fx.xray", 0.26, 0.1, 0.3, 0.2, "Fosh: bot akkaunt", None),
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: SOXTA SKRIN", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: KO'PAYTIRILGAN", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: BOT SHARH", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [53, 56, 60, 65]),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "SOXTA ISBOT — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.5, "fx.crack", 0.55, 0, 0, 0, "OVOZ VAKUUMI: shisha yoriladi", None),
+    (9.85, "fx.creak", 0.3, 0.2, 0, 0, "Yoriq zo'riqadi...", 0.45),
+    (9.95, "fx.heartbeat", 0.3, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (Eb-major)", [63, 67, 70, 75]),
+    (10.3, "fx.shatter", 0.55, 0, 0.35, 0.15, "SHISHA SINADI — o'tish", None),
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    *[(12.0 + k * 0.1, "ui.slider", 0.07, -0.3, 0.1, 0, f"Reyting hisoblanmoqda {k + 1}/8", EB_PENT[k]) for k in range(8)],
+    *[(12.4 + i * 0.12, "fx.bar", 0.12, 0.3, 0.2, 0.15, f"Yulduz taqsimoti {5 - i}★", [82, 79, 75, 72, 70][i]) for i in range(5)],
+    (13.6, "ui.popup", 0.16, 0, 0.2, 0, "Qoida: baho faqat buyurtmadan", 75),
+    *[x for i, at in enumerate((14.2, 14.8, 15.4)) for x in [
+        (at, "ui.popup", 0.13, (-0.3, 0, 0.3)[i], 0.2, 0, f"Sharh #{i + 1}", [77, 79, 82][i]),
+        (at + 0.45, "fx.stamp", 0.24, (-0.3, 0, 0.3)[i], 0.15, 0, f"Tasdiqlangan buyurtma #{i + 1}", None),
+    ]],
+    (17.0, "ui.tap", 0.36, 0.2, 0, 0, "'Buyurtma berish' bosildi", None),
+    (17.05, "ui.success", 0.24, 0, 0.4, 0.2, "Ishonch bilan buyurtma", None),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: OCHIQ HAQIQAT oldidan", [67, 70, 75, 79]),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "OCHIQ HAQIQAT — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 53),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Ishonch bilan tanlang oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    *[(22.5 + k * 0.17, "ui.select", 0.16, round(-0.5 + k * 0.25, 2), 0.3, 0.2, f"Yulduz #{k + 1}", [75, 77, 79, 82, 84][k]) for k in range(5)],
+    (23.2, "fx.kassa", 0.36, 0, 0.3, 0.2, "KASSA — 4.6 reyting", None),
+    *[(23.5 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[(23.7 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [79, 82, 87][i]) for i in range(3)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [70, 75, 79, 82]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 59),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [87, 91, 94][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (Eb tonikada)", 63),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 94),
+]
+
+SCORE_15 = [
+    ("0:00–0:09.5", "Muammo · F-minor, tashvishli minimal", "7-qism aranjirovkasi 1 yarim ton yuqorida: qorong'i pad, offbeat Rhodes, filtrlangan bas, 5.5 s dan kick. Ustida: skrinshotlar 'chiq-chiq' (kamera zatvori), lupa kiradi va har fosh — shisha shimmer + pastga tushuvchi 'vuuu' (slamlar bilan bir kadrda)."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: kadr shishadek yoriladi — keskin 'chars', mayda jaranglar, yoriqning ingichka g'ichirlashi, yurak urishi. Keyin J-cut swell Eb-major'da."),
+    ("0:10.3–0:11", "Shisha sinadi", "Portlash + 70 ta parcha jarangi; ishonch 'sinadi', parchalar ortidan yechim ochiladi."),
+    ("0:11–0:21.75", "Yechim · Eb-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: reyting hisoblagichi (Eb-pentatonik qadamlar), yulduz taqsimoti ustunlari, qoida, uchta sharh va har biriga 'Tasdiqlangan' muhri."),
+    ("0:22–0:27", "Natija · Eb-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. Beshta yulduz ko'tariluvchi qo'ng'iroqchalar bilan yonadi, kassa ovozi (ssenariydagi 'kassa ovozi')."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (Eb tonikada), so'nish."),
+]
+
+
+def score_15(M):
+    """7-qism partiturasi, 1 yarim ton yuqorida."""
+    global KEY_SHIFT
+    KEY_SHIFT = 1
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_15():
+    """15-qism: Ochiq haqiqat (Reyting tizimi). Score + cue-sheet (CUES_15)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # glass cracks: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_15(M)
+    render_cues(M, CUES_15)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -2465,7 +2620,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
