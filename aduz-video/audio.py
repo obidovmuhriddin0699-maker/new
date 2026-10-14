@@ -6,6 +6,7 @@ sidechain and a full drum/bass/chord arrangement.
 Every episode shares the same music bed (Muammo 0-11 s, Yechim 11-22 s, Natija 22-32 s);
 the SFX cues follow that episode's animation timeline in episodeN.html.
 """
+import os
 import sys
 import wave
 
@@ -3010,6 +3011,44 @@ def render_18():
     out = M.render()
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
+
+
+# ---------- Foydalanuvchi SFX kutubxonasi: sfx/*.wav (19-qismdan boshlab) ----------
+# Foydalanuvchi yuborgan ikki namunaviy videodan (SFX to'plami reklamasi) kesib olingan haqiqiy yozuvlar:
+# mono, 44.1 kHz, boshidagi jimlik kesilgan, cho'qqi −1 dBFS. Cue'larda "sfx.<nom>" sifatida ishlatiladi.
+SFX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sfx")
+_SMP = {}
+
+
+def smp(name):
+    if name not in _SMP:
+        with wave.open(os.path.join(SFX_DIR, name + ".wav")) as w:
+            assert w.getframerate() == SR and w.getnchannels() == 1
+            _SMP[name] = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(float) / 32768
+    return _SMP[name].copy()
+
+
+SFX_LIB = {
+    "click_1": ("L3", "Toza UI klik (1.7 kHz), 40 ms"), "click_2": ("L3", "UI klik, 2-variant"), "click_3": ("L3", "UI klik, 3-variant"),
+    "click_4": ("L3", "UI klik, 4-variant"), "click_5": ("L3", "UI klik, 5-variant"),
+    "click_double_1": ("L3", "Qo'sh klik (tasdiqlash)"), "click_double_2": ("L3", "Qo'sh klik, 2-variant"),
+    "pop_swish": ("L3", "Qisqa 'pop' + shuvullash: element paydo bo'lishi"), "swipe": ("L4", "Swipe: ekran/kartaning sirpanishi"),
+    "glitch_seq": ("L5", "Raqamli glitch ketma-ketligi (6 zarb)"), "notify_pop": ("L3", "Bildirishnoma: ikki 'pop' + dum"),
+    "notify_ring": ("L3", "Bildirishnoma: jarangli 'ding'"), "hit_low": ("L5", "Past tonal zarba (≈260 Hz) + dum"),
+    "hit_chime": ("L5", "Tonal zarba, qo'ng'iroqsimon (≈390 Hz)"), "hit_tone": ("L5", "Tonal zarba, 3-variant"),
+    "whoosh_soft": ("L4", "Yumshoq whoosh (1.3 s)"), "whoosh_sweep": ("L4", "Whoosh, tonallik siljishi bilan"),
+    "ratchet_roll": ("L3", "Tishli chiqillash, sekinlashuvchi (1.2 s)"), "riser_click": ("L4", "Riser: chiqillashlar bilan kuchayib boradi"),
+    "glitch_long": ("L5", "Uzun zich glitch / ma'lumot oqimi (1.8 s)"), "glitch_noise": ("L5", "Shovqinli glitch (1.4 s)"),
+    "stutter": ("L5", "Stutter: 10 ta tez zarb"), "glitch_short": ("L5", "Qisqa yuqori glitch (0.4 s)"),
+    "tick": ("L3", "Mayda tik"), "tick_roll": ("L3", "8 ta bir tekis tik (hisoblagich/yozish)"), "boom_sub": ("L5", "Sub-boom (≈58 Hz) + dum"),
+}
+SOUNDS.update({f"sfx.{n}": (lay, (lambda a=None, n=n: smp(n)), d) for n, (lay, d) in SFX_LIB.items()})
+CLICKS = ["click_1", "click_2", "click_3", "click_4", "click_5"]
+
+
+def sfx_riser(at, end):
+    """riser_click shunday joylashtiriladi-ki, uning cho'qqisi `end` ga to'g'ri keladi."""
+    return end - 1.12
 
 V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18}
 

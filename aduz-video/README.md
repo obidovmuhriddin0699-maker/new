@@ -505,6 +505,14 @@ A|B chizig'i "zzzip". Poygada A — chapda past, B — o'ngda baland "blip"lar. 
 Raqamlar (byudjet, test ulushi 10%, CTR 0.4% / 0.9% / 2.7%, bosishlar, ×6.7) va dizayn matnlari — namuna. A/B test funksiyasi
 (test byudjeti, g'olibni aniqlash, byudjetni bir bosishda ko'chirish) ssenariy asosida — ADUZ'ning haqiqiy imkoniyatlari bilan solishtiring.
 
+## SFX kutubxonasi (19-qismdan boshlab)
+
+Foydalanuvchi yuborgan namunaviy videolardagi ovozlar 26 ta alohida faylga kesib olindi: [`sfx/`](sfx/README.md)
+(kliklar, swipe, glitch, bildirishnoma, tonal zarbalar, whoosh, riser, tiklar, sub-boom). `audio.py` da ular
+`sfx.<nom>` sifatida ro'yxatdan o'tgan va 19-qismdan boshlab barcha roliklarning cue-sheet'larida asosiy UI, o'tish va
+zarba ovozlari shular bo'ladi; musiqa va tonallikka bog'liq qo'ng'iroqchalar (ui.select, sonic logo) avvalgidek sintez.
+Har bir ovozni eshitish: [`sfx/PREVIEW.mp4`](sfx/PREVIEW.mp4).
+
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 
 **Kuchli tomonlari**
