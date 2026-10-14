@@ -32,6 +32,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 25 | `ADUZ_25-qism.mp4` | Mutlaq erkinlik — mobil boshqaruv (uchala dizayn + butun ovoz kutubxonasi) |
 | 26 | `ADUZ_26-qism.mp4` | Ulashing va daromad ko'ring — referal havola ("motion reel", 24-qism dizayni) |
 | 27 | `ADUZ_27-qism.mp4` | Aqlli byudjet taqsimoti — **Instagram Reels** uchun (hook, xavfsiz zona, loop; [`INSTAGRAM_27.md`](INSTAGRAM_27.md)) |
+| 28 | `ADUZ_28-qism.mp4` | Yangi bozor standarti — **xotima**, Instagram Reels ([`INSTAGRAM_28.md`](INSTAGRAM_28.md)) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -836,6 +837,29 @@ Foyda. Yakun: identity "ADUZ" + izoh-CTA → loop.
 xor Eb-major; tanga — fx.coin, o'lik kanal — fx.zap, jonli — tick_hi, skaner — fx.scan + fx.nope / ui.select.
 
 Namuna — tekshiring: 62%, 3 000 000 / 1 860 000 so'm, ×3, kanal nomlari va ERR qiymatlari, "jonli optimizatsiya" funksiyasi.
+
+## 28-qism (xotima): "Yangi bozor standarti" — Instagram Reels
+
+27-qism Reels qoidalari bilan (hook kadr 0 da, xavfsiz zona, katta subtitrlar, izoh-CTA, loop) — "motion reel" uslubi.
+Paket: [`INSTAGRAM_28.md`](INSTAGRAM_28.md), muqova `ADUZ_28-qism_cover.jpg`. Xotima sifatida seriyaga qaytadi: tartibsizlik
+doskasidagi har stiker oldingi qism raqami bilan, ekotizimdagi sakkiz modul — seriyadan, musiqa asl tonallikka (D) qaytadi.
+
+**G'oya:** hook — "ESKI DAVR" to'q sariq chiziq bilan o'chirilgan, "tugadi.". Eski davr: o'n ikki og'riq stikeri (01 Kanal
+qidirish — 3 kun, 05 Soxta ko'rishlar, 11 Avans yo'qoldi, 24 Javob yo'q, 27 O'lik kanal, 15 Narx — sir, …) doskaga yopishadi,
+qizil ip bilan bog'lanadi; *TARTIBSIZLIK · ISHONCHSIZLIK · VAQT YO'QOTISH*; 8.5 s: **YETAR. — eski davr tartibsizligi**.
+Vakuum: stikerlar birin-ketin tushadi. Yangi o'tish: **snapInto** — stikerlar qaytib uchib, tekis panjaraga yig'iladi.
+Yechim: "ADUZ ekotizimi — hammasi bitta joyda": markazga sakkiz modul ulanadi (Kanallar bozori, Tekshiruv, Kafolatli to'lov,
+Statistika, 24/7 menejer, Retargeting, Referal, Optimizatsiya); "Hisobotni ochish" → to'liq shaffoflik: siz to'ladingiz
+1 000 000 → kanallarga 900 000 → ADUZ xizmati 100 000 so'm, "HAMMASI KO'RINIB TURADI". 18.5 s: **YANGI STANDART. — Farg'ona
+vodiysi reklama bozori uchun**; binafsha karta: shaffof narx · tekshirilgan kanal · kafolatli to'lov · jonli yordam ✓.
+Natija: nuqtali panjarada **28/28**, Eski davr ↔ ADUZ (tartibsizlik → bitta ekotizim; yashirin narx → to'liq shaffoflik;
+ishonchsizlik → kafolat), nishonlar Shaffof · Xavfsiz · Tez. Yakun: identity + "IZOHGA YOZING: ADUZ" → loop.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_28.md`](SOUND_ARCHITECTURE_28.md). 7-qism partiturasi asl tonallikda (E-minor → D-major),
+xor D-major, sonic logo D tonikada; stikerlar — fx.sticky + fx.twang, vakuumda fx.sticky_v, panjara — fx.snap, hisobot —
+fx.paper + tangalar, standartlar — ko'tariluvchi ui.select + muhr.
+
+Namuna — tekshiring: hisobotdagi 1 000 000 / 900 000 / 100 000 so'm (ADUZ xizmat haqi), modullar ro'yxati va "standartlar".
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 
