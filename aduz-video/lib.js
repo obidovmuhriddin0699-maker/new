@@ -552,3 +552,24 @@ function boot({ scene1, scene2, scene3, captions: caps, duration = 32, transitio
     (function loop() { renderFrame(((performance.now() - t0) / 1000) % duration); requestAnimationFrame(loop); })();
   }
 }
+// Eyelids: o = openness (0 closed … 1 fully open). Two curved dark lids meet at the horizontal centre line.
+function lids(o, color = '#030406') {
+  if (o >= 1) return;
+  const g = clamp(o) * H * .9, side = g * (.3 + .7 * clamp(o)), cy = H / 2;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(-40, -40); ctx.lineTo(W + 40, -40); ctx.lineTo(W + 40, cy - side);
+  ctx.quadraticCurveTo(W / 2, cy - 2 * g + side, -40, cy - side); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-40, H + 40); ctx.lineTo(W + 40, H + 40); ctx.lineTo(W + 40, cy + side);
+  ctx.quadraticCurveTo(W / 2, cy + 2 * g - side, -40, cy + side); ctx.closePath(); ctx.fill();
+}
+// Transition: waking up — drawA is already dark; drawB is seen through eyelids that open, blink once, then open fully.
+const EYE_OPEN = [[0, 0], [.18, 0], [.42, .38], [.5, .06], [.58, .06], [1, 1]];   // [progress, openness] (shared with audio cues)
+function eyelidOpen(t, a, b, drawA, drawB) {
+  const p = prog(t, a, b);
+  let o = 0;
+  for (let i = 1; i < EYE_OPEN.length; i++) { const [p0, o0] = EYE_OPEN[i - 1], [p1, o1] = EYE_OPEN[i]; if (p <= p1) { o = lerp(o0, o1, eInOut(clamp((p - p0) / (p1 - p0 || 1)))); break; } }
+  if (o <= 0) { drawA(t); return; }
+  drawB(t);
+  withAlpha(.5 * (1 - o), () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
+  lids(o);
+}

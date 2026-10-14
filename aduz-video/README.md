@@ -18,6 +18,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 11 | `ADUZ_11-qism.mp4` | Kafolatlangan xavfsizlik (Escrow) |
 | 12 | `ADUZ_12-qism.mp4` | Shaffof statistika va jonli tahlil |
 | 13 | `ADUZ_13-qism.mp4` | Ommaviy qamrov |
+| 14 | `ADUZ_14-qism.mp4` | Vaqt mashinasi (Rejalashtirish) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -344,6 +345,37 @@ Muammoda bir xil uch bosish qayta-qayta takrorlanadi va soat tiqillashi tobora b
 
 Raqamlar (54 kanal, 186 000 obunachi, "2 daqiqa", "har bir kanal — alohida tasdiq", "bitta hisobot") — namuna; ssenariyda faqat
 "50+ kanal" deyilgan. ADUZ'ning haqiqiy ommaviy joylash imkoniyatlari bilan solishtiring.
+
+## 14-qism: "Vaqt mashinasi (Rejalashtirish)"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: **uyg'onish** (yangi `eyelidOpen`: ko'z qovoqlari
+ochiladi, bir pirpiraydi, keyin to'liq ochiladi; muammo sahnasida ham xuddi shu `lids()` qovoqlari kadr ustida og'irlashib yumiladi) va whip-pan.
+
+**G'oya:** muammo — "tungi soatlardagi noqulayliklar". Qulflangan ekranda uchta tungi budilnik: 23:00, 01:00, 06:30 (har biri boshqa
+kanal posti). 23:00 da budilnik chalinadi — "Kechiktirish"; ko'z qovoqlari og'irlashadi (POV), soat 23:07, admin: "Vaqt o'tdi — post
+bekor qilindi". 01:00 da yana, 06:30 da yana. 8.5 s: **UYQUSIZ TUN — har bir post alohida budilnik**. Ovoz vakuumida ko'zlar yumiladi.
+Yechim — uyg'onish, "Rejalashtirish": kun (Seshanba) → soat barabani 19:00 → 23:00 → navbatga 23:00, 01:00, 06:30 → "Rejalashtirish".
+Keyin "vaqt mashinasi": telefon orqasida katta soat aylanadi, sarlavha osmoni kechqurundan tunga va tongga o'tadi (oy → quyosh),
+"Siz: uxlayapsiz zzz", har post o'z vaqtida "Chiqdi ✓". Natija — soat millari 23:00 dan 07:00 gacha aylanadi, uchta yashil belgi.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_14.md`](SOUND_ARCHITECTURE_14.md). Yangi tovushlar: budilnik (tonallikdagi marimba-arpedjio),
+vibratsiya, uyquli nafas, ko'z yumilishi "shirt", ertalabki qushlar (uyg'onishda va lapse oxirida — tong). Muammoda devor soati
+tiqillaydi; yechimdagi lapse paytida tiqillash tezlashadi. Musiqa — 7-qism aranjirovkasi 3 yarim ton pastda (C#-minor → B-major).
+Sonic logo B tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "14-QISM · Vaqt mashinasi". Tungi qulflangan ekran 22:58, uchta budilnik. 23:00: "Postni joylang!" → "Kechiktirish", qovoqlar og'irlashadi | Tungi post — tungi budilnik. 23:00... yana besh daqiqa... |
+| 0:05–0:10.2 | 1. Muammo | 23:07, admin: "Vaqt o'tdi — post bekor qilindi" (23:00 kartasi "Kechikdi"). *TUNGI 23:00 · 01:00 — YANA · 06:30 — YANA* (budilniklar). 8.5 s: **UYQUSIZ TUN**. Ko'zlar yumiladi (ovoz vakuumi) | Kechikdingiz — post bekor. 01:00 da yana, 06:30 da yana... uyqu ham, reklama ham yo'q. |
+| 0:10.2–0:11 | O'tish | Uyg'onish: qovoqlar ochiladi, pirpirash | — |
+| 0:11–0:16 | 2. Yechim | "Rejalashtirish": post "Yangi kolleksiya — 30% chegirma", kun Seshanba, soat barabani → 23:00, navbat: 23:00 · 01:00 · 06:30 → "3 ta post rejada" | ADUZ'da kun va soatni tanlaysiz — postlar navbatga turadi. |
+| 0:16–0:22 | 2. Yechim | Vaqt mashinasi: soat 22:59 → 07:00, oy → quyosh, "Siz: uxlayapsiz", har post "Chiqdi ✓". 18.5 s: **AVTOMATIK — siz uxlaysiz, post o'z vaqtida**. "Hammasi o'z vaqtida chiqdi!" | Siz uxlaysiz — taymer har birini o'z vaqtida joylaydi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Siz uxladingiz — reklama ishladi": soat 23:00 → 07:00, uchta ✓ (kassa). Oldin (tunda budilnik; 23:07 — kechikdi; uyqusiz tun) ↔ ADUZ (avtomatik taymer; aniq 23:00; tinch uyqu). Nishonlar: Taymer · Kalendar · Tinch uyqu | Vaqtingiz — sizniki, reklama — o'z vaqtida. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Kanal nomlari, vaqtlar va post matni ("30% chegirma") — namuna. Rejalashtirish interfeysi (kun, soat barabani, navbat) ssenariy
+asosida — ADUZ'ning haqiqiy rejalashtirish imkoniyatlari bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 
