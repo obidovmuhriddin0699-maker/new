@@ -3302,7 +3302,130 @@ def render_20():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20}
+
+# ---------- 21-qism: Raqamli adolat (Arbitraj) — sfx/ + FX v2 ----------
+SOUNDS.update({
+    "sfx.dust": ("L5", lambda a=None: smp("glitch_noise", 5) * np.linspace(0.3, 1, len(smp("glitch_noise", 5))) ** 0.5, "Kulga aylanish: glitch_noise +5, sekin kuchayib"),
+    "sfx.gavel": ("L5", lambda a=None: layer(smp("boom_sub") * 0.8, smp("hit_low", 5) * 0.8, smp("click_double_2", -10) * 0.9), "Sudya bolg'asi: boom_sub + hit_low +5 + qo'sh klik −10"),
+})
+FRONT.update({"sfx.dust"})
+F_PENT = [65, 67, 69, 72, 74, 77, 79, 81, 84, 86]
+
+CUES_21 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "sfx.whoosh_soft", 0.2, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    (0.5, "sfx.pop_swish", 0.28, 0, 0.2, 0, "Reklama posti chiqdi (18:00)", None),
+    (0.55, "sfx.tick", 0.2, 0, 0.3, 0.25, "Post yaltiraydi (glint)", 12),
+    *[(1.4 + k * 0.17, "sfx.tick", 0.08 + 0.01 * k, 0.4, 0.1, 0, "Vaqt tez o'tadi 18:00 → 20:07", 3) for k in range(13)],
+    (3.7, "sfx.glitch_seq", 0.4, 0, 0.2, 0, "POST O'CHIRILDI — RGB glitch", None),
+    (3.7, "sfx.hit_low", 0.4, 0, 0.3, 0, "O'chirish zarbasi", -5),
+    (4.4, "sfx.pop_swish", 0.26, 0.3, 0.2, 0, "Boshqa reklama tepaga qadaldi", 4),
+    (4.4, "sfx.stutter", 0.16, 0.3, 0.1, 0, "Kichik glitch", 7),
+    (5.0, "sfx.pop_swish", 0.24, 0.3, 0.2, 0, "Siz: 'Post qayerda?'", -2),
+    (6.0, "sfx.notify_pop", 0.3, -0.3, 0.2, 0, "Admin: 'Kanal qoidasi'", None),
+    (7.0, "sfx.notify_ring", 0.3, 0, 0.25, 0, "Admin sizni blokladi", -6),
+    *[x for at, pan, nm in ((5.6, -0.4, "POST O'CHIRILDI"), (6.6, 0.4, "2 SOAT"), (7.6, -0.4, "PUL KETDI")) for x in [
+        (at, "sfx.stutter", 0.42, pan, 0.2, 0, f"Slam: {nm}", None),
+        (at, "sfx.glitch_short", 0.5, pan, 0.2, 0, "Slam qatlami", None),
+    ]],
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [55, 58, 62, 67]),
+    (8.38, "sfx.riser_click", 0.3, 0, 0, 0, "Riser — cho'qqisi 9.5 s da, gate kesadi", None),
+    (8.5, "sfx.boom_sub", 0.9, 0, 0.35, 0, "VA'DA BUZILDI — asosiy zarba", None),
+    (8.5, "sfx.hit_low", 0.6, 0, 0.4, 0, "Zarba qatlami: tonal", None),
+    (8.5, "sfx.glitch_seq", 0.28, 0, 0.2, 0, "Zarba qatlami: glitch", None),
+    (9.6, "sfx.dust", 0.45, 0.2, 0, 0, "OVOZ VAKUUMI: va'da kulga aylanib sochiladi", None),
+    (9.95, "fx.heartbeat", 0.28, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (F-major)", [65, 69, 72, 77]),
+    (10.22, "sfx.whoosh_sweep", 0.3, 0.3, 0.2, 0, "Bolg'a ko'tarilib tushadi", -3),
+    (10.5, "sfx.gavel", 0.85, 0, 0.45, 0.15, "SUDYA BOLG'ASI — o'tish", None),
+    (10.52, "sfx.hit_chime", 0.22, 0, 0.4, 0.2, "Flare jarangi", 12),
+    (11.0, "sfx.boom_sub", 0.45, 0, 0.35, 0, "Yechim boshlanishi", None),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "sfx.whoosh_soft", 0.2, -0.3, 0.2, 0, "Telefon kiradi", None),
+    *[(12.0 + k * 0.28, "sfx.tick", 0.16, round(-0.3 + 0.12 * (k % 6), 2), 0.2, 0.2, f"Bot tekshiruvi #{k + 1} — post joyida", 7) for k in range(5)],
+    *[(12.0 + k * 0.28 + 0.02, "ui.select", 0.06, 0.2, 0.3, 0.2, "Tekshiruv — tonallikdagi tasdiq", 81) for k in range(5)],
+    (13.4, "sfx.glitch_short", 0.5, 0, 0.2, 0, "BUZILISH ANIQLANDI", -3),
+    (13.4, "sfx.notify_ring", 0.36, 0, 0.25, 0.2, "Ogohlantirish", -4),
+    (13.45, "fx.shutter", 0.3, 0.2, 0.15, 0, "Dalil: skrinshot", None),
+    (13.62, "sfx.tick", 0.18, 0.3, 0.3, 0.25, "Dalil kartasi yaltiraydi", 12),
+    (14.2, "sfx.pop_swish", 0.24, 0, 0.2, 0, "Arbitraj ko'rib chiqmoqda", 2),
+    (14.25, "sfx.ratchet_roll", 0.16, -0.2, 0.15, 0, "Tarozi tebranadi", None),
+    (15.0, "sfx.gavel", 0.4, 0, 0.35, 0, "Qaror: buyurtmachi foydasiga", None),
+    (15.02, "ui.success", 0.22, 0, 0.4, 0.2, "Musiqiy tasdiq", None),
+    (15.1, "sfx.tick", 0.18, 0.3, 0.3, 0.25, "Qaror kartasi yaltiraydi", 12),
+    *[(15.6 + k * 0.1 + 0.5, "fx.coin", 0.07, round(-0.4 + 0.15 * k, 2), 0.2, 0, f"Tanga qaytdi #{k + 1}", None) for k in range(6)],
+    (15.6, "sfx.whoosh_soft", 0.16, 0.4, 0.2, 0, "Pul qaytmoqda", 5),
+    (16.3, "sfx.notify_ring", 0.34, -0.2, 0.25, 0.2, "1 200 000 so'm qaytarildi", 3),
+    (16.4, "sfx.tick", 0.18, -0.2, 0.3, 0.25, "Qaytarildi kartasi yaltiraydi", 12),
+    (16.6, "sfx.pop_swish", 0.22, 0.2, 0.2, 0, "Admin reytingi pasayadi", -7),
+    (17.0, "sfx.glitch_short", 0.2, 0.2, 0.2, 0, "4.6 → 3.9", -7),
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: ADOLAT oldidan", [69, 72, 77, 81]),
+    (18.45, "sfx.whoosh_soft", 0.12, 0, 0.4, 0, "Oltin nurlar ochiladi", 7),
+    (18.5, "sfx.boom_sub", 0.8, 0, 0.35, 0, "ADOLAT — zarba", None),
+    (18.5, "sfx.hit_chime", 0.5, 0, 0.4, 0.2, "Zarba qatlami: tonal", 3),
+    (18.5, "imp.sparkle", 0.35, 0, 0.5, 0, "Oltin uchqunlar", 301),
+    (19.7, "sfx.swipe", 0.3, 0, 0.2, 0, "Oyna ko'tariladi", None),
+    (19.9, "ui.success", 0.26, 0, 0.5, 0.3, "Pul qaytarildi", None),
+    (20.63, "sfx.riser_click", 0.32, 0, 0, 0, "Riser — cho'qqisi whip'da (21.75 s)", None),
+    (21.75, "sfx.whoosh_sweep", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (21.75, "sfx.swipe", 0.3, 0, 0.2, 0, "Whip qatlami", None),
+    (22.0, "sfx.boom_sub", 0.5, 0, 0.4, 0, "Natija boshlanishi", None),
+    (22.3, "sfx.whoosh_soft", 0.14, 0.3, 0.3, 0, "Bolg'a ko'tariladi; nurlar", 4),
+    (22.75, "sfx.gavel", 0.75, 0, 0.45, 0.15, "BOLG'A — adolat", None),
+    (23.2, "fx.kassa", 0.32, 0, 0.3, 0.2, "KASSA — 1 200 000 qaytdi", None),
+    (23.22, "sfx.notify_ring", 0.22, 0.2, 0.25, 0.2, "Kassa qatlami", 3),
+    *[(23.5 + i * 0.35, "sfx.swipe", 0.34, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[x for i in range(3) for x in [
+        (23.7 + i * 0.35, f"sfx.{CLICKS[(i + 1) % 5]}", 0.4, 0.4, 0, 0, f"ADUZ qatori #{i + 1}", None),
+        (23.72 + i * 0.35, "ui.select", 0.13, 0.4, 0.3, 0.2, "Tonallikdagi tasdiq", [77, 81, 84][i]),
+    ]],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [69, 74, 77, 81]),
+    (25.0, "sfx.boom_sub", 0.45, 0, 0.4, 0, "Urg'u", None),
+    (25.0, "sfx.hit_chime", 0.15, 0, 0.4, 0.2, "Flare jarangi", 12),
+    (25.0, "imp.sparkle", 0.4, 0, 0.5, 0, "Uchqunlar", 303),
+    *[x for i in range(3) for x in [
+        (25.2 + i * 0.25, "sfx.pop_swish", 0.3, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [7, 12, 16][i]),
+        (25.22 + i * 0.25, "ui.select", 0.1, -0.4 + 0.4 * i, 0.3, 0, "Tonallikdagi qo'ng'iroqcha", [84, 89, 93][i]),
+    ]],
+    (26.85, "sfx.whoosh_soft", 0.2, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (F tonikada)", 65),
+    (28.3, "sfx.click_1", 0.35, 0.2, 0.3, 0.3, "CTA tugmasi", None),
+    (28.32, "ui.select", 0.07, 0.2, 0.5, 0.4, "CTA qo'ng'iroqchasi", 93),
+]
+
+SCORE_21 = [
+    ("Ovoz manbai", "Foydalanuvchi SFX kutubxonasi (sfx/) + FX v2", "UI, o'tish va zarba ovozlari — sfx.* namunalari. Yangi yig'malar: sfx.gavel (boom_sub + hit_low +5 + qo'sh klik −10) va sfx.dust (glitch_noise +5, sekin kuchayib). Sintez: partitura, swell, tonallikdagi qo'ng'iroqchalar, success, uchqunlar, kassa, skrinshot zatvori, sonic logo."),
+    ("0:00–0:09.5", "Muammo · G-minor, tashvishli minimal", "7-qism aranjirovkasi 3 yarim ton yuqorida. Ustida: post chiqadi (pop + glint), vaqt tez o'tadi (tobora balandlashuvchi tiklar), 3.7 s — post o'chiriladi (glitch_seq + past hit), boshqa reklama, chat, blok; slamlar — stutter + glitch."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: 'Bu xabar o'chirildi' kartasi kulga aylanib sochiladi — sfx.dust; yurak urishi va qizil pulsatsiya. Keyin J-cut swell F-major'da."),
+    ("0:10.2–0:11", "Sudya bolg'asi", "Bolg'a ko'tarilib tushadi (whoosh_sweep) va 10.5 s da uriladi — sfx.gavel + flare jarangi; oltin doira ochiladi."),
+    ("0:11–0:21.75", "Yechim · F-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: bot tekshiruvlari (tik + tonallik), buzilish aniqlandi (glitch + notify_ring), skrinshot-dalil, arbitraj (ratchet — tarozi tebranadi), qaror (kichik bolg'a), tangalar qaytadi, reyting pasayadi."),
+    ("0:22–0:27", "Natija · F-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. Bolg'a zarbasi, kassa (ssenariydagi 'kassa ovozi')."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (F tonikada), so'nish."),
+]
+
+
+def score_21(M):
+    """7-qism partiturasi, 3 yarim ton yuqorida."""
+    global KEY_SHIFT
+    KEY_SHIFT = 3
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_21():
+    """21-qism: Raqamli adolat (Arbitraj). Score + cue-sheet (CUES_21), SFX — sfx/ kutubxonasi."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # the promise turns to dust: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_21(M)
+    render_cues(M, CUES_21)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16, 17: render_17, 18: render_18, 19: render_19, 20: render_20, 21: render_21}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -3310,7 +3433,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16), 17: (CUES_17, SCORE_17), 18: (CUES_18, SCORE_18), 19: (CUES_19, SCORE_19), 20: (CUES_20, SCORE_20), 21: (CUES_21, SCORE_21)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)

@@ -716,3 +716,18 @@ function godRays(t, x, y, a, col = '255,214,102', n = 14, len = 900) {
     ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len, -38); ctx.lineTo(len, 38); ctx.closePath(); ctx.fill(); }
   ctx.restore();
 }
+// Disintegrate: the region (x, y, w, h), already drawn on a flat `bg`, turns to dust drifting right/up (p: 0→1).
+function disintegrate(x, y, w, h, p, bg = '#05070d', seed = 1, cell = 14) {
+  if (p <= 0) return;
+  const buf = fxSnapshot(), r = rnd(seed);
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = bg; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+  for (let cx = x; cx < x + w; cx += cell) for (let cy = y; cy < y + h; cy += cell) {
+    const j = r(), k = r(), delay = (cx - x) / w * .55 + j * .2, q = clamp((p - delay) / .45);
+    if (q >= 1) continue;
+    const e = eIn(q), dx = e * (180 + 160 * k), dy = -e * (60 + 160 * j) + Math.sin(q * 6 + k * 9) * 12 * q;
+    ctx.globalAlpha = 1 - q; const sz = cell * (1 - .5 * q);
+    ctx.drawImage(buf, cx, cy, cell, cell, cx + dx, cy + dy, sz, sz);
+  }
+  ctx.restore();
+}

@@ -25,6 +25,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 18 | `ADUZ_18-qism.mp4` | Mukammallik formulasi (A/B test) |
 | 19 | `ADUZ_19-qism.mp4` | Mikro-kanallar kuchi |
 | 20 | `ADUZ_20-qism.mp4` | Qonuniy va oq savdo (B2B) |
+| 21 | `ADUZ_21-qism.mp4` | Raqamli adolat (Arbitraj) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -583,6 +584,41 @@ E-IMZO, TASDIQLANDI muhrlari ostidan siyoh sachrashi), `flare` (anamorfik yorug'
 
 Kompaniya nomi, STIR, summa, "Didox", "1C" eksporti va hujjatlar ro'yxati — namuna. Qaysi hujjatlar avtomatik yaratilishi,
 qaysi ESF operatori va E-imzo ishlatilishi — ADUZ'ning haqiqiy B2B imkoniyatlari va O'zbekiston qonunchiligi bilan solishtiring.
+
+## 21-qism: "Raqamli adolat (Arbitraj)"
+
+7-qism uslubi + FX v2; ovoz — [`sfx/`](sfx/README.md). O'tishlar: **sudya bolg'asi** (vakuumdan keyin bolg'a dastasi
+uchidan aylanib kadr markaziga uriladi — flare + uchqun, oltin doira ochiladi) va whip-pan. Yangi effekt: **`disintegrate`**
+(kadrdagi element kulga aylanib o'ngga-yuqoriga sochiladi).
+
+**G'oya:** muammo — "va'daga vafo qilinmasligi (postni o'chirish)". "Vodiy Live" kanali, qadalgan kelishuv: "24 soat tepada ·
+to'landi 1 200 000 so'm · 18:00". Soat tez o'tadi; 20:07 da post o'chiriladi ("Bu xabar o'chirildi", RGB glitch), o'rniga
+"Boshqa reklama" qadaladi. "Post qayerda? 24 soat edi-ku!" — "Admin: «Kanal qoidasi. Pul qaytmaydi.»" — "Admin sizni blokladi".
+Hisoblagich: tepada turdi 2 s 07 d / kelishuv 24 s / qaytgan pul 0. *POST O'CHIRILDI · 2 SOAT · PUL KETDI*. 8.5 s: **VA'DA
+BUZILDI — post ham yo'q, pul ham**. Vakuumda "o'chirildi" kartasi qorong'ida kulga aylanib sochiladi. Yechim — ADUZ "Nazorat
+24/7": buyurtma kafolatda; bot har 5 daqiqada tekshiradi (yurak urishi chizig'i, "✓ N ta tekshiruv — post joyida") → 20:07 da
+"Post topilmadi!" → "Shart buzildi · 2 s 07 d · dalil: skrinshot + vaqt belgisi" → arbitraj tarozisi → "Buyurtmachi foydasiga"
+→ 1 200 000 so'm tangalar bilan qaytadi → admin reytingi 4.6 → 3.9. Natija — bolg'a taxtachaga uriladi, "1 200 000 so'm
+qaytdi", kassa.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_21.md`](SOUND_ARCHITECTURE_21.md). Yangi yig'malar: **sfx.gavel** (boom_sub + hit_low +5 +
+qo'sh klik −10) va **sfx.dust** (glitch_noise +5, sekin kuchayadi — vakuumdagi kul). Vaqt o'tishi — tobora balandlashuvchi
+tiklar; o'chirish — glitch_seq; bot tekshiruvlari — tik + tonallikdagi qo'ng'iroqcha; dalil — kamera zatvori; tarozi —
+ratchet_roll. Musiqa — 7-qism aranjirovkasi 3 yarim ton yuqorida (G-minor → F-major). Sonic logo F tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "21-QISM · Raqamli adolat". Kanal, kelishuv "24 soat tepada", post 18:00 → soat tez o'tadi → 20:07 "Bu xabar o'chirildi" → boshqa reklama | Kelishuv: post 24 soat tepada turadi. Pul to'landi... |
+| 0:05–0:10.2 | 1. Muammo | "Post qayerda?" — "Kanal qoidasi. Pul qaytmaydi." — blok. *POST O'CHIRILDI · 2 SOAT · PUL KETDI*. 8.5 s: **VA'DA BUZILDI**. 9.55 s: karta kulga aylanadi (ovoz vakuumi) | Ikki soatdan keyin post o'chirildi. Admin: «Kanal qoidasi»... va'da kuldek sochildi. |
+| 0:10.2–0:11 | O'tish | Sudya bolg'asi uriladi → oltin doira | — |
+| 0:11–0:16 | 2. Yechim | "Nazorat 24/7": bot tekshiruvlari → "Post topilmadi!" → dalil (skrinshot 20:07:14) → arbitraj → "Buyurtmachi foydasiga" | ADUZ boti postni 24/7 kuzatadi — buzilish darhol dalil bilan qayd etiladi. |
+| 0:16–0:22 | 2. Yechim | 1 200 000 so'm qaytarildi, reyting 4.6 → 3.9. 18.5 s: **ADOLAT — shart buzilsa, pul qaytadi**. "Pul qaytarildi!" | Qaror avtomatik: shart buzilsa — pul sizga qaytadi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Adolat — avtomatik": bolg'a zarbasi, "1 200 000 so'm qaytdi" (kassa). Oldin (postni o'chirib ketadi; isbot yo'q; pul ketdi) ↔ ADUZ (24/7 bot nazorati; avtomatik dalil; pul qaytdi). Nishonlar: Nazorat 24/7 · Adolat · Refund | Adolat — raqamli va avtomatik. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Vaqtlar, summa, "har 5 daqiqada", reyting o'zgarishi — namuna. Avtomatik nazorat, dalil yig'ish, arbitraj qarori va refund
+tartibi ssenariy asosida — ADUZ'ning haqiqiy arbitraj qoidalari bilan solishtiring.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 
