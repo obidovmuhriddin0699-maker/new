@@ -20,6 +20,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 13 | `ADUZ_13-qism.mp4` | Ommaviy qamrov |
 | 14 | `ADUZ_14-qism.mp4` | Vaqt mashinasi (Rejalashtirish) |
 | 15 | `ADUZ_15-qism.mp4` | Ochiq haqiqat (Reyting tizimi) |
+| 16 | `ADUZ_16-qism.mp4` | Bot va mutaxassis hamkorligi |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -407,6 +408,37 @@ yulduzlar taqsimoti, qoida "Baho — faqat buyurtma bergan mijozdan", uchta shar
 
 Raqamlar (4.6, 1 248 ta baho, taqsimot foizlari, obunachilar, buyurtma raqamlari) va sharh matnlari — namuna. "Baho faqat
 buyurtmadan keyin" va "sharhlar tahrirlanmaydi" qoidalari ssenariy asosida — ADUZ'ning haqiqiy reyting qoidalari bilan solishtiring.
+
+## 16-qism: "Bot va mutaxassis hamkorligi"
+
+7-qism uslubida (telefon, sodda UI, ovoz vakuumi, taqqoslash kartasi). O'tishlar: **bitta chiziq** (chigal simlar tortilib bitta
+yashil chiziqqa aylanadi, yangi `slitOpen` esa kadrni shu chiziqdan ochadi) va whip-pan.
+
+**G'oya:** muammo — "murakkab texnik integratsiya". Telefonda kod muharriri: "Kanalni ulash · 1/12 qadam", `POST /api/v2/…`,
+`Bearer` token, webhook, SSL; konsolda xatolar (401, SSL, timeout, 403). Telefon atrofida rang-barang **simlar** chiqib, tobora
+chigallashadi, xatolarda uchqun sachraydi. *API TOKEN? · WEBHOOK? · 401 XATO*. 8.5 s: **CHIGAL — kanal ulash dasturchi ishi**.
+Vakuumda qisqa tutashuv: chiroqlar o'chadi, ekran qorayadi. Yechim — Telegram'da "Vodiy Live › Administratorlar › + Admin qo'shish"
+→ "@aduz_bot" → uchta huquq (xabar joylash, tahrirlash, statistika) → "Saqlash". ADUZ'da: botdan kanalga **bitta kabel** ulanadi →
+"Kanal ulandi", ro'yxat (avto-joylash, jonli statistika, kafolatli to'lov) va **mutaxassis** Dilshod: "Salom! Kanalingiz ulandi.
+Birinchi reklamani birga sozlaymiz." Natija — kanal va bot avatarlari yashil kabel bilan ulanadi, ma'lumot impulslari oqadi.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_16.md`](SOUND_ARCHITECTURE_16.md). Yangi tovushlar: elektr uchquni, qisqa tutashuv (portlash +
+pasayuvchi g'uvullash), kuygan sim vishillashi, simlar tortilishi "tang", vilka rozetkaga (klak + uchqun + yoqilish toni).
+Kod yozish va "@aduz_bot" — klaviatura. Musiqa — 7-qism aranjirovkasi 1 yarim ton pastda (Eb-minor → Db-major). Sonic logo Db tonikada.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:05 | 1. Muammo | "16-QISM · Oson ulanish". Kod: POST /api/v2/channels/connect, token, webhook; konsol: 401, SSL, timeout. Simlar chiqadi | Kanalni ulash: API token, webhook, kod... 12 ta qadam. |
+| 0:05–0:10.3 | 1. Muammo | 403 xato, simlar telefon ustidan kesib o'tadi. *API TOKEN? · WEBHOOK? · 401 XATO*. 8.5 s: **CHIGAL**. 9.5 s: qisqa tutashuv (ovoz vakuumi) | Xato ustiga xato — dasturchisiz iloji yo'q... va hammasi kuyib ketdi. |
+| 0:10.3–0:11 | O'tish | Simlar bitta yashil chiziqqa → kadr chiziqdan ochiladi | — |
+| 0:11–0:16 | 2. Yechim | Telegram: Administratorlar → + Admin qo'shish → @aduz_bot → 3 ta huquq → Saqlash. ADUZ: vilka ulanadi → "Kanal ulandi" | ADUZ'da botni kanalga admin qilasiz — tamom, ulandi. |
+| 0:16–0:22 | 2. Yechim | Ro'yxat ✓✓✓; mutaxassis Dilshod xabari. 18.5 s: **BOT + MUTAXASSIS — kod yozmasdan, bitta qadamda**. "Kanal ulandi!" | Texnik ishni bot bajaradi, savollarga mutaxassis javob beradi. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | "Ulanish — bitta qadam": VL ↔ bot yashil kabel, ✓ (kassa). Oldin (API, webhook, kod; dasturchi kerak; kunlab sozlash) ↔ ADUZ (botni admin qilish; mutaxassis yordami; bir necha daqiqa). Nishonlar: Oson ulanish · Aqlli bot · Mutaxassis | Kod yo'q, chigal yo'q — bitta qadam. |
+| 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
+
+Bot nomi (@aduz_bot), huquqlar ro'yxati, mutaxassis ismi va "bir necha daqiqa" — namuna. Ulanish jarayoni ssenariy asosida ("botni
+admin qilish orqali oson ulanish") — ADUZ'ning haqiqiy bot nomi, kerakli huquqlar va qo'llab-quvvatlash xizmati bilan solishtiring.
 
 ## Manba ssenariylar tahlili (PDF + XLSX, 28 qism)
 

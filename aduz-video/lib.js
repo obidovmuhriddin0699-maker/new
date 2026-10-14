@@ -609,3 +609,14 @@ function shatter(t, a, b, drawA, drawB) {
     ctx.restore();
   }
 }
+// Transition: slit — drawA collapses to a glowing horizontal line (drawA draws that itself), then drawB opens from the line.
+function slitOpen(t, a, b, drawA, drawB, color = '#22e39a', at = .4) {
+  const p = prog(t, a, b);
+  if (p < at) { drawA(t); return; }
+  const q = eOut((p - at) / (1 - at)), h = (H / 2 + 40) * q;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.beginPath(); ctx.rect(0, H / 2 - h, W, 2 * h); ctx.clip(); drawB(t); ctx.restore();
+  ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 40; ctx.fillStyle = color;
+  withAlpha(1 - q * .8, () => { ctx.fillRect(0, H / 2 - h - 5, W, 10); ctx.fillRect(0, H / 2 + h - 5, W, 10); });
+  ctx.restore();
+}

@@ -2612,7 +2612,143 @@ def render_15():
     out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
     return out
 
-V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15}
+
+# ---------- 16-qism: Bot va mutaxassis hamkorligi ----------
+def fx_zap(dur=0.35):
+    x = seconds(dur)
+    crackle = filt(filt(rng.standard_normal(len(x)), "highpass", 2000) * (rng.random(len(x)) > 0.92), "lowpass", 7000) * 2.5
+    buzz = np.sign(np.sin(2 * np.pi * 100 * x)) * 0.25 * np.exp(-x / 0.08)
+    return np.tanh((crackle + buzz) * np.exp(-x / (dur * 0.4)) * 1.5) * 0.7
+
+
+def fx_short():
+    x = seconds(1.0)
+    bang = np.tanh(filt(rng.standard_normal(len(x)), "lowpass", 3000) * np.exp(-x / 0.04) * 3) * 0.8
+    hum = np.sin(2 * np.pi * np.cumsum(120 * 2 ** (-x * 2.5)) / SR) * np.exp(-x / 0.35) * 0.5
+    return layer(bang, hum, fx_zap(0.6) * 0.6)
+
+
+def fx_fizz(dur=0.6):
+    x = seconds(dur)
+    return filt(rng.standard_normal(len(x)), "bandpass", [3000, 9000]) * (rng.random(len(x)) > 0.8) * np.exp(-x / (dur * 0.5)) * 0.8
+
+
+def fx_twang():
+    x = seconds(0.7)
+    f = 70 * 2 ** (2.5 * np.clip(x / 0.35, 0, 1))
+    return np.tanh(np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x / 0.3) * 1.5) * 0.6
+
+
+def fx_plug():
+    return layer(fx_switch() * 1.1, np.concatenate([np.zeros(int(0.03 * SR)), fx_zap(0.2) * 0.4]), np.concatenate([np.zeros(int(0.06 * SR)), tone(m(61), 0.5, "sine", 0.05, 0.3) * 0.3]))
+
+
+SOUNDS.update({
+    "fx.zap": ("L3", lambda a=None: fx_zap(a or 0.35), "Elektr uchquni: chirsillash"),
+    "fx.short": ("L5", lambda a=None: fx_short(), "Qisqa tutashuv: portlash + pasayib boruvchi g'uvullash"),
+    "fx.fizz": ("L3", lambda a=None: fx_fizz(a or 0.6), "Kuygan simlar vishillashi"),
+    "fx.twang": ("L4", lambda a=None: fx_twang(), "Simlar tortiladi: yuqoriga ketuvchi 'tang'"),
+    "fx.plug": ("L3", lambda a=None: fx_plug(), "Vilka rozetkaga: klak + uchqun + yoqilish toni"),
+})
+FRONT.update({"fx.short", "fx.fizz"})
+
+DB_PENT = [61, 63, 65, 68, 70, 73, 75, 77, 80, 82, 85]
+_W16 = [0.6 + i * 0.45 for i in range(8)] + [5.4, 6.4]
+
+CUES_16 = [
+    (0.0, "amb.office", 0.09, 0, 0, 0, "Xona — sahna 'havosi'", 9.6),
+    (0.05, "tr.whoosh", 0.16, 0.3, 0.2, 0, "Telefon kadrga kiradi", None),
+    *[(at, "tr.whoosh", 0.06, round((-1) ** i * 0.6, 2), 0.1, 0, f"Sim #{i + 1} chiqadi", None) for i, at in enumerate(_W16)],
+    *[(at + k * 0.03, "fx.type", 0.05, -0.1, 0, 0, "Kod yozilmoqda", None) for at, n in ((0.8, 29), (1.4, 30), (2.0, 30), (2.6, 18), (3.1, 27)) for k in range(0, n, 3)],
+    *[x for at in (2.4, 3.6, 4.6, 6.0) for x in [
+        (at, "fx.zap", 0.22, (-0.5, 0.5, -0.5, 0.5)[[2.4, 3.6, 4.6, 6.0].index(at)], 0.15, 0, f"Uchqun ({at} s)", None),
+        (at + 0.02, "ui.error", 0.16, 0, 0.2, 0, "Konsol: xato", None),
+    ]],
+    (5.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: API TOKEN?", None),
+    (6.6, "imp.glitch", 0.4, 0.4, 0.25, 0, "Slam: WEBHOOK?", None),
+    (7.6, "imp.glitch", 0.4, -0.4, 0.25, 0, "Slam: 401 XATO", None),
+    (8.0, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: asosiy zarba oldidan", [51, 54, 58, 63]),
+    (8.5, "imp.boom", 0.72, 0, 0.4, 0, "CHIGAL — asosiy zarba", 1.0),
+    (8.5, "imp.clap", 0.38, 0, 0.5, 0, "Zarba qatlami", None),
+    (8.5, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (8.6, "tr.riser", 0.3, 0, 0, 0, "Riser — 9.5 s da keskin kesiladi", 0.9),
+    (9.5, "fx.short", 0.5, 0, 0, 0, "OVOZ VAKUUMI: qisqa tutashuv", None),
+    (9.62, "fx.fizz", 0.3, -0.3, 0, 0, "Simlar vishillaydi", 0.5),
+    (9.95, "fx.heartbeat", 0.3, 0, 0, 0, "Yurak urishi", None),
+    (10.15, "tr.swell", 0.4, 0, 0.3, 0, "J-cut: yechim akkordi (Db-major)", [61, 65, 68, 73]),
+    (10.3, "fx.twang", 0.4, 0, 0.2, 0.15, "Simlar bitta chiziqqa tortiladi", None),
+    (10.58, "tr.whoosh", 0.3, 0, 0.3, 0, "Chiziqdan kadr ochiladi", None),
+    (11.0, "imp.boom", 0.5, 0, 0.35, 0, "Yechim boshlanishi", 0.8),
+    (11.0, "amb.air", 0.025, 0, 0, 0, "Yorug' muhit (deyarli sezilmas)", 10.7),
+    (11.1, "tr.whoosh", 0.18, -0.3, 0.2, 0, "Telefon kiradi", None),
+    (12.1, "ui.tap", 0.3, 0.2, 0, 0, "+ Admin qo'shish", None),
+    *[(12.4 + k * 0.066, "fx.type", 0.08, 0.1, 0, 0, f"'@aduz_bot' — {k + 1}/9", None) for k in range(9)],
+    (13.05, "ui.popup", 0.14, 0, 0.2, 0, "ADUZ Bot topildi", 73),
+    (13.3, "ui.select", 0.22, 0.2, 0.2, 0, "ADUZ Bot tanlandi", 77),
+    *[(13.7 + i * 0.15, "fx.switch", 0.16, 0.4, 0.1, 0, f"Huquq #{i + 1} yoqildi", None) for i in range(3)],
+    (14.4, "ui.tap", 0.34, 0.2, 0, 0, "'Saqlash' bosildi", None),
+    (14.7, "tr.slide", 0.14, 0.5, 0.1, 0, "ADUZ ekraniga", None),
+    (15.0, "tr.whoosh", 0.12, 0.3, 0.1, 0, "Vilka siljiydi", None),
+    (15.6, "fx.plug", 0.42, -0.3, 0.2, 0, "VILKA ULANDI", None),
+    (15.7, "ui.success", 0.26, 0, 0.4, 0.2, "Kanal ulandi", None),
+    *[(at, "ui.select", 0.14, 0, 0.3, 0.2, f"Ro'yxat #{i + 1}", [73, 77, 80][i]) for i, at in enumerate((16.0, 16.3, 16.6))],
+    (17.0, "ui.popup", 0.16, 0, 0.2, 0, "Mutaxassis Dilshod", 82),
+    *[(17.3 + k * 0.1, "fx.type", 0.05, 0.1, 0, 0, "Mutaxassis yozmoqda", None) for k in range(10)],
+    (18.0, "tr.swell", 0.35, 0, 0.3, 0, "J-cut: BOT + MUTAXASSIS oldidan", [65, 68, 73, 77]),
+    (18.5, "imp.boom", 0.6, 0, 0.4, 0, "BOT + MUTAXASSIS — zarba", 0.9),
+    (18.5, "imp.crash", 0.26, 0, 0, 0, "Zarba qatlami", None),
+    (18.5, "imp.sparkle", 0.4, 0, 0.5, 0, "Oltin uchqunlar", 61),
+    (19.9, "ui.success", 0.28, 0, 0.5, 0.3, "Kanal ulandi oynasi", None),
+    (21.2, "tr.riser", 0.26, 0, 0, 0, "J-cut: whip oldidan", 0.55),
+    (21.75, "tr.whip", 0.42, 0, 0.25, 0, "Whip-pan o'tishi", None),
+    (22.0, "imp.boom", 0.55, 0, 0.45, 0, "Natija boshlanishi", 0.9),
+    (22.0, "imp.crash", 0.3, 0, 0, 0, "Zarba qatlami", None),
+    (22.5, "tr.riser", 0.16, 0, 0.2, 0, "Yashil kabel cho'ziladi", 0.7),
+    (23.2, "fx.plug", 0.3, 0, 0.2, 0, "Ulandi ✓", None),
+    (23.2, "fx.kassa", 0.34, 0, 0.3, 0.2, "KASSA — ulanish", None),
+    *[(23.5 + i * 0.35, "fx.strike", 0.16, -0.4, 0.15, 0, f"'Oldin' qatori #{i + 1} chizildi", None) for i in range(3)],
+    *[(23.7 + i * 0.35, "ui.select", 0.16, 0.4, 0.3, 0.2, f"ADUZ qatori #{i + 1}", [77, 80, 85][i]) for i in range(3)],
+    (24.5, "tr.swell", 0.3, 0, 0.3, 0, "J-cut: nishonlar oldidan", [68, 73, 77, 80]),
+    (25.0, "imp.boom", 0.42, 0, 0.4, 0, "Urg'u", 0.6),
+    (25.0, "imp.sparkle", 0.45, 0, 0.5, 0, "Uchqunlar", 67),
+    *[(25.2 + i * 0.25, "ui.select", 0.14, -0.4 + 0.4 * i, 0.3, 0, f"Nishon #{i + 1}", [85, 89, 92][i]) for i in range(3)],
+    (26.85, "tr.whoosh", 0.16, 0, 0.4, 0, "Yakuniy kadrga", None),
+    (27.0, "brand.logo", 0.55, 0, 0.5, 0.35, "ADUZ SONIC LOGO (Db tonikada)", 61),
+    (28.3, "ui.select", 0.08, 0.2, 0.5, 0.4, "CTA tugmasi", 92),
+]
+
+SCORE_16 = [
+    ("0:00–0:09.5", "Muammo · Eb-minor, tashvishli minimal", "7-qism aranjirovkasi 1 yarim ton pastda: qorong'i pad, offbeat Rhodes, filtrlangan bas, 5.5 s dan kick. Ustida: kod yozish (klaviatura), simlar chiqishi (mayda whoosh), har xato — elektr uchquni + konsol xatosi."),
+    ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: qisqa tutashuv — portlash, pasayib boruvchi g'uvullash, kuygan simlar vishillashi, yurak urishi. Keyin J-cut swell Db-major'da."),
+    ("0:10.3–0:11", "Bitta chiziq", "Simlar tortiladi (yuqoriga ketuvchi 'tang') va bitta yashil chiziqqa aylanadi; undan kadr whoosh bilan ochiladi."),
+    ("0:11–0:21.75", "Yechim · Db-major, siyrak", "Half-time kick + snap, Rhodes, sub, qo'ng'iroqcha. Ustida: 'Admin qo'shish', '@aduz_bot' yozilishi, uchta tumbler, 'Saqlash', vilka rozetkaga (klak + uchqun + yoqilish toni), mutaxassis xabari."),
+    ("0:22–0:27", "Natija · Db-major, to'liq", "To'liq baraban, supersaw, Rhodes + qo'ng'iroqcha melodiyasi. Yashil kabel ulanadi — kassa ovozi (ssenariydagi 'kassa ovozi')."),
+    ("0:27–0:32", "Yakun · brend", "ADUZ sonic logo (Db tonikada), so'nish."),
+]
+
+
+def score_16(M):
+    """7-qism partiturasi, 1 yarim ton pastda."""
+    global KEY_SHIFT
+    KEY_SHIFT = -1
+    try:
+        score_7(M)
+    finally:
+        KEY_SHIFT = 0
+
+
+def render_16():
+    """16-qism: Bot va mutaxassis hamkorligi. Score + cue-sheet (CUES_16)."""
+    M = MixerPro(120)
+    M.gates.append((9.5, 10.15, 0.03))  # short circuit: sound vacuum
+    M.width = [(0, 0.75), (32, 0.75)]
+    score_16(M)
+    render_cues(M, CUES_16)
+    out = M.render()
+    out *= np.clip((DUR - t) / 1.4, 0, 1)[:, None] * np.clip(t / 0.3, 0, 1)[:, None]
+    return out
+
+V2 = {4: render_4, 5: render_5, 6: render_6, 7: render_7, 8: render_8, 9: render_9, 10: render_10, 11: render_11, 12: render_12, 13: render_13, 14: render_14, 15: render_15, 16: render_16}
 
 
 CUES = {1: cues_1, 2: cues_2, 3: cues_3}
@@ -2620,7 +2756,7 @@ CUES = {1: cues_1, 2: cues_2, 3: cues_3}
 if __name__ == "__main__":
     episode, out = int(sys.argv[1]), sys.argv[-1]
     if "--cuesheet" in sys.argv:
-        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15)}
+        sheets = {7: (CUES_7, SCORE_7), 8: (CUES_8, SCORE_8), 9: (CUES_9, SCORE_9), 10: (CUES_10, SCORE_10), 11: (CUES_11, SCORE_11), 12: (CUES_12, SCORE_12), 13: (CUES_13, SCORE_13), 14: (CUES_14, SCORE_14), 15: (CUES_15, SCORE_15), 16: (CUES_16, SCORE_16)}
         with open(out, "w") as fh:
             fh.write(cuesheet_md(episode, *sheets[episode]))
         print("wrote", out)
