@@ -28,6 +28,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | 21 | `ADUZ_21-qism.mp4` | Raqamli adolat (Arbitraj) |
 | 22 | `ADUZ_22-qism.mp4` | Jalb qiluvchi kontent |
 | 23 | `ADUZ_23-qism.mp4` | Iliq mijozlarni qaytarish (birinchi neon qism) |
+| 24 | `ADUZ_24-qism.mp4` | Doimiy hamroh — 24/7 yordam (birinchi "motion reel" qism) |
 
 > Diktor ovozi hali yozilmagan: matn ekranda subtitr sifatida turibdi.
 > Diktor yozib berilsa, quyidagi taymkodlar bo'yicha qo'yiladi.
@@ -42,6 +43,7 @@ musiqa va SFX bilan. Telegram, Instagram Reels va YouTube Shorts uchun.
 | `episodeN.html` | Qism sahnalari. Brauzerda ochsangiz takrorlanib o'ynaydi |
 | `lib.js` | Umumiy qismlar: telefon, logotip, subtitr, kursor, sarlavha va hisoblagichlar, xatolik belgilari, muammo/yechim/natija fonlari, yakuniy kadr, sahnalar tartibi |
 | `neon.js` | Neon mavzu (23-qismdan): telegram_reklama777 dizayn tizimi — ranglar, Russo One + Archivo shriftlari (`fonts/`, OFL), fonlar, subtitr, logotip, yakuniy kadr, neon nishon, izoh-CTA, PostTimeline |
+| `reel.js` | "Motion reel" mavzu (24-qismdan): HUD ramka, 4 rangli palitra, Archivo 900 + Instrument Serif italik + JetBrains Mono (`fonts/`, OFL), scramble matn, nuqtali panjara, UI kartalar, chiziqli fon, halftone, zarracha sfera, identity yakuniy kadr, `gridWave` o'tishi |
 | `render.mjs` | HTML → MP4 render (Playwright + ffmpeg) |
 | `audio.py` | Musiqa va SFX sintezi. 1–3-qism: oddiy fon (numpy). 4-qismdan: v2 dvigatel (numpy + scipy) — 120 BPM aranjirovka (baraban, sub-bas, supersaw akkordlar, FM qo'ng'iroqchalar), reverb, sidechain, soft-clip |
 
@@ -695,6 +697,42 @@ xor "ooo". Yangi: `sfx.cool_down` (iliq mijoz soviydi), radar ping'lari va topil
 Namuna — tekshiring: barcha raqamlar (1 222, 486, 214, 96, 1.4% → 8.6%, −10% chegirma, kanal nomlari), retargeting
 funksiyasining o'zi (segmentlar, eslatma reklamasi, "kanallar bo'ylab topish"), shuningdek yakundagi izoh-CTA kalit so'zi
 ("ADUZ") va handle `@telegram_reklama777` — ADUZ uchun to'g'ri ekanini tasdiqlang.
+
+## 24-qism: "Doimiy hamroh (24/7 yordam)"
+
+**Birinchi "motion reel" qism.** Vizual uslub — foydalanuvchi yuborgan showreel videosi asosida ([`reel.js`](reel.js)):
+HUD ramka (burchak qavslari, mayda mono yozuvlar, jonli taymkod, bo'lim raqami "01 / MUAMMO", pastda shkala-pleyhed),
+siyoh-qora va iliq qog'oz fonlar, 4 rang (signal to'q sariq #f04a1e, laym #d6f03a, binafsha #6a5cf2, oq-krem #efece4),
+og'ir grotesk KATTA HARFLI kinetik so'zlar, serif italik urg'ular ("Yordam.", "Siz yolg'iz emassiz."), dekodlanuvchi mono
+matn, rangli plitkalar panjarasi, tekis UI kartalar (toggle, donut, ustunlar, keyframe-taymlayn), diagonal chiziqlar,
+halftone, zarracha sfera, harflar tushib "ADUZ" yasaydigan identity kadri (orbita + to'q sariq tagchiziq). Yangi o'tish:
+**gridWave** (plitkalar to'lqin bo'lib kadrni yopadi, "Yordam." so'zi, so'ng ochiladi). Tuzilma, FX v2, sfx/, xor — avvalgidek.
+
+**G'oya:** kechasi 23:40, to'lov o'tmagan. Mijoz yordam xizmatiga 6 marta yozadi — kulrang bitta belgi, "OFFLINE",
+"oxirgi marta: 3 kun oldin", kutish taymeri 3 soatgacha yuguradi. *JAVOB YO'Q · OFFLINE · SOVUQ MUNOSABAT* (qiyshiq
+slab-kartalar). 8.5 s: butun kadr to'q sariq — **SOVUQ. — va javobsiz qoldingiz**. Vakuum: oxirgi "Allo?" shovqinga
+aylanib sochiladi, to'q sariq chiziq tekis. Yechim — qog'oz fonda UI kartalar: "Jonli menejer" toggle yoqiladi →
+Dilnoza (ADUZ menejeri) onlayn → "Hozir tekshiraman" → "To'lov o'tdi, reklamangiz ertaga 09:00 da" → "Rahmat, tez ekan!";
+javob vaqti 3 soat → 47 s, hal qilindi 98%, 24 soatlik murojaat ustunlari. 18.5 s: laym kadr **JAVOB BOR. — 47 soniyada,
+kechasi ham**. Binafsha karta: "Siz yolg'iz emassiz." + murojaat → javob → yechim keyframe'lari, "HAL QILINDI".
+Natija — chiziqli fonda **24/7**, Oldin ↔ ADUZ kartasi, kassa, rangli nishonlar (Jonli · 24/7 · Tezkor), zarracha sfera.
+
+**Ovoz:** [`SOUND_ARCHITECTURE_24.md`](SOUND_ARCHITECTURE_24.md). 7-qism partiturasi 3 yarim ton pastda (C#-minor → B-major),
+muammoda pizzicato, xor B-major'da (`mus.choir_b`). Har yuborilgan xabar yarim ton pastroq — umid so'nadi.
+
+| Vaqt | Kadr | Ekranda | Diktor |
+|---|---|---|---|
+| 0:00–0:04.5 | 1. Muammo | "24-QISM" dekodlanadi, "DOIMIY HAMROH". Chat: xabarlar javobsiz, taymer yuguradi | Kechasi 23:40. To'lov o'tmadi — yozasiz, yozasiz... |
+| 0:04.5–0:10.3 | 1. Muammo | *JAVOB YO'Q · OFFLINE · SOVUQ MUNOSABAT*. 8.5 s: to'q sariq **SOVUQ.** 9.6 s: "Allo?" shovqinga aylanadi | ...javob yo'q. Operator offline. Siz — yolg'iz. ...hech kim yo'q. |
+| 0:10.3–0:11 | O'tish | Plitkalar to'lqini + "Yordam." + xor | — |
+| 0:11–0:16 | 2. Yechim | Jonli menejer toggle → chat: 40 soniyada javob, to'lov o'tdi | ADUZ: jonli, malakali menejer — 47 soniyada javob. |
+| 0:16–0:21.75 | 2. Yechim | 47 s · 98% · 24 soat ustunlari. 18.5 s: **JAVOB BOR.** "Siz yolg'iz emassiz." | Kechasi ham, dam olishda ham. 24/7. |
+| 0:21.75–0:22.15 | O'tish | Whip-pan | — |
+| 0:22–0:27 | 3. Natija | **24/7** chiziqlarda. Oldin (3 soat kutish; bot yoki jimlik; faqat ish vaqtida) ↔ ADUZ (47 soniyada javob; jonli menejer; 24/7, bayramda ham). Nishonlar: Jonli · 24/7 · Tezkor | Doimiy hamroh — har doim yoningizda. |
+| 0:27–0:32 | Yakun | Harflar tushib "ADUZ", orbita, "BIZNESINGIZ HIMOYACHISI", "Telegram reklama ekotizimi", CTA | ADUZ — biznesingiz himoyachisi! |
+
+Namuna — tekshiring: 47 soniya javob vaqti, 98% hal qilish, "24/7, bayramda ham", menejer ismi (Dilnoza) va chatdagi
+vaqtlar/matnlar — ADUZ yordam xizmatining haqiqiy ko'rsatkichlari va ish tartibi bilan almashtiring.
 
 ## SFX kutubxonasi (19-qismdan boshlab)
 

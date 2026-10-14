@@ -26,6 +26,21 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
 - Yordamchilar: `glowText`, `neonGround`, `chipCard`, `neonBadge`, `commentCTA`, `postTimeline`, `HANDLE`.
   Pastki ~420 px — subtitrdan boshqa matnsiz (subtitr y≈1588).
 
+## Dizayn (24-qismdan): "MOTION REEL" mavzu — foydalanuvchi referens videosi (showreel, 15 s)
+- Foydalanuvchi: "keyingi qism grafik dizaynini shu video dizaynidan tayyorla va bu uslubni saqlab qo'y".
+  Sahifada `<script src="lib.js"></script><script src="reel.js"></script>` (neon.js o'rniga). Ikkala mavzu saqlanadi;
+  keyingi qismlar uchun foydalanuvchi boshqasini aytmaguncha — oxirgi so'ralgan uslub (reel).
+- Ranglar `R.*`: ink #0e0d0f, warm #1c1311 (identity foni), paper #e9e7e2 (yechim/UI foni), card #f7f6f3,
+  off #efece4, orange #f04a1e (asosiy aksent, muammo kesimi, tagchiziq), lime #d6f03a (ijobiy, "javob bor"),
+  violet #6a5cf2 (ikkinchi aksent, keyframe kartasi, halftone). Ko'p rang — faqat panjara/konfetti/nishonlarda.
+- Shrift: Archivo 900 — KATTA HARF kinetik so'zlar (`heavy()`, manfiy tracking); Instrument Serif italik — urg'u
+  iboralar (`serif()`); JetBrains Mono — kengaytirilgan mayda yozuvlar, HUD, raqamlar (`mono()`, `scramble()`).
+- Qurilmalar: `hud(t, SECTIONS, light, '24-QISM')` (har kadrda, overlay'da; qog'oz fonda light=true), `tickLine`,
+  `dotGrid`, `stripes`, `halftone`, `card`/`toggle`/`donut`, `particleSphere`, `reelBadge`, identity `endCard`,
+  o'tish `gridWave(t,a,b,A,B,'So'z.')`. Muammo slamlari — qiyshiq rangli slab-kartalar; 8.5 va 18.5 da
+  butun kadrni egallovchi rangli kesim (to'q sariq / laym) + og'ir so'z + serif izoh.
+- Subtitr: siyoh plashka, chapda to'q sariq chiziq, y≈1700 (HUD shkalasidan yuqorida).
+
 ## Vizual effektlar (foydalanuvchi: "juda yoqdi, yanada efekt qil")
 - **FX v2** (`lib.js`, 20-qismdan): `rgbGlitch`, `punch`, `shine`, `inkSplat`, `flare`, `trail`, `pulseVignette`,
   `godRays`, `disintegrate`. Har qismda ko'p ishlatiladi: slamlarda glitch, voqealarda punch, tayyor kartalarda shine,
@@ -34,7 +49,7 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   `bounce`, `charsDown`, `letterUp`, `colorBounce`, `flicker`, `typewriter`, `blurUp`, `scale`, `wordRight`.
   Sarlavhalar, oltin slam, natija sarlavhasi va reklama kartalari shu presetlar bilan jonlantiriladi.
 - Ishlatilgan o'tishlar (takrorlamaslik uchun): circleWipe, clockWipe, zoomThrough, pixelDissolve, splitDoors, squeegee,
-  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23).
+  implode, cardFlip, crtOff, sliceGlitch, lightsOn, tileFlip, eyelidOpen, shatter, slitOpen, splitOpen, sudya bolg'asi, radarSweep (23), gridWave (24).
 
 ## Ovoz
 - **SFX kutubxonasi** `sfx/` (39 ta, foydalanuvchi yuborgan SFX-to'plam videolaridan kesilgan): UI/o'tish/zarba
