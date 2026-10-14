@@ -636,3 +636,83 @@ function splitOpen(t, a, b, drawA, drawB, color = '#22e39a', at = .4) {
   withAlpha(1 - q * .8, () => { ctx.fillRect(W / 2 - w - 5, 0, 10, H); ctx.fillRect(W / 2 + w - 5, 0, 10, H); });
   ctx.restore();
 }
+
+// ======================= FX v2 — kuchaytirilgan effektlar (20-qism v2 dan boshlab) =======================
+let FXBUF = null;
+function fxSnapshot() { // copy of the current frame
+  if (!FXBUF) { FXBUF = document.createElement('canvas'); FXBUF.width = W; FXBUF.height = H; }
+  const g = FXBUF.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'copy'; g.drawImage(cv, 0, 0); g.globalCompositeOperation = 'source-over';
+  return FXBUF;
+}
+// RGB split + torn horizontal bands for `dur` seconds after `at` (draw it after the scene, before captions).
+function rgbGlitch(t, at, dur = .28, strength = 1, seed = 1) {
+  const d = t - at; if (d < 0 || d > dur) return;
+  const k = strength * (1 - d / dur) ** .7, buf = fxSnapshot(), r = rnd(seed * 97 + Math.floor(d * 60));
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'screen';
+  ctx.globalAlpha = .22 * Math.min(1, k); ctx.filter = 'sepia(1) saturate(8) hue-rotate(-50deg)'; ctx.drawImage(buf, -22 * k, 0);
+  ctx.filter = 'sepia(1) saturate(8) hue-rotate(150deg)'; ctx.drawImage(buf, 22 * k, 0);
+  ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  for (let i = 0; i < 7; i++) {
+    const y = r() * H, h = 12 + r() * 90, off = (r() - .5) * 160 * k;
+    ctx.drawImage(buf, 0, y, W, h, off, y, W, h);
+    if (r() < .4) { ctx.globalAlpha = .25 * k; ctx.fillStyle = r() < .5 ? '#ff2d55' : '#22d3ee'; ctx.fillRect(0, y, W, 3); ctx.globalAlpha = 1; }
+  }
+  ctx.restore();
+}
+// Camera punch-in: sum of short zoom bumps → multiply into camera zoom.
+function punch(t, times, amt = .045, len = .35) {
+  let z = 1; for (const at of times) { const d = t - at; if (d >= 0 && d < len) z += amt * Math.sin(Math.PI * d / len) * (1 - d / len); } return z;
+}
+// Diagonal glossy light sweep across a rounded rect (p: 0→1).
+function shine(x, y, w, h, p, r = 20, col = 'rgba(255,255,255,.75)') {
+  if (p <= 0 || p >= 1) return;
+  ctx.save(); rr(x, y, w, h, r); ctx.clip();
+  const cx = lerp(x - w * .4, x + w * 1.4, eInOut(p)), g = ctx.createLinearGradient(cx - 90, y, cx + 90, y + h);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.5, col); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.globalCompositeOperation = 'lighter'; ctx.fillRect(x, y, w, h); ctx.restore();
+}
+// Ink splat: blobs + droplets flung outwards from (x, y).
+function inkSplat(t, at, x, y, col, seed = 1, size = 1) {
+  const d = t - at; if (d < 0 || d > 1.6) return;
+  const r = rnd(seed), grow = eOut(Math.min(1, d / .12)), fade = 1 - clamp((d - .9) / .7);
+  withAlpha(fade, () => {
+    ctx.fillStyle = col;
+    for (let i = 0; i < 26; i++) {
+      const a = r() * 6.283, dist = (60 + r() * 260) * size * grow, rad = (4 + r() * 18) * size * (1 - .5 * (dist / (320 * size)));
+      ctx.beginPath(); ctx.arc(x + Math.cos(a) * dist, y + Math.sin(a) * dist * .8, Math.max(1, rad), 0, 7); ctx.fill();
+      if (i % 3 === 0) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * dist * .8, y + Math.sin(a) * dist * .65); ctx.lineWidth = rad * .9; ctx.strokeStyle = col; ctx.stroke(); }
+    }
+  });
+}
+// Anamorphic flare streak at (x, y).
+function flare(t, at, x, y, col = '#fff3c4', len = 900, dur = .7) {
+  const d = t - at; if (d < 0 || d > dur) return;
+  const k = Math.sin(Math.PI * Math.min(1, d / dur)) ** .6;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createLinearGradient(x - len, y, x + len, y); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.5, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.globalAlpha = .8 * k; ctx.fillStyle = g; ctx.fillRect(x - len, y - 5, 2 * len, 10);
+  ctx.globalAlpha = .35 * k; ctx.fillRect(x - len * .6, y - 24, len * 1.2, 48);
+  const rg = ctx.createRadialGradient(x, y, 0, x, y, 160); rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.globalAlpha = .7 * k; ctx.fillStyle = rg; ctx.fillRect(x - 160, y - 160, 320, 320);
+  ctx.restore();
+}
+// Motion trail: call fn(x, y, alpha, i) for n past positions of a path pos(time).
+function trail(t, pos, n = 6, dt = .025, fn) {
+  for (let i = n; i >= 0; i--) { const p = pos(t - i * dt); if (!p) continue; fn(p[0], p[1], i ? .35 * (1 - i / (n + 1)) : 1, i); }
+}
+// Pulsing coloured vignette (e.g. heartbeat in the vacuum).
+function pulseVignette(t, beats, col = '255,30,60', amt = .45) {
+  let k = 0; for (const at of beats) { const d = t - at; if (d >= 0 && d < .45) k = Math.max(k, Math.exp(-d * 7)); }
+  if (k <= 0) return;
+  const g = ctx.createRadialGradient(W / 2, H / 2, H * .25, W / 2, H / 2, H * .75); g.addColorStop(0, `rgba(${col},0)`); g.addColorStop(1, `rgba(${col},${amt * k})`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+// Light rays fanning from (x, y) — behind a hero element.
+function godRays(t, x, y, a, col = '255,214,102', n = 14, len = 900) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(x, y); ctx.rotate(t * .25);
+  for (let i = 0; i < n; i++) { ctx.rotate(Math.PI * 2 / n); const g = ctx.createLinearGradient(0, 0, len, 0); g.addColorStop(0, `rgba(${col},${.22 * a})`); g.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len, -38); ctx.lineTo(len, 38); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}

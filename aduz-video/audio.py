@@ -3252,8 +3252,26 @@ CUES_20 = [
     (28.32, "ui.select", 0.07, 0.2, 0.5, 0.4, "CTA qo'ng'iroqchasi", 96),
 ]
 
+SOUNDS.update({
+    "sfx.splat": ("L5", lambda a=None: layer(smp("pop_swish", -12), smp("glitch_short", -12) * 0.4), "Siyoh sachrashi: pop_swish −12 + glitch_short −12"),
+})
+FRONT.update({"sfx.splat"})
+CUES_20 += [  # FX v2: effektlar uchun qo'shimcha ovozlar
+    *[(at + 0.12, "sfx.tick", 0.2, 0.3, 0.3, 0.25, "Yaltiroq nur (glint)", 12) for at in (12.0, 12.6, 13.0, 13.9, 14.6, 15.2, 16.5)],
+    (5.4, "sfx.stutter", 0.2, 0.2, 0.15, 0, "Soliq xabari — RGB glitch", 5),
+    (9.66, "sfx.splat", 0.4, 0, 0, 0, "Muhr ostidan siyoh sachraydi", None),
+    (10.7, "sfx.hit_chime", 0.18, 0, 0.4, 0.2, "Varaq o'rtasida yorug'lik chizig'i", 12),
+    (13.9, "sfx.pop_swish", 0.22, 0.3, 0.2, 0, "E-imzo siyohi sachraydi", -7),
+    (16.0, "sfx.pop_swish", 0.2, 0.6, 0.3, 0.2, "Hujjatlar buxgalterga yetdi — uchqun", 9),
+    (18.45, "sfx.whoosh_soft", 0.12, 0, 0.4, 0, "Oltin nurlar ochiladi", 7),
+    (22.3, "sfx.whoosh_soft", 0.12, 0, 0.4, 0, "Hujjatlar ortida nurlar", 7),
+    (23.2, "sfx.pop_swish", 0.22, 0, 0.3, 0, "Yashil siyoh sachraydi", -9),
+    (25.0, "sfx.hit_chime", 0.15, 0, 0.4, 0.2, "Nishonlar ustida flare", 12),
+]
+CUES_20.sort(key=lambda c: c[0])
+
 SCORE_20 = [
-    ("Ovoz manbai", "Foydalanuvchi SFX kutubxonasi (sfx/)", "UI, o'tish va zarba ovozlari — sfx.* namunalari (kliklar, qo'sh klik, pop_swish, swipe, whoosh, riser_click, stutter/glitch, notify, hit_low/hit_chime, boom_sub). Sintez: partitura, J-cut swell, tonallikdagi qo'ng'iroqchalar, success, uchqunlar, kassa, qog'oz shitirlashi, kichik muhr (fx.stamp), sonic logo."),
+    ("Ovoz manbai", "Foydalanuvchi SFX kutubxonasi (sfx/) + FX v2", "FX v2: har yaltiroq nur — yuqori tik (glint), siyoh sachrashlari — past pop_swish, nurlar — yumshoq whoosh, flare — hit_chime +12. UI, o'tish va zarba ovozlari — sfx.* namunalari (kliklar, qo'sh klik, pop_swish, swipe, whoosh, riser_click, stutter/glitch, notify, hit_low/hit_chime, boom_sub). Sintez: partitura, J-cut swell, tonallikdagi qo'ng'iroqchalar, success, uchqunlar, kassa, qog'oz shitirlashi, kichik muhr (fx.stamp), sonic logo."),
     ("0:00–0:09.5", "Muammo · Bb-minor, tashvishli minimal", "7-qism aranjirovkasi 6 yarim ton yuqorida. Ustida: buxgalter xabarlari (notify_pop), sizning javoblaringiz (pop_swish), cheklar shitirlashi, hujjatlar ro'yxati (swipe) va uchta '✕' — pastga tushib boruvchi qisqa glitchlar, soliq xabari (notify_ring pastroq), slamlar — stutter + glitch."),
     ("0:09.5–0:10.15", "Ovoz vakuumi", "Gate: 'RAD ETILDI' muhri kadrga uriladi — boom_sub + hit_low (−5) + qo'sh klik (−12) bitta og'ir zarbaga yig'ilgan; yurak urishi. Keyin J-cut swell Ab-major'da."),
     ("0:10.4–0:11", "Varaq ag'dariladi", "Ikki swipe (pastroq va balandroq) — varaqning ikki yarmi."),

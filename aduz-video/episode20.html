@@ -50,6 +50,8 @@ function stampMark(x, y, s, label, col, rot = -.18) {
 const MSGS = [[.8, 'in', 'Reklama xarajatlari boʻyicha hujjatlar qani?'], [1.6, 'out', 'Adminlarga kartadan oʻtkazganman...'], [2.4, 'in', 'Shartnoma? Hisob-faktura? Dalolatnoma?'], [4.6, 'in', 'Unda bu xarajatni hisobdan chiqarib boʻlmaydi.'], [7.0, 'out', '???']];
 const CHECK = [['Shartnoma', 3.3], ['Hisob-faktura (ESF)', 3.6], ['Dalolatnoma', 3.9]];
 const TAX = 5.4, STAMP = 9.55;
+const PUNCH1 = [.8, 1.6, 2.4, 3.3, 3.6, 3.9, 4.6, TAX, 7.0];
+const BEATS = [9.55, 9.95, 10.2];
 const IMPACTS1 = [[TAX, 8], [5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46], [STAMP, 40]];
 const PAPERS = (() => { const r = rnd(241); return Array.from({ length: 24 }, (_, i) => ({ x: r() * W, at: 2.4 + i * .3, v: 120 + r() * 160, rot: r() * 6, w: 70 + r() * 50, spin: (r() - .5) * 2 })); })();
 function paper(x, y, w, rot, k) {
@@ -97,7 +99,7 @@ function scene1(t) {
   const stress = prog(t, 4.6, 9.4);
   problemBg(t, stress);
   const [sx, sy, sr] = shakeAt(t, IMPACTS1);
-  camera(1 + .06 * eInOut(prog(t, 0, 10.6)), sr, sx, sy, () => {
+  camera((1 + .06 * eInOut(prog(t, 0, 10.6))) * punch(t, PUNCH1), sr, sx, sy, () => {
     for (const p of PAPERS) { const d = t - p.at; if (d < 0) continue; const y = -100 + p.v * d; if (y > H + 100) continue;
       withAlpha(.32 * (1 - y / H * .5), () => paper(p.x + Math.sin(d * 1.3 + p.rot) * 40, y, p.w, p.rot + p.spin * d, p.w | 0)); }
     episodeTitle(t, '20-QISM', 'Oq savdo', 56);
@@ -119,7 +121,9 @@ function scene1(t) {
   if (t > STAMP) {
     withAlpha(.6, () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
     const sp = prog(t, STAMP, STAMP + .1);
+    inkSplat(t, STAMP + .1, W / 2, 900, 'rgba(220,38,38,.9)', 31, 1.5);
     stampMark(W / 2, 900, lerp(2.4, 1.15, eIn(sp)), 'RAD ETILDI', '#ef4444');
+    sparks(t, STAMP + .1, W / 2, 900, 37, ['#fecaca', '#ef4444', '#ffffff'], 30, 900);
     if (sp >= 1) withAlpha(.25 * (1 - prog(t, STAMP + .1, STAMP + .5)), () => { ctx.fillStyle = '#ef4444'; ctx.fillRect(0, 0, W, H); });
   }
 }
@@ -139,7 +143,7 @@ function docsScreen(t) {
   text('Vodiy Textile MChJ', SX + 155, SY + 235, 30, C.ink, 900); text('STIR 305 123 456 · bank hisob raqami', SX + 155, SY + 275, 22, C.grey, 600);
   const on = t > T20.legal, k = eInOut(prog(t, T20.legal, T20.legal + .25));
   scaled(LEG.x + LEG.w / 2, LEG.y + 40, 1 + .03 * bump(t, T20.legal, .2), () => {
-    rr(LEG.x, LEG.y, LEG.w, LEG.h, 20); ctx.fillStyle = on ? '#ecfdf5' : '#fff'; ctx.fill();
+    rr(LEG.x, LEG.y, LEG.w, LEG.h, 20); ctx.fillStyle = on ? '#ecfdf5' : '#fff'; ctx.fill(); shine(LEG.x, LEG.y, LEG.w, LEG.h, prog(t, T20.legal, T20.legal + .55));
     text('Yuridik shaxs sifatida toʻlash', LEG.x + 30, LEG.y + 50, 27, C.ink, 800);
     rr(LEG.x + LEG.w - 110, LEG.y + 20, 80, 42, 21); ctx.fillStyle = k > .5 ? '#16c784' : '#cbd5e1'; ctx.fill();
     ctx.beginPath(); ctx.arc(LEG.x + LEG.w - 89 + 38 * k, LEG.y + 41, 17, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
@@ -155,14 +159,18 @@ function docsScreen(t) {
       else { const q = eBack(prog(t, i === 2 ? T20.sign : at, (i === 2 ? T20.sign : at) + .3));
         if (i === 2 && !signed) { ctx.beginPath(); ctx.arc(SX + SW - 80, y + 49, 20, t * 8, t * 8 + 4.5); ctx.lineWidth = 5; ctx.strokeStyle = '#8b5cf6'; ctx.stroke(); }
         else scaled(SX + SW - 80, y + 49, q, () => { ctx.beginPath(); ctx.arc(SX + SW - 80, y + 49, 22, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill(); check(SX + SW - 80, y + 50, 16, '#fff', 5); }); }
+      const ok = i === 2 ? T20.sign : at;
+      shine(SX + 30, y, SW - 60, 98, prog(t, ok, ok + .55));
+      sparks(t, ok, SX + SW - 80, y + 49, 61 + i, ['#22e39a', '#ffffff', C.gold], 14, 420);
     });
   });
   // e-signature stamp on the ESF row
   const sg = prog(t, T20.sign - .12, T20.sign);
+  inkSplat(t, T20.sign, SX + SW - 200, SY + 440 + 2 * 112 + 50, 'rgba(124,58,237,.75)', 43, .45);
   if (sg > 0) { const y = SY + 440 + 2 * 112; withAlpha(1 - prog(t, T20.sign + .7, T20.sign + 1.0), () => stampMark(SX + SW - 200, y + 50, lerp(1.2, .42, eIn(sg)), 'E-IMZO', '#7c3aed', -.12)); }
   const rp = eBack(prog(t, T20.reply, T20.reply + .35));
   if (rp > 0) scaled(SX + SW / 2, SY + 945, rp, () => {
-    rr(SX + 30, SY + 900, SW - 60, 92, 22); ctx.fillStyle = '#ede9fe'; ctx.fill();
+    rr(SX + 30, SY + 900, SW - 60, 92, 22); ctx.fillStyle = '#ede9fe'; ctx.fill(); shine(SX + 30, SY + 900, SW - 60, 92, prog(t, T20.reply + .1, T20.reply + .7), 22);
     ctx.beginPath(); ctx.arc(SX + 80, SY + 946, 28, 0, 7); ctx.fillStyle = '#8b5cf6'; ctx.fill(); text('NB', SX + 80, SY + 948, 20, '#fff', 800, 'center', 'middle');
     text('Nodira: Rahmat! Hammasi joyida,', SX + 125, SY + 938, 24, '#4c1d95', 800); text('hisobga oldim.', SX + 125, SY + 970, 24, '#4c1d95', 700);
   });
@@ -171,6 +179,7 @@ function docsScreen(t) {
     rr(EXP.x, EXP.y, EXP.w, EXP.h, 43); ctx.fillStyle = ex ? '#065f46' : '#0ea371'; ctx.fill();
     glyph('chart', EXP.x + 90, EXP.y + 43, .75);
     text(ex ? 'Buxgalteriyaga yuborildi ✓' : 'Buxgalteriyaga eksport (1C)', EXP.x + EXP.w / 2 + 30, EXP.y + 55, 29, '#fff', 900, 'center');
+    shine(EXP.x, EXP.y, EXP.w, EXP.h, prog(t, T20.exp, T20.exp + .6), 43);
   });
   const mp = eOut(prog(t, T20.sheet, T20.sheet + .45));
   if (mp > 0) {
@@ -192,16 +201,18 @@ function docsScreen(t) {
 }
 function scene2(t) {
   const [sx, sy, sr] = shakeAt(t, IMPACTS2);
-  camera(1.04 - .04 * eOut(prog(t, 11, 12)) + .025 * eInOut(prog(t, 12, 21.8)), sr, sx, sy, () => {
+  camera((1.04 - .04 * eOut(prog(t, 11, 12)) + .025 * eInOut(prog(t, 12, 21.8))) * punch(t, [T20.legal, ...T20.docs, T20.sign, T20.act, T20.exp, T20.reply], .025), sr, sx, sy, () => {
     solutionBg(t, 'Oq savdo — avtomatik hujjatlar');
     const enter = eBack(prog(t, 11.1, 11.75));
     scaled(W / 2, PY + PH / 2, lerp(.8, 1, enter), () => withAlpha(prog(t, 11.1, 11.35), () =>
       phone('#f4f7f6', 0, lerp(180, 0, enter), 0, () => docsScreen(t))));
     // documents fly to the accountant
     const acc = [W - 150, 250];
-    for (let k = 0; k < 4; k++) { const p = prog(t, T20.fly[0] + k * .12, T20.fly[0] + k * .12 + .45); if (p <= 0 || p >= 1) continue;
-      const e = eInOut(p), x = lerp(W / 2, acc[0], e), y = lerp(EXP.y, acc[1], e) - Math.sin(Math.PI * e) * 200;
-      ctx.save(); ctx.translate(x, y); ctx.rotate(e * 2); rr(-30, -38, 60, 76, 8); ctx.fillStyle = '#fff'; ctx.fill(); glyph('doc', 0, 0, .8, '#0ea371'); ctx.restore(); }
+    for (let k = 0; k < 4; k++) {
+      const a0 = T20.fly[0] + k * .12, pos = tt => { const p = prog(tt, a0, a0 + .45); if (p <= 0 || p >= 1) return null; const e = eInOut(p); return [lerp(W / 2, acc[0], e), lerp(EXP.y, acc[1], e) - Math.sin(Math.PI * e) * 200, e]; };
+      trail(t, pos, 6, .02, (x, y, a, i) => withAlpha(a, () => { const e = pos(t - i * .02)[2]; ctx.save(); ctx.translate(x, y); ctx.rotate(e * 2); rr(-30, -38, 60, 76, 8); ctx.fillStyle = i ? '#a7f3d0' : '#fff'; ctx.fill(); if (!i) glyph('doc', 0, 0, .8, '#0ea371'); ctx.restore(); }));
+    }
+    sparks(t, T20.fly[1], acc[0], acc[1], 71, ['#c4b5fd', '#ffffff', C.gold], 22, 420);
     const ap = eBack(prog(t, T20.fly[0] - .2, T20.fly[0] + .2)) * (1 - eIn(prog(t, 18.2, 18.45)));
     if (ap > 0) scaled(acc[0], acc[1], ap, () => { ctx.beginPath(); ctx.arc(acc[0], acc[1], 60, 0, 7); ctx.fillStyle = '#8b5cf6'; ctx.fill(); text('NB', acc[0], acc[1] + 2, 36, '#fff', 800, 'center', 'middle'); text('Buxgalter', acc[0], acc[1] + 95, 26, '#fff', 800, 'center'); });
     const taps = [[T20.legal, LEG.x + LEG.w - 70, LEG.y + 40], [T20.exp, EXP.x + EXP.w / 2 + 150, EXP.y + 43]];
@@ -213,6 +224,7 @@ function scene2(t) {
   });
   const dim = prog(t, T20.slam - .05, T20.slam + .1) * (1 - prog(t, T20.sheet - .2, T20.sheet));
   if (dim > 0) withAlpha(dim * .55, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+  godRays(t, W / 2, 860, prog(t, T20.slam, T20.slam + .2) * (1 - prog(t, T20.slam + 1.0, T20.slam + 1.3)));
   shockwave(t, T20.slam, W / 2, 880, C.gold, 1100);
   sparks(t, T20.slam, W / 2, 880, 253, [C.gold, '#fff3c4', '#22e39a'], 40, 1250);
   slam(t, T20.slam, 'OQ SAVDO', W / 2, 840, 150, C.gold, { hold: 1.0, glow: 'rgba(255,200,61,.8)' });
@@ -236,7 +248,7 @@ function badge(bx, by, label, kind, p) {
 }
 function scene3(t) {
   const [sx, sy, sr] = shakeAt(t, IMPACTS3);
-  camera(1 + .03 * eInOut(prog(t, 22, 27)), sr, sx, sy, () => {
+  camera((1 + .03 * eInOut(prog(t, 22, 27))) * punch(t, [22.35, 22.53, 22.71, 22.89, 23.2, 25.0], .03), sr, sx, sy, () => {
     resultBg(t);
     const out = eInOut(prog(t, 26.6, 27.3));
     withAlpha(1 - out, () => {
@@ -244,6 +256,7 @@ function scene3(t) {
         text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
         text('Oq savdo — tinch biznes', W / 2, 260, 54, '#fff', 800, 'center');
       });
+      godRays(t, W / 2, 480, prog(t, 22.3, 22.8) * .9);
       ['Shartnoma', 'Hisob-varaq', 'ESF', 'Dalolatnoma'].forEach((nm, i) => {
         const p = eBack(prog(t, 22.35 + i * .18, 22.7 + i * .18)); if (p <= 0) return;
         const x = W / 2 + (i - 1.5) * 200, rot = (i - 1.5) * .09;
@@ -254,6 +267,7 @@ function scene3(t) {
         ctx.restore();
       });
       const sp = prog(t, 23.1, 23.2);
+      inkSplat(t, 23.2, W / 2, 480, 'rgba(22,163,74,.55)', 47, 1.1);
       if (sp > 0) withAlpha(1, () => stampMark(W / 2, 480, lerp(1.8, .8, eIn(sp)), 'TASDIQLANDI', '#16a34a', -.1));
       const cp = eOut(prog(t, 23.0, 23.5)), x = 90, y = lerp(760, 720, cp), w = 900, h = 450;
       withAlpha(cp, () => {
@@ -292,7 +306,17 @@ boot({
     { a: 10.4, b: 11.0, fn: cardFlip },
     { a: 21.75, b: 22.15, fn: whipPan },
   ],
-  overlay: t => { filmLook(t); },
+  overlay: t => {
+    [[3.3, .35], [3.6, .35], [3.9, .35], [TAX, .6], [5.6, .8], [6.6, .8], [7.6, .8]].forEach(([a, k], i) => rgbGlitch(t, a, .25, k, i + 1));
+    rgbGlitch(t, 8.5, .42, 1.2, 9); flare(t, 8.5, W / 2, 880, '#ff8a9a');
+    rgbGlitch(t, STAMP + .1, .3, .9, 11); pulseVignette(t, BEATS);
+    flare(t, 10.7, W / 2, H / 2, '#ffffff', 1100, .5);
+    flare(t, T20.sign, SX + SW - 200, SY + 500, '#c4b5fd', 500, .5);
+    rgbGlitch(t, T20.slam, .3, .5, 13); flare(t, T20.slam, W / 2, 840);
+    rgbGlitch(t, 23.2, .25, .45, 15); flare(t, 23.2, W / 2, 480, '#bbf7d0');
+    flare(t, 25.0, W / 2, 1340, '#fff3c4', 800, .6); flare(t, 27.05, W / 2, 900, '#fff3c4', 900, .8);
+    filmLook(t);
+  },
 });
 </script>
 </body>

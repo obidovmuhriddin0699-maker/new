@@ -574,6 +574,13 @@ ko'tariluvchi whoosh_sweep). Yangi yig'ma ovoz: **sfx.stamp_big** — boom_sub +
 | 0:22–0:27 | 3. Natija | "Oq savdo — tinch biznes": 4 hujjat + TASDIQLANDI (kassa). Oldin (karta, chek yo'q; hujjat yo'q; soliq xavfi) ↔ ADUZ (bank orqali, rasmiy; shartnoma, ESF, dalolatnoma; to'liq hisobot). Nishonlar: Qonuniy · E-hujjat · Hisobot | Oq savdo — tinch biznes. |
 | 0:27–0:32 | Yakun | ADUZ logotipi + sonic logo, shior, CTA | ADUZ — biznesingiz himoyachisi! |
 
+**FX v2 (kuchaytirilgan effektlar, `lib.js`):** `rgbGlitch` (RGB siljish + yirtilgan bo'laklar — har slam, "✕" va soliq
+xabarida), `punch` (har voqeada kamera zarbasi), `shine` (hujjat tayyor bo'lganda yaltiroq nur), `inkSplat` (RAD ETILDI,
+E-IMZO, TASDIQLANDI muhrlari ostidan siyoh sachrashi), `flare` (anamorfik yorug'lik chizig'i — zarbalar, varaq, logo),
+`trail` (buxgalterga uchayotgan hujjatlar izi), `pulseVignette` (vakuumda yurak urishi bilan qizil pulsatsiya),
+`godRays` (OQ SAVDO va natijadagi hujjatlar ortida oltin nurlar). Ularga mos ovozlar: glint (yuqori tik), siyoh "shap"
+(sfx.splat), nur shamoli, flare jarangi. Keyingi qismlarda ham shu effektlar ishlatiladi.
+
 Kompaniya nomi, STIR, summa, "Didox", "1C" eksporti va hujjatlar ro'yxati — namuna. Qaysi hujjatlar avtomatik yaratilishi,
 qaysi ESF operatori va E-imzo ishlatilishi — ADUZ'ning haqiqiy B2B imkoniyatlari va O'zbekiston qonunchiligi bilan solishtiring.
 

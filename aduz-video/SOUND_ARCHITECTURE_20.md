@@ -152,12 +152,13 @@ Bu hujjat `audio.py` dan avtomatik yaratiladi (`python3 audio.py 20 --cuesheet S
 | `sfx.boom_sub` | L5 | Sub-boom (≈58 Hz) + dum |
 | `sfx.deflate` | L5 | Gigant pufak havosi chiqadi: whoosh_sweep −7 yarim ton |
 | `sfx.stamp_big` | L5 | Katta muhr 'RAD ETILDI': boom_sub + hit_low −5 + qo'sh klik −12 |
+| `sfx.splat` | L5 | Siyoh sachrashi: pop_swish −12 + glitch_short −12 |
 
 ## Musiqa (score)
 
 | Vaqt | Bo'lim | Aranjirovka |
 |---|---|---|
-| Ovoz manbai | Foydalanuvchi SFX kutubxonasi (sfx/) | UI, o'tish va zarba ovozlari — sfx.* namunalari (kliklar, qo'sh klik, pop_swish, swipe, whoosh, riser_click, stutter/glitch, notify, hit_low/hit_chime, boom_sub). Sintez: partitura, J-cut swell, tonallikdagi qo'ng'iroqchalar, success, uchqunlar, kassa, qog'oz shitirlashi, kichik muhr (fx.stamp), sonic logo. |
+| Ovoz manbai | Foydalanuvchi SFX kutubxonasi (sfx/) + FX v2 | FX v2: har yaltiroq nur — yuqori tik (glint), siyoh sachrashlari — past pop_swish, nurlar — yumshoq whoosh, flare — hit_chime +12. UI, o'tish va zarba ovozlari — sfx.* namunalari (kliklar, qo'sh klik, pop_swish, swipe, whoosh, riser_click, stutter/glitch, notify, hit_low/hit_chime, boom_sub). Sintez: partitura, J-cut swell, tonallikdagi qo'ng'iroqchalar, success, uchqunlar, kassa, qog'oz shitirlashi, kichik muhr (fx.stamp), sonic logo. |
 | 0:00–0:09.5 | Muammo · Bb-minor, tashvishli minimal | 7-qism aranjirovkasi 6 yarim ton yuqorida. Ustida: buxgalter xabarlari (notify_pop), sizning javoblaringiz (pop_swish), cheklar shitirlashi, hujjatlar ro'yxati (swipe) va uchta '✕' — pastga tushib boruvchi qisqa glitchlar, soliq xabari (notify_ring pastroq), slamlar — stutter + glitch. |
 | 0:09.5–0:10.15 | Ovoz vakuumi | Gate: 'RAD ETILDI' muhri kadrga uriladi — boom_sub + hit_low (−5) + qo'sh klik (−12) bitta og'ir zarbaga yig'ilgan; yurak urishi. Keyin J-cut swell Ab-major'da. |
 | 0:10.4–0:11 | Varaq ag'dariladi | Ikki swipe (pastroq va balandroq) — varaqning ikki yarmi. |
@@ -184,6 +185,7 @@ Bu hujjat `audio.py` dan avtomatik yaratiladi (`python3 audio.py 20 --cuesheet S
 | 0:04.60 | L3 | `sfx.notify_pop` | -10 dB | L30 | 20% | Buxgalter: 'Hisobdan chiqarib bo'lmaydi' |
 | 0:05.10 | L3 | `fx.paper` | -20 dB | R60 | 25% | Cheklar uchib tushadi #10 |
 | 0:05.40 | L3 | `sfx.notify_ring` | -9 dB | R20 | 25% | Soliq xizmati xabari |
+| 0:05.40 | L5 | `sfx.stutter` | -14 dB | R20 | 15% | Soliq xabari — RGB glitch |
 | 0:05.60 | L5 | `sfx.stutter` | -8 dB | L40 | 20% | Slam: SHARTNOMA YO'Q |
 | 0:05.60 | L5 | `sfx.glitch_short` | -6 dB | L40 | 20% | Slam qatlami |
 | 0:06.00 | L3 | `fx.paper` | -20 dB | L40 | 25% | Cheklar uchib tushadi #13 |
@@ -200,39 +202,51 @@ Bu hujjat `audio.py` dan avtomatik yaratiladi (`python3 audio.py 20 --cuesheet S
 | 0:08.50 | L5 | `sfx.hit_low` | -4 dB | C | 40% | Zarba qatlami: tonal |
 | 0:08.50 | L5 | `sfx.glitch_seq` | -11 dB | C | 20% | Zarba qatlami: glitch |
 | 0:09.62 | L5 | `sfx.stamp_big` | -7 dB | C | 0% | OVOZ VAKUUMI: 'RAD ETILDI' muhri |
+| 0:09.66 | L5 | `sfx.splat` | -8 dB | C | 0% | Muhr ostidan siyoh sachraydi |
 | 0:09.95 | L5 | `fx.heartbeat` | -11 dB | C | 0% | Yurak urishi |
 | 0:10.15 | L4 | `tr.swell` | -8 dB | C | 30% | J-cut: yechim akkordi (Ab-major) |
 | 0:10.40 | L4 | `sfx.swipe` | -8 dB | L30 | 20% | Varaq ag'dariladi (1-yarmi) |
 | 0:10.70 | L4 | `sfx.swipe` | -8 dB | R30 | 20% | Varaq ag'dariladi (2-yarmi) |
+| 0:10.70 | L5 | `sfx.hit_chime` | -15 dB | C | 40% | Varaq o'rtasida yorug'lik chizig'i |
 | 0:11.00 | L5 | `sfx.boom_sub` | -6 dB | C | 35% | Yechim boshlanishi |
 | 0:11.00 | L5 | `sfx.hit_chime` | -10 dB | C | 40% | Yechim: tonal urg'u |
 | 0:11.00 | L2 | `amb.air` | -32 dB | C | 0% | Yorug' muhit (deyarli sezilmas) |
 | 0:11.10 | L4 | `sfx.whoosh_soft` | -14 dB | L30 | 20% | Telefon kiradi |
 | 0:12.00 | L3 | `sfx.click_1` | -3 dB | R30 | 0% | 'Yuridik shaxs sifatida to'lash' tumbleri |
 | 0:12.05 | L3 | `ui.select` | -16 dB | R30 | 25% | Tumbler yoqildi (tonallikda) |
+| 0:12.12 | L3 | `sfx.tick` | -14 dB | R30 | 30% | Yaltiroq nur (glint) |
 | 0:12.30 | L3 | `sfx.pop_swish` | -14 dB | L20 | 20% | Hujjat #1 yaratilmoqda |
 | 0:12.60 | L3 | `sfx.click_2` | -5 dB | R30 | 10% | Hujjat #1 ✓ |
 | 0:12.62 | L3 | `ui.select` | -17 dB | R30 | 25% | Tonallikdagi tasdiq |
 | 0:12.70 | L3 | `sfx.pop_swish` | -14 dB | C | 20% | Hujjat #2 yaratilmoqda |
+| 0:12.72 | L3 | `sfx.tick` | -14 dB | R30 | 30% | Yaltiroq nur (glint) |
 | 0:13.00 | L3 | `sfx.click_3` | -5 dB | R30 | 10% | Hujjat #2 ✓ |
 | 0:13.02 | L3 | `ui.select` | -17 dB | R30 | 25% | Tonallikdagi tasdiq |
 | 0:13.10 | L3 | `sfx.pop_swish` | -14 dB | R20 | 20% | Hujjat #3 yaratilmoqda |
+| 0:13.12 | L3 | `sfx.tick` | -14 dB | R30 | 30% | Yaltiroq nur (glint) |
 | 0:13.40 | L3 | `sfx.click_4` | -5 dB | R30 | 10% | Hujjat #3 ✓ |
 | 0:13.42 | L3 | `ui.select` | -17 dB | R30 | 25% | Tonallikdagi tasdiq |
 | 0:13.90 | L3 | `fx.stamp` | -10 dB | R20 | 20% | E-IMZO muhri |
 | 0:13.90 | L5 | `sfx.hit_chime` | -12 dB | R20 | 30% | E-imzo — tonal urg'u |
+| 0:13.90 | L3 | `sfx.pop_swish` | -13 dB | R30 | 20% | E-imzo siyohi sachraydi |
+| 0:14.02 | L3 | `sfx.tick` | -14 dB | R30 | 30% | Yaltiroq nur (glint) |
 | 0:14.30 | L3 | `sfx.pop_swish` | -14 dB | R20 | 20% | Dalolatnoma yaratilmoqda |
 | 0:14.60 | L3 | `sfx.click_5` | -5 dB | R30 | 10% | Dalolatnoma ✓ |
 | 0:14.62 | L3 | `ui.select` | -17 dB | R30 | 25% | Tonallikdagi tasdiq |
+| 0:14.72 | L3 | `sfx.tick` | -14 dB | R30 | 30% | Yaltiroq nur (glint) |
 | 0:15.20 | L3 | `sfx.click_double_2` | -3 dB | R20 | 0% | 'Buxgalteriyaga eksport' |
 | 0:15.25 | L3 | `sfx.pop_swish` | -12 dB | R60 | 20% | Buxgalter avatari |
+| 0:15.32 | L3 | `sfx.tick` | -14 dB | R30 | 30% | Yaltiroq nur (glint) |
 | 0:15.35 | L4 | `sfx.whoosh_sweep` | -18 dB | R50 | 20% | Hujjat #1 buxgalterga uchadi |
 | 0:15.47 | L4 | `sfx.whoosh_sweep` | -18 dB | R50 | 20% | Hujjat #2 buxgalterga uchadi |
 | 0:15.59 | L4 | `sfx.whoosh_sweep` | -18 dB | R50 | 20% | Hujjat #3 buxgalterga uchadi |
 | 0:15.71 | L4 | `sfx.whoosh_sweep` | -18 dB | R50 | 20% | Hujjat #4 buxgalterga uchadi |
+| 0:16.00 | L3 | `sfx.pop_swish` | -14 dB | R60 | 30% | Hujjatlar buxgalterga yetdi — uchqun |
 | 0:16.40 | L3 | `sfx.notify_ring` | -9 dB | R10 | 25% | Buxgalter: 'Rahmat! Hammasi joyida' |
 | 0:16.42 | L3 | `ui.success` | -14 dB | R10 | 40% | Musiqiy tasdiq |
+| 0:16.62 | L3 | `sfx.tick` | -14 dB | R30 | 30% | Yaltiroq nur (glint) |
 | 0:18.00 | L4 | `tr.swell` | -9 dB | C | 30% | J-cut: OQ SAVDO oldidan |
+| 0:18.45 | L4 | `sfx.whoosh_soft` | -18 dB | C | 40% | Oltin nurlar ochiladi |
 | 0:18.50 | L5 | `sfx.boom_sub` | -2 dB | C | 35% | OQ SAVDO — zarba |
 | 0:18.50 | L5 | `sfx.hit_chime` | -6 dB | C | 40% | Zarba qatlami: tonal |
 | 0:18.50 | L5 | `imp.sparkle` | -9 dB | C | 50% | Oltin uchqunlar |
@@ -243,12 +257,14 @@ Bu hujjat `audio.py` dan avtomatik yaratiladi (`python3 audio.py 20 --cuesheet S
 | 0:21.75 | L4 | `sfx.swipe` | -10 dB | C | 20% | Whip qatlami |
 | 0:22.00 | L5 | `sfx.boom_sub` | -4 dB | C | 40% | Natija boshlanishi |
 | 0:22.00 | L5 | `sfx.hit_low` | -8 dB | C | 40% | Zarba qatlami |
+| 0:22.30 | L4 | `sfx.whoosh_soft` | -18 dB | C | 40% | Hujjatlar ortida nurlar |
 | 0:22.35 | L3 | `sfx.pop_swish` | -13 dB | L45 | 25% | Hujjat kartasi #1 |
 | 0:22.53 | L3 | `sfx.pop_swish` | -13 dB | L15 | 25% | Hujjat kartasi #2 |
 | 0:22.71 | L3 | `sfx.pop_swish` | -13 dB | R15 | 25% | Hujjat kartasi #3 |
 | 0:22.89 | L3 | `sfx.pop_swish` | -13 dB | R45 | 25% | Hujjat kartasi #4 |
 | 0:23.15 | L3 | `fx.stamp` | -8 dB | C | 20% | TASDIQLANDI muhri |
 | 0:23.20 | L5 | `fx.kassa` | -10 dB | C | 30% | KASSA — hujjatlar tasdiqlandi |
+| 0:23.20 | L3 | `sfx.pop_swish` | -13 dB | C | 30% | Yashil siyoh sachraydi |
 | 0:23.22 | L3 | `sfx.notify_ring` | -13 dB | R20 | 25% | Kassa qatlami |
 | 0:23.50 | L4 | `sfx.swipe` | -9 dB | L40 | 15% | 'Oldin' qatori #1 chizildi |
 | 0:23.70 | L3 | `sfx.click_3` | -8 dB | R40 | 0% | ADUZ qatori #1 |
@@ -262,6 +278,7 @@ Bu hujjat `audio.py` dan avtomatik yaratiladi (`python3 audio.py 20 --cuesheet S
 | 0:24.50 | L4 | `tr.swell` | -10 dB | C | 30% | J-cut: nishonlar oldidan |
 | 0:25.00 | L5 | `sfx.boom_sub` | -7 dB | C | 40% | Urg'u |
 | 0:25.00 | L5 | `imp.sparkle` | -8 dB | C | 50% | Uchqunlar |
+| 0:25.00 | L5 | `sfx.hit_chime` | -16 dB | C | 40% | Nishonlar ustida flare |
 | 0:25.20 | L3 | `sfx.pop_swish` | -10 dB | L40 | 30% | Nishon #1 |
 | 0:25.22 | L3 | `ui.select` | -20 dB | L40 | 30% | Tonallikdagi qo'ng'iroqcha |
 | 0:25.45 | L3 | `sfx.pop_swish` | -10 dB | C | 30% | Nishon #2 |
