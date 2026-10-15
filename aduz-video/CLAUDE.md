@@ -4,6 +4,16 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
 
 ## Holat
 - 28 qismning hammasi tayyor (1–28). 27–28 — Instagram Reels formatida.
+- 1–26 ning Instagram versiyalari (`episodeN_ig.html` = asl qism + `reel.js` + `ig_config.js` + `igwrap.js`,
+  `make_ig.py`, `ig_audio.py`, `build_ig.sh N`) → `instagram/`. Matnlar `ig_config.js`, post matnlari `instagram/captions.json`.
+- Joylash: Windsor.ai Instagram ulanishi (akkaunt 17841419124058324 = telegram_reklama777, `create_video_post`),
+  video/muqova — GitHub raw havolalari (repo ochiq). Reja `instagram/README.md`: har kuni 18:53 (Toshkent) 1 ta,
+  avval bot bilan mos qismlar; kunlik vazifa trig_01Bp5FitH93XqTyCeTKFUhAs (shu sessiyaga bog'langan).
+- Haqiqiy bot ("Target reklama bot", foydalanuvchi skrinshotlari): rollar Mijoz / Kanal egasi; reklama yaratish →
+  WebApp 3 qadam (hudud → kategoriya → kanal: narx, obunachi, ko'rish, ER, bo'sh navbat) → sana/vaqt/interval →
+  hisob-kitob → to'lov (hamyon, Click, Payme, demo) → moderatsiya → rejalashtirish. Statistika: kampaniyalar,
+  yuborilgan xabarlar, muvaffaqiyat darajasi, sarflangan. Botda ko'rinmagan: escrow, matching %, A/B, retargeting,
+  referal, reyting, yuridik hujjatlar, konstruktor, optimizatsiya (2, 3, 10, 11, 15, 18–23, 26, 27 — joylash kutilmoqda).
 
 ## Format va tuzilma
 - Har qism: `episodeN.html` (canvas 1080×1920, 30 fps, 32 s) + `audio.py` dagi `render_N` / `CUES_N` / `SCORE_N`.
