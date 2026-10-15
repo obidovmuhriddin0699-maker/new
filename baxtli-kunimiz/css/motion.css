@@ -1,0 +1,77 @@
+/* ==========================================================================
+   Motion. Reveals are toggled by js/reveal.js (.is-in); script headings
+   "write themselves" left to right; gold text shimmers slowly.
+   ========================================================================== */
+@keyframes eq { from { transform: scaleY(0.25); } to { transform: scaleY(1); } }
+@keyframes sweep { 0% { transform: translateX(-100%); } 40%, 100% { transform: translateX(100%); } }
+@keyframes breathe { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes nudge { 0%, 100% { transform: translateY(0) rotate(45deg); } 50% { transform: translateY(5px) rotate(45deg); } }
+@keyframes seal-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes seal-snap { 0% { transform: scale(1); } 40% { transform: scale(0.92); } 100% { transform: scale(1.02); } }
+@keyframes glow { 0% { opacity: 0; transform: scale(0.6); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes crumb {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(0); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); }
+}
+@keyframes bloom { 0% { opacity: 0; } 55% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes ring { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.9); } }
+@keyframes unfold-in { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+@keyframes wish-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes shine { 0% { background-position: 100% 0; } 100% { background-position: -120% 0; } }
+@keyframes float-in { from { opacity: 0; transform: translateY(26px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+
+/* gold script shimmers once in a while */
+.js .script.is-in, .js .is-in .script, .js .vow.is-in span { animation: shine 7s linear 1.2s infinite; }
+
+/* ---------- reveals ---------- */
+.js .reveal {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  filter: blur(6px);
+  transition: opacity 1.1s var(--ease), transform 1.3s var(--ease-out), filter 1.2s var(--ease);
+  transition-delay: var(--d, 0s);
+}
+.js .reveal.is-in { opacity: 1; transform: none; filter: none; }
+
+/* script titles write themselves */
+.js .reveal.title, .js .reveal.vow span, .js .reveal.final__names {
+  clip-path: inset(-20% 100% -30% 0);
+  transform: none;
+  filter: none;
+  transition: clip-path 1.8s cubic-bezier(0.55, 0.1, 0.3, 1), opacity 0.6s;
+  transition-delay: var(--d, 0s);
+}
+.js .reveal.title.is-in, .js .reveal.vow.is-in span, .js .reveal.final__names.is-in { clip-path: inset(-20% -5% -30% 0); }
+.js .reveal.vow { opacity: 1; filter: none; transform: none; }
+.js .reveal.vow span { opacity: 0; }
+.js .reveal.vow.is-in span { opacity: 1; }
+.js .reveal.vow.is-in span:nth-child(2) { transition-delay: 0.7s; }
+.js .reveal.vow.is-in span:nth-child(3) { transition-delay: 1.4s; }
+
+/* hero arch rises a touch slower */
+.js .hero .arch.reveal { transform: translate3d(0, 40px, 0) scale(0.96); transition-duration: 1.4s, 1.8s, 1.4s; }
+.js .hero .arch.reveal.is-in { transform: none; }
+.js .divider.reveal { transform: scaleX(0.2); filter: none; }
+.js .divider.reveal.is-in { transform: none; }
+
+/* gallery tiles */
+.js .gallery__item { opacity: 0; transform: translateY(30px) rotate(var(--tilt, 0deg)); transition: opacity 1s var(--ease), transform 1.2s var(--ease-out); }
+.js .gallery__item.is-in { opacity: 1; transform: translateY(0) rotate(0); }
+.js .gallery__item.is-in:nth-child(even) { transform: translateY(18px); }
+
+/* program rows */
+.js .timeline__item { opacity: 0; transform: translateY(14px); transition: opacity 0.8s var(--ease), transform 1s var(--ease-out); }
+.js .timeline__item.is-in { opacity: 1; transform: none; }
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.2s !important; transition-delay: 0s !important; }
+  .js .reveal, .js .gallery__item, .js .timeline__item { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
+  .js .reveal.vow span { opacity: 1 !important; clip-path: none !important; }
+  .timeline__rose { transform: translateY(var(--rose-y, 0px)) !important; }
+}
+
+/* countdown digits drop in */
+.countdown__num.tick { animation: tick 0.6s var(--ease-out); }
+@keyframes tick { from { opacity: 0.15; transform: translateY(-45%); } to { opacity: 1; transform: none; } }

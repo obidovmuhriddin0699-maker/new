@@ -1,0 +1,174 @@
+/* ==========================================================================
+   Envelope intro + wax seals.
+   Sequence (js/intro.js): seal cracks → flap opens → card slides out →
+   the card blooms to full screen → the invitation appears.
+   ========================================================================== */
+.intro { display: none; }
+.js .intro {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  justify-items: center;
+  align-items: center;
+  padding: calc(var(--safe-t) + 24px) 18px calc(var(--safe-b) + 24px);
+  overflow: hidden;
+  color: #fbf3e4;
+  background:
+    radial-gradient(80% 60% at 50% 50%, rgba(20, 36, 31, 0) 0%, rgba(20, 36, 31, 0.55) 100%),
+    var(--forest) url("../assets/art/backdrop-leaves-800.webp") center / cover no-repeat;
+}
+@media (min-width: 900px) {
+  .js .intro { background-image: radial-gradient(80% 60% at 50% 50%, rgba(20, 36, 31, 0) 0%, rgba(20, 36, 31, 0.55) 100%), url("../assets/art/backdrop-leaves.webp"); }
+}
+.intro.is-gone { display: none; }
+
+/* lace-like double frame around the screen */
+.intro__frame {
+  position: absolute;
+  inset: calc(var(--safe-t) + 10px) 10px calc(var(--safe-b) + 10px);
+  border: 1px solid rgba(251, 243, 228, 0.45);
+  pointer-events: none;
+}
+.intro__frame::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px dotted rgba(251, 243, 228, 0.55);
+}
+
+.intro__head { align-self: end; display: grid; justify-items: center; gap: 6px; padding-bottom: 26px; text-align: center; }
+.intro__label { color: rgba(251, 243, 228, 0.82); }
+.intro__names { font-size: clamp(2.6rem, 11vw, 3.4rem); }
+.intro__date { color: rgba(251, 243, 228, 0.8); letter-spacing: 0.4em; }
+.intro__hint {
+  align-self: start;
+  margin-top: 30px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(251, 243, 228, 0.85);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+/* ---------- the envelope ---------- */
+.envelope {
+  position: relative;
+  width: min(84vw, 380px);
+  aspect-ratio: 400 / 270;
+  perspective: 1400px;
+  filter: drop-shadow(0 24px 30px rgba(8, 20, 16, 0.45));
+}
+.envelope__back {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(120, 146, 120, 0.9), rgba(160, 182, 150, 0.9)),
+    url("../assets/art/paper-ivory.webp");
+  background-blend-mode: multiply;
+}
+.envelope__card {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 7%;
+  height: 86%;
+  z-index: 2;
+  transition: transform 1.15s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.mini-card {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
+  height: 100%;
+  padding: 10px;
+  background: var(--card) url("../assets/art/paper-ivory.webp");
+  border: 1px solid rgba(176, 136, 72, 0.4);
+  outline: 1px solid rgba(176, 136, 72, 0.2);
+  outline-offset: -6px;
+  color: var(--ink);
+  text-align: center;
+}
+.mini-card .caps { font-size: 0.6rem; }
+.mini-card__names { font-size: clamp(1.7rem, 7.5vw, 2.3rem); }
+.mini-card__date { font-size: 0.62rem; letter-spacing: 0.36em; }
+.envelope__front { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; }
+.envelope__flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 4;
+  height: 70.4%;
+  transform-origin: 50% 0;
+  transform-style: preserve-3d;
+  transition: transform 1s cubic-bezier(0.55, 0, 0.3, 1);
+}
+.envelope__flap svg { width: 100%; height: 100%; filter: drop-shadow(0 3px 3px rgba(60, 45, 20, 0.18)); }
+.flap-mono { font-family: var(--script); font-size: 46px; fill: rgba(176, 136, 72, 0.55); transition: opacity 0.4s; }
+
+/* opening states */
+.envelope.is-open .envelope__flap { transform: rotateX(180deg); }
+.envelope.is-open .flap-mono { opacity: 0; }
+.envelope.is-flap-behind .envelope__flap { z-index: 1; }
+.envelope.is-card-out .envelope__card { transform: translateY(-58%); }
+.envelope.is-card-out .envelope__card { z-index: 5; }
+
+/* the card blooms into the page */
+.intro.is-blooming .intro__head,
+.intro.is-blooming .intro__hint { opacity: 0; transform: translateY(-10px); transition: opacity 0.6s, transform 0.8s var(--ease-out); }
+.intro__bloom {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: radial-gradient(circle at 50% 45%, #fffdf6 0%, #fbf3e2 45%, rgba(251, 243, 226, 0.95) 100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.intro.is-blooming .intro__bloom { animation: bloom 1.5s var(--ease) forwards; }
+.intro.is-fading { opacity: 0; transition: opacity 0.9s var(--ease) 0.1s; }
+
+/* ---------- wax seal (markup built by js/seal.js) ---------- */
+.seal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.seal--intro {
+  position: absolute;
+  left: 50%;
+  top: 67%;
+  z-index: 6;
+  width: clamp(64px, 19vw, 82px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+.seal--rsvp { width: 112px; aspect-ratio: 1; }
+.seal__half { position: absolute; inset: 0; transition: transform 0.9s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.7s ease 0.25s; filter: drop-shadow(0 4px 5px rgba(60, 10, 15, 0.45)); }
+.seal__half svg { width: 100%; height: 100%; overflow: visible; }
+.seal__half--l { clip-path: polygon(0 0, 53% 0, 47% 24%, 56% 44%, 45% 63%, 54% 80%, 49% 100%, 0 100%); }
+.seal__half--r { clip-path: polygon(53% 0, 100% 0, 100% 100%, 49% 100%, 54% 80%, 45% 63%, 56% 44%, 47% 24%); }
+.seal__crumb { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 40%; background: #7a1f2b; opacity: 0; }
+.seal__glow { position: absolute; inset: -18%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 215, 170, 0.55), rgba(255, 215, 170, 0) 65%); opacity: 0; pointer-events: none; }
+.seal:not(.is-cracked) { animation: seal-pulse 2.6s ease-in-out infinite; }
+.seal:not(.is-cracked):hover .seal__half { transform: scale(1.04); }
+.seal.is-cracked { pointer-events: none; animation: seal-snap 0.18s ease-out; }
+.seal.is-cracked .seal__glow { animation: glow 0.9s ease-out forwards; }
+.seal.is-cracked .seal__half--l { transform: translate(-42%, 70%) rotate(-28deg); opacity: 0; }
+.seal.is-cracked .seal__half--r { transform: translate(44%, 80%) rotate(24deg); opacity: 0; }
+.seal.is-cracked .seal__crumb { animation: crumb 0.8s cubic-bezier(0.3, 0.6, 0.5, 1) forwards; }
+.seal:focus-visible { outline: 1.5px solid rgba(251, 243, 228, 0.8); outline-offset: 6px; border-radius: 50%; }
+.seal--rsvp:focus-visible { outline-color: var(--gold); }
+@media (min-width: 900px) {
+  .envelope { width: min(40vw, 470px); }
+  .intro__names { font-size: 3.8rem; }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Muxriddin & Umida — to‘yga taklifnoma",
+  "short_name": "M&U to‘y",
+  "description": "06.11.2026 · Versal to‘yxonasi, Farg‘ona",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf7ef",
+  "theme_color": "#34524a",
+  "lang": "uz",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icons/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
