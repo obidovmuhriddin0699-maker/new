@@ -11,8 +11,8 @@ def cfg(n):
     body = m.group(1)
     return {k: ('null' not in re.search(k + r': ([^\]]*?\]|null)', body).group(1)) for k in ('cut1', 'cut2', 'card', 'res')}
 
-def cues(n):
-    c = cfg(n); old = n <= 3          # 1–3 have no 8.5 / 18.5 hits of their own
+def cues(n, c=None):
+    c = c or cfg(n); old = n <= 3          # 1–3 have no 8.5 / 18.5 hits of their own
     q = [(0.0, "sfx.boom_sub", 0.95, 0, 0.3, 0, "HOOK", None), (0.0, "sfx.bass_drop", 0.7, 0, 0.3, 0, "", None),
          (0.12, "sfx.bass_drop", 0.5, 0, 0.3, 0, "", 5), (0.25, "sfx.swoosh_text", 0.22, 0, 0.2, 0, "", None),
          (1.45, "sfx.glitch_short", 0.4, 0, 0.15, 0, "", None), (1.5, "sfx.swipe", 0.3, 0, 0.15, 0, "", None)]

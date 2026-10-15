@@ -12,7 +12,7 @@ def build(n):
     tail = ''
     if 'src="reel.js"' not in s:
         tail += '<script src="reel.js"></script>\n'
-    tail += f'<script>window.IG_EP = {n}; window.IG_CAPTIONS = CAPTIONS.slice(); CAPTIONS.length = 0;</script>\n<script src="ig_config.js"></script>\n<script src="igwrap.js"></script>\n'
+    tail += f'<script>window.IG_EP = {n}; window.IG_CAPTIONS = CAPTIONS.slice(); CAPTIONS.length = 0;</script>\n<script src="ig_config.js"></script>\n<script src="igbot.js"></script>\n<script src="igwrap.js"></script>\n'
     s = s.replace('</body>', tail + '</body>', 1)
     open(f'episode{n}_ig.html', 'w', encoding='utf-8').write(s)
 

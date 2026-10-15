@@ -3,7 +3,7 @@
 set -e
 n=$1
 cd "$(dirname "$0")"
-python3 ig_audio.py $n >/dev/null
+case " 2 3 10 11 15 18 19 20 21 22 23 26 27 " in *" $n "*) python3 bot_audio.py $n >/dev/null ;; *) python3 ig_audio.py $n >/dev/null ;; esac
 node render.mjs episode${n}_ig.html >/dev/null
 ffmpeg -nostdin -loglevel error -y -i build/episode${n}_ig_silent.mp4 -i build/episode${n}_ig.wav \
   -c:v libx264 -profile:v high -level 4.1 -pix_fmt yuv420p -preset slow -crf 18 -maxrate 10M -bufsize 20M -r 30 -g 30 -keyint_min 30 -sc_threshold 0 \

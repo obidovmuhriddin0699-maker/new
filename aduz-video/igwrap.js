@@ -9,7 +9,7 @@
   const ep = window.IG_EP, cfg = window.IGCFG[ep], base = window.renderFrame;
   const ARCH = 'Archivo, Inter, "DejaVu Sans", sans-serif';
   const SC = .72, FX = 480, FY = 200, FW = W * SC, FH = H * SC;
-  const caps = (window.IG_CAPTIONS || []).filter(c => c[0] < 27);
+  const caps = cfg.bot ? (window.IG_CAPTIONS || []).filter(c => c[0] < 10.9).map(([a, b, x]) => [a, Math.min(b, 10.9), x]).concat(cfg.bot.caps || []) : (window.IG_CAPTIONS || []).filter(c => c[0] < 27);
   const sm = document.createElement('canvas'); sm.width = 54; sm.height = 96;
   const noop = () => {};
   window.captions = igCaptions;
@@ -93,7 +93,7 @@
     });
     withAlpha(prog(tt, t0 + 1.9, t0 + 2.2), () => serif('ulanish havolasini yuboramiz · saqlab qoʻying', W / 2, 1385, 40, R.off));
   }
-  const SECTIONS = [[0, '00', 'HOOK'], [1.6, '01', 'MUAMMO'], [9.5, '02', 'VAKUUM'], [10.4, '03', 'OTISH'], [11, '04', 'YECHIM'], [22, '05', 'NATIJA'], [27, '06', 'ADUZ']];
+  const SECTIONS = cfg.bot ? [[0, '00', 'HOOK'], [1.6, '01', 'MUAMMO'], [9.5, '02', 'VAKUUM'], [10.4, '03', 'OTISH'], [11, '04', 'BOTDA'], [23.1, '05', 'NATIJA'], [27, '06', 'ADUZ']] : [[0, '00', 'HOOK'], [1.6, '01', 'MUAMMO'], [9.5, '02', 'VAKUUM'], [10.4, '03', 'OTISH'], [11, '04', 'YECHIM'], [22, '05', 'NATIJA'], [27, '06', 'ADUZ']];
 
   window.renderFrame = function (t) {
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none';
@@ -102,6 +102,12 @@
       F = ARCH; FD = null; ctx.clearRect(0, 0, W, H); hookFrame(t, t);
       const cut = prog(t, 1.45, 1.6); if (cut > 0) withAlpha(cut, () => { ctx.fillStyle = R.ink; ctx.fillRect(0, 0, W, H); });
     } else {
+      const B = cfg.bot && window.IGBOT;
+      if (B && t >= 10.95 && t < 27) {
+        F = ARCH; FD = null; ctx.clearRect(0, 0, W, H);
+        if (t < 23.1) IGBOT.scene(t, cfg); else IGBOT.result(t, cfg);
+        const into = 1 - prog(t, 10.95, 11.2); if (into > 0) withAlpha(into, () => { ctx.fillStyle = R.ink; ctx.fillRect(0, 0, W, H); });
+      } else {
       window.hud = noop;
       base(t);
       window.hud = hud0;
@@ -116,6 +122,7 @@
       ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; rr(fx, FY, FW, FH, 30); ctx.fillStyle = R.ink; ctx.fill(); ctx.restore();
       ctx.save(); rr(fx, FY, FW, FH, 30); ctx.clip(); ctx.drawImage(buf, fx, FY, FW, FH); ctx.restore();
       ctx.save(); rr(fx, FY, FW, FH, 30); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(239,236,228,.22)'; ctx.stroke(); ctx.restore();
+      }
       orangeCut(t); limeCut(t); violetCard(t); resultCard(t);
       if (t >= 27) endCard(t, 27.0, cta);
       if (t > 31.4) {

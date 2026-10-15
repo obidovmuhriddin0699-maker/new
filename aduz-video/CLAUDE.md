@@ -13,7 +13,13 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
   WebApp 3 qadam (hudud → kategoriya → kanal: narx, obunachi, ko'rish, ER, bo'sh navbat) → sana/vaqt/interval →
   hisob-kitob → to'lov (hamyon, Click, Payme, demo) → moderatsiya → rejalashtirish. Statistika: kampaniyalar,
   yuborilgan xabarlar, muvaffaqiyat darajasi, sarflangan. Botda ko'rinmagan: escrow, matching %, A/B, retargeting,
-  referal, reyting, yuridik hujjatlar, konstruktor, optimizatsiya (2, 3, 10, 11, 15, 18–23, 26, 27 — joylash kutilmoqda).
+  referal, reyting, yuridik hujjatlar, konstruktor, optimizatsiya.
+- **Botga mos IG versiyalar** (2, 3, 10, 11, 15, 18–23, 26, 27; foydalanuvchi: "Qolganlarni botga moslab joyla"):
+  `ig_config.js` oxiridagi `BOT` bloki matnlarni almashtiradi va `bot` qo'shadi (`seq` ekranlar [nom, boshi, oxiri, opts],
+  `focus` izohlar, `caps` 11–27 s subtitrlar, `title`/`cmp`/`badges` natija). `igwrap.js` 10.95–23.1 s da
+  `IGBOT.scene`, 23.1–27 s da `IGBOT.result` (`igbot.js`, telefon ichida botning haqiqiy ekranlari) chizadi.
+  Ovoz `bot_audio.py` (muammo cue'lari < 10.9 s + bot cue'lari + IG qatlami; 2–3 uchun asl wav + score_7 fon).
+  Faqat botda bor funksiyalarni ko'rsatish; namunaviy raqamlarni "namuna" deb belgilash. Joylash 2026-10-30 dan.
 
 ## Format va tuzilma
 - Har qism: `episodeN.html` (canvas 1080×1920, 30 fps, 32 s) + `audio.py` dagi `render_N` / `CUES_N` / `SCORE_N`.
