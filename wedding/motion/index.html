@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=432, initial-scale=1">
+  <title>Taklifnoma — motion design</title>
+  <!-- A cinematic motion-design invitation (1080×1920 when rendered by
+       tools/render-motion.cjs). Names, date and city come from ../config.js. -->
+  <link rel="stylesheet" href="../css/fonts.css">
+  <link rel="stylesheet" href="motion.css">
+</head>
+<body>
+  <svg class="defs" aria-hidden="true">
+    <defs>
+      <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8A6A2E"/><stop offset=".3" stop-color="#EBD39A"/>
+        <stop offset=".55" stop-color="#B8903F"/><stop offset=".8" stop-color="#F5E6B8"/><stop offset="1" stop-color="#9A7535"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <main class="stage" id="stage">
+
+    <!-- 1 · Logo -->
+    <section class="scene" style="--at:0s; --out:5s">
+      <div class="glow" style="--at:0.2s"></div>
+      <svg class="emblem" viewBox="0 0 200 240" style="--at:0.3s">
+        <g class="lines">
+          <path class="draw" style="--i:0" pathLength="1" d="M38 222 V104 A62 62 0 0 1 162 104 V222" stroke-width="1.3"/>
+          <path class="draw" style="--i:1" pathLength="1" d="M46 214 V104 A54 54 0 0 1 154 104 V214" stroke-width="0.7"/>
+          <path class="draw" style="--i:2" pathLength="1" d="M30 222 H170" stroke-width="1.1"/>
+          <path class="draw" style="--i:3" pathLength="1" d="M30 222 V196 H38 M170 222 V196 H162" stroke-width="0.9"/>
+          <path class="draw" style="--i:4" pathLength="1" d="M22 230 H178" stroke-width="0.6"/>
+          <path class="draw" style="--i:5" pathLength="1" d="M84.8 113.1 L58.2 104.4" stroke-width="0.8"/>
+          <path class="draw" style="--i:6" pathLength="1" d="M85.9 110.4 L68.3 100.9" stroke-width="0.8"/>
+          <path class="draw" style="--i:7" pathLength="1" d="M87.5 108.0 L65.6 90.6" stroke-width="0.8"/>
+          <path class="draw" style="--i:8" pathLength="1" d="M89.5 106.0 L76.3 90.9" stroke-width="0.8"/>
+          <path class="draw" style="--i:9" pathLength="1" d="M91.8 104.3 L77.4 80.2" stroke-width="0.8"/>
+          <path class="draw" style="--i:10" pathLength="1" d="M94.4 103.0 L87.4 84.3" stroke-width="0.8"/>
+          <path class="draw" style="--i:11" pathLength="1" d="M97.1 102.3 L92.1 74.7" stroke-width="0.8"/>
+          <path class="draw" style="--i:12" pathLength="1" d="M100.0 102.0 L100.0 82.0" stroke-width="0.8"/>
+          <path class="draw" style="--i:13" pathLength="1" d="M102.9 102.3 L107.9 74.7" stroke-width="0.8"/>
+          <path class="draw" style="--i:14" pathLength="1" d="M105.6 103.0 L112.6 84.3" stroke-width="0.8"/>
+          <path class="draw" style="--i:15" pathLength="1" d="M108.2 104.3 L122.6 80.2" stroke-width="0.8"/>
+          <path class="draw" style="--i:16" pathLength="1" d="M110.5 106.0 L123.7 90.9" stroke-width="0.8"/>
+          <path class="draw" style="--i:17" pathLength="1" d="M112.5 108.0 L134.4 90.6" stroke-width="0.8"/>
+          <path class="draw" style="--i:18" pathLength="1" d="M114.1 110.4 L131.7 100.9" stroke-width="0.8"/>
+          <path class="draw" style="--i:19" pathLength="1" d="M115.2 113.1 L141.8 104.4" stroke-width="0.8"/>
+          <path class="draw" style="--i:20" pathLength="1" d="M84 118 A16 16 0 0 1 116 118" stroke-width="0.9"/>
+          <path class="draw" style="--i:21" pathLength="1" d="M100 30 L108 40 L100 50 L92 40 Z" stroke-width="1.0"/>
+          <path class="draw" style="--i:22" pathLength="1" d="M100 50 V60" stroke-width="0.8"/>
+          <path class="draw" style="--i:23" pathLength="1" d="M70 200 H130" stroke-width="0.7"/>
+          <path class="draw" style="--i:24" pathLength="1" d="M100 194 L106 200 L100 206 L94 200 Z" stroke-width="0.9"/>
+          <path class="draw" style="--i:25" pathLength="1" d="M38 150 H46 M154 150 H162" stroke-width="0.8"/>
+          <path class="draw" style="--i:26" pathLength="1" d="M38 180 H46 M154 180 H162" stroke-width="0.8"/>
+        </g>
+        <text class="mono" x="100" y="172" text-anchor="middle" style="--at:2.1s"><tspan data-text="initialGroom">K</tspan><tspan class="amp" dx="2">&amp;</tspan><tspan dx="2" data-text="initialBride">F</tspan></text>
+      </svg>
+      <p class="eyebrow track" style="--at:2.9s">To‘yga taklifnoma</p>
+      <div class="sweep" style="--at:3.6s"></div>
+    </section>
+
+    <!-- 2 · Doors open onto the ballroom film, names -->
+    <section class="scene" style="--at:4.9s; --out:11.6s">
+      <div class="media zoom" style="--at:4.9s; --dur:7s"><video data-film="ballroom-couple" data-start="4.9" muted playsinline></video></div>
+      <div class="scrim"></div>
+      <div class="rays" style="--at:6.5s"></div>
+      <div class="names">
+        <h1 class="name letters" data-text="groomUpper" style="--at:6.9s">KAMRON</h1>
+        <p class="amp-big fade-up" style="--at:7.7s">&amp;</p>
+        <h1 class="name letters" data-text="brideUpper" style="--at:7.9s">FARANGIZ</h1>
+        <p class="tagline fade-up" style="--at:9.0s">Ikki qalb · bir taqdir</p>
+      </div>
+      <div class="door door--l" style="--at:5.3s"></div>
+      <div class="door door--r" style="--at:5.3s"></div>
+      <div class="flash" style="--at:5.3s"></div>
+    </section>
+
+    <!-- 3 · The invitation -->
+    <section class="scene" style="--at:11.5s; --out:17.8s">
+      <div class="media zoom" style="--at:11.5s; --dur:6.5s"><img data-image="chandelier-embrace" alt=""></div>
+      <div class="scrim scrim--soft"></div>
+      <div class="card" style="--at:11.9s">
+        <span class="corner corner--tl"></span><span class="corner corner--tr"></span>
+        <span class="corner corner--bl"></span><span class="corner corner--br"></span>
+        <p class="eyebrow fade-up" style="--at:12.3s">Taklifnoma</p>
+        <h2 class="title letters" style="--at:12.6s">Qadrli mehmonimiz!</h2>
+        <div class="divider" style="--at:13.4s"></div>
+        <p class="body words" style="--at:13.8s">Sizni hayotimizning eng go‘zal kuni — nikoh to‘yimizga lutfan taklif etamiz.</p>
+      </div>
+    </section>
+
+    <!-- 4 · Story: four films in gold arches -->
+    <section class="scene" style="--at:17.7s; --out:30.2s">
+      <div class="paper"></div>
+      <p class="eyebrow eyebrow--dark fade-up" style="--at:18s">Bizning hikoyamiz</p>
+      <div class="chapter" style="--at:18.3s; --out:21.4s">
+        <div class="arch"><video data-film="hands-lace" data-start="18.3" muted playsinline></video></div>
+        <p class="ch-num fade-up" style="--at:18.9s">I</p><p class="ch-title fade-up" style="--at:19.1s">Ilk uchrashuv</p>
+      </div>
+      <div class="chapter" style="--at:21.3s; --out:24.4s">
+        <div class="arch"><video data-film="watch-hands" data-start="21.3" muted playsinline></video></div>
+        <p class="ch-num fade-up" style="--at:21.9s">II</p><p class="ch-title fade-up" style="--at:22.1s">Bir-birimizni kashf etib</p>
+      </div>
+      <div class="chapter" style="--at:24.3s; --out:27.4s">
+        <div class="arch"><video data-film="ring-hand" data-start="24.3" muted playsinline></video></div>
+        <p class="ch-num fade-up" style="--at:24.9s">III</p><p class="ch-title fade-up" style="--at:25.1s">Va’da</p>
+      </div>
+      <div class="chapter" style="--at:27.3s; --out:30.2s">
+        <div class="arch"><video data-film="dress-spin" data-start="27.3" muted playsinline></video></div>
+        <p class="ch-num fade-up" style="--at:27.9s">IV</p><p class="ch-title fade-up" style="--at:28.1s">Bir umrga</p>
+      </div>
+    </section>
+
+    <!-- 5 · The date -->
+    <section class="scene scene--noir" style="--at:30.1s; --out:36.4s">
+      <div class="rays rays--big" style="--at:30.1s"></div>
+      <p class="eyebrow fade-up" style="--at:30.5s">To‘y sanasi</p>
+      <div class="date">
+        <div class="day drop" style="--at:30.8s"><span class="foil" data-text="day">06</span></div>
+        <p class="month track-wide" data-text="monthUpper" style="--at:31.6s">OKTABR</p>
+        <p class="year fade-up" data-text="year" style="--at:32.2s">2026</p>
+      </div>
+      <div class="divider" style="--at:32.6s"></div>
+      <p class="when fade-up" data-text="weekdayTime" style="--at:33s">Seshanba · soat 16:00</p>
+    </section>
+
+    <!-- 6 · The place -->
+    <section class="scene" style="--at:36.3s; --out:41.4s">
+      <div class="media zoom" style="--at:36.3s; --dur:5.2s"><video data-film="street-embrace" data-start="36.3" muted playsinline></video></div>
+      <div class="scrim"></div>
+      <p class="eyebrow fade-up place-eyebrow" style="--at:36.8s">To‘y manzili</p>
+      <svg class="pin" viewBox="0 0 64 88" style="--at:37s">
+        <path class="draw" style="--i:0" pathLength="1" d="M32 84C32 84 6 52 6 32a26 26 0 0 1 52 0c0 20-26 52-26 52z"/>
+        <circle class="draw" style="--i:4" pathLength="1" cx="32" cy="32" r="9"/>
+      </svg>
+      <div class="ripple" style="--at:38.2s"></div>
+      <h2 class="city letters" data-text="city" style="--at:38.2s">Andijon shahri</h2>
+    </section>
+
+    <!-- 7 · Finale -->
+    <section class="scene" style="--at:41.3s; --out:99s">
+      <div class="media zoom" style="--at:41.3s; --dur:7s"><img data-image="sparklers" alt=""></div>
+      <div class="scrim scrim--band"></div>
+      <svg class="emblem emblem--mini fade-up" viewBox="0 0 200 240" style="--at:41.8s">
+        <g class="lines lines--static">
+          <path class="static" style="--i:0" pathLength="1" d="M38 222 V104 A62 62 0 0 1 162 104 V222" stroke-width="1.3"/>
+          <path class="static" style="--i:1" pathLength="1" d="M46 214 V104 A54 54 0 0 1 154 104 V214" stroke-width="0.7"/>
+          <path class="static" style="--i:2" pathLength="1" d="M30 222 H170" stroke-width="1.1"/>
+          <path class="static" style="--i:3" pathLength="1" d="M30 222 V196 H38 M170 222 V196 H162" stroke-width="0.9"/>
+          <path class="static" style="--i:4" pathLength="1" d="M22 230 H178" stroke-width="0.6"/>
+          <path class="static" style="--i:5" pathLength="1" d="M84.8 113.1 L58.2 104.4" stroke-width="0.8"/>
+          <path class="static" style="--i:6" pathLength="1" d="M85.9 110.4 L68.3 100.9" stroke-width="0.8"/>
+          <path class="static" style="--i:7" pathLength="1" d="M87.5 108.0 L65.6 90.6" stroke-width="0.8"/>
+          <path class="static" style="--i:8" pathLength="1" d="M89.5 106.0 L76.3 90.9" stroke-width="0.8"/>
+          <path class="static" style="--i:9" pathLength="1" d="M91.8 104.3 L77.4 80.2" stroke-width="0.8"/>
+          <path class="static" style="--i:10" pathLength="1" d="M94.4 103.0 L87.4 84.3" stroke-width="0.8"/>
+          <path class="static" style="--i:11" pathLength="1" d="M97.1 102.3 L92.1 74.7" stroke-width="0.8"/>
+          <path class="static" style="--i:12" pathLength="1" d="M100.0 102.0 L100.0 82.0" stroke-width="0.8"/>
+          <path class="static" style="--i:13" pathLength="1" d="M102.9 102.3 L107.9 74.7" stroke-width="0.8"/>
+          <path class="static" style="--i:14" pathLength="1" d="M105.6 103.0 L112.6 84.3" stroke-width="0.8"/>
+          <path class="static" style="--i:15" pathLength="1" d="M108.2 104.3 L122.6 80.2" stroke-width="0.8"/>
+          <path class="static" style="--i:16" pathLength="1" d="M110.5 106.0 L123.7 90.9" stroke-width="0.8"/>
+          <path class="static" style="--i:17" pathLength="1" d="M112.5 108.0 L134.4 90.6" stroke-width="0.8"/>
+          <path class="static" style="--i:18" pathLength="1" d="M114.1 110.4 L131.7 100.9" stroke-width="0.8"/>
+          <path class="static" style="--i:19" pathLength="1" d="M115.2 113.1 L141.8 104.4" stroke-width="0.8"/>
+          <path class="static" style="--i:20" pathLength="1" d="M84 118 A16 16 0 0 1 116 118" stroke-width="0.9"/>
+          <path class="static" style="--i:21" pathLength="1" d="M100 30 L108 40 L100 50 L92 40 Z" stroke-width="1.0"/>
+          <path class="static" style="--i:22" pathLength="1" d="M100 50 V60" stroke-width="0.8"/>
+          <path class="static" style="--i:23" pathLength="1" d="M70 200 H130" stroke-width="0.7"/>
+          <path class="static" style="--i:24" pathLength="1" d="M100 194 L106 200 L100 206 L94 200 Z" stroke-width="0.9"/>
+          <path class="static" style="--i:25" pathLength="1" d="M38 150 H46 M154 150 H162" stroke-width="0.8"/>
+          <path class="static" style="--i:26" pathLength="1" d="M38 180 H46 M154 180 H162" stroke-width="0.8"/>
+        </g>
+      </svg>
+      <p class="eyebrow fade-up" style="--at:42.4s">Sizni kutamiz</p>
+      <h2 class="final-names letters" data-text="namesInline" style="--at:42.8s">Kamron &amp; Farangiz</h2>
+      <p class="final-msg words" style="--at:44.2s">Sevgimizning eng go‘zal lahzasida yonimizda bo‘lishingizni chin dildan kutib qolamiz.</p>
+      <p class="final-date fade-up" data-text="dateDots" style="--at:45.6s">06 · 10 · 2026</p>
+    </section>
+
+    <canvas class="sparks" id="sparks"></canvas>
+    <div class="fade-black" style="--at:47.2s"></div>
+  </main>
+
+  <script src="../config.js"></script>
+  <script src="motion.js"></script>
+</body>
+</html>

@@ -9,7 +9,9 @@
     "test:setup": "npx playwright install chromium",
     "previews": "node tools/render-previews.cjs",
     "build": "python3 tools/build_single.py",
-    "video": "node tools/render-video.cjs"
+    "video": "node tools/render-video.cjs",
+    "motion": "node tools/render-motion.cjs",
+    "motion:preview": "node tools/render-motion.cjs --preview"
   },
   "devDependencies": {
     "playwright": "1.56.1"

@@ -1,3 +1,5 @@
 node_modules/
 tests/screenshots/
 dist/.frames/
+dist/.motion-frames/
+dist/.motion-preview/

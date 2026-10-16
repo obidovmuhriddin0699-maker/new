@@ -98,6 +98,32 @@ A video is frozen in time, so the countdown in it is rendered as seen at `VIDEO_
 (default `2026-09-06T10:00`, i.e. 30 days before the configured date). **Re-render after
 the date is confirmed**, and pick a `VIDEO_NOW` shortly before you send it.
 
+## Motion-design video: `dist/taklifnoma-motion.mp4`
+
+A 48-second cinematic motion-graphics invitation (1080×1920, 30 fps, with "Asadov —
+Silencio"). It's a composed piece in its own right, built in `motion/` and not a recording
+of the website:
+
+| Time | Scene |
+|---|---|
+| 0–5 s | The Art Deco emblem draws itself in gold; crystal glints; "To‘yga taklifnoma" |
+| 5–12 s | Deco doors swing open with a flash and sparklers; names letter by letter over the ballroom film |
+| 12–18 s | Glass invitation card over the chandelier photo; words appear one by one |
+| 18–30 s | Four story films open like an iris inside gold arches, with chapter titles |
+| 30–36 s | The date in large gold numerals with a turning sunburst |
+| 36–41 s | A gold map pin draws itself; the city name appears |
+| 41–48 s | Sparkler finale: emblem, names, message, date; fade to black |
+
+Names, date and city are read from `config.js`.
+
+```bash
+npm run motion            # renders dist/taklifnoma-motion.mp4 (Playwright + ffmpeg)
+npm run motion:preview    # a few stills in dist/.motion-preview/ for quick checks
+```
+
+Opening `motion/index.html` through the local server (`npm start` → `/motion/`) plays the
+composition live in the browser, without music.
+
 ## 3. Structure
 
 ```
@@ -131,7 +157,8 @@ wedding/
 │   ├── fonts/  icons/  textures/
 ├── docs/RSVP.md          connecting the form to Google Sheets / Formspree
 ├── tests/e2e.cjs         Playwright end-to-end suite
-└── tools/                static server, preview-image, single-file and video renderers
+├── motion/               the motion-design composition (index.html, motion.css, motion.js)
+└── tools/                static server, preview-image, single-file, video and motion renderers
 ```
 
 ## 4. Music
