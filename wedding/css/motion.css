@@ -4,30 +4,31 @@
    always visible if scripts fail to load.
    ========================================================================== */
 
-/* ---------- Hero: revealed as the curtain parts ---------- */
-.js [data-hero] { opacity: 0; transform: translateY(18px); }
-.js.is-opened [data-hero] { animation: intro-in 1.6s var(--ease) both; }
-.js .opening__name[data-hero] { opacity: 1; transform: none; }
-.js .opening__name .ch { opacity: 0; transform: translateY(0.45em) scale(0.96); filter: blur(6px); }
-.js.is-opened .opening__name .ch {
-  animation: letter-in 1.5s var(--ease) both;
-  animation-delay: calc(var(--d, 0s) + var(--i) * 0.07s);
+/* ---------- Hero: revealed as the envelope opens into it ---------- */
+.js [data-hero] { opacity: 0; transform: translateY(16px); }
+.js.is-opened [data-hero] { animation: intro-in 1.4s var(--ease) both; }
+.js.is-opened [data-hero="1"] { animation-delay: 2.2s; }
+.js.is-opened [data-hero="2"] { animation-delay: 2.9s; }
+.js.is-opened [data-hero="4"] { animation-delay: 3.9s; }
+.js.is-opened [data-hero="6"] { animation-delay: 4.9s; }
+.js.is-opened [data-hero="7"] { animation-delay: 5.3s; }
+.js.is-opened [data-hero="8"] { animation-delay: 5.9s; }
+/* The arch draws itself in gold. */
+.js .hero-arch__line { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.js.is-opened .hero-arch__line { animation: draw-line 2.6s var(--ease) 2.3s forwards; }
+@keyframes draw-line { to { stroke-dashoffset: 0; } }
+/* Names are "written": a soft wipe from left to right, like a pen stroke. */
+.js .write[data-hero] { opacity: 1; transform: none; clip-path: inset(0 100% 0 0); }
+.js.is-opened .write[data-hero] { animation: write 1.9s cubic-bezier(0.45, 0, 0.25, 1) both; }
+.js.is-opened .write[data-hero="3"] { animation-delay: 3.1s; }
+.js.is-opened .write[data-hero="5"] { animation-delay: 4.0s; }
+@keyframes write {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 -10% 0 0); }
 }
-.js.is-opened [data-hero="1"] { animation-delay: 1.1s; }
-.js .opening__name[data-hero="2"] { --d: 1.35s; }
-.js.is-opened [data-hero="3"] { animation-delay: 2.1s; }
-.js .opening__name[data-hero="4"] { --d: 2.0s; }
-.js.is-opened [data-hero="5"] { animation-delay: 2.6s; }
-.js.is-opened [data-hero="6"] { animation-delay: 2.85s; }
-.js.is-opened [data-hero="7"] { animation-delay: 3.3s; }
-
 @keyframes intro-in {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
-}
-@keyframes letter-in {
-  from { opacity: 0; transform: translateY(0.45em) scale(0.96); filter: blur(6px); }
-  to { opacity: 1; transform: none; filter: blur(0); }
 }
 
 /* Gold dividers draw outward from the diamond (clip, since <use> content can't be styled). */
@@ -78,6 +79,8 @@
   }
   .scene__film, .scene__media::after, .scroll-cue i, .gold-text, .btn--gold, .marquee__track { animation: none !important; }
   .dust { display: none; }
+  .js .write[data-hero] { clip-path: none !important; }
+  .js .hero-arch__line { stroke-dashoffset: 0 !important; }
   .js .reveal, .js .reveal--image, .js [data-hero], .js .opening__name .ch {
     opacity: 1 !important;
     transform: none !important;

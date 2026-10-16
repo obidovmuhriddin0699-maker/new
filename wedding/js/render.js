@@ -88,6 +88,24 @@
     });
   }
 
+  /** Month grid (Monday first) with the wedding day sealed in gold. */
+  function renderCalendar(v) {
+    var grid = L.$("[data-calendar]");
+    if (!grid || !v.date) return;
+    var heads = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+    var first = new Date(Date.UTC(v.date.y, v.date.m - 1, 1)).getUTCDay(); // 0 = Sunday
+    var lead = (first + 6) % 7;
+    var days = new Date(Date.UTC(v.date.y, v.date.m, 0)).getUTCDate();
+    var html = heads.map(function (h) { return '<span class="calendar__head" role="columnheader">' + h + "</span>"; }).join("");
+    for (var i = 0; i < lead; i++) html += '<span class="calendar__day calendar__day--empty"></span>';
+    for (var d = 1; d <= days; d++) {
+      var on = d === v.date.d;
+      html += '<span class="calendar__day' + (on ? " calendar__day--on" : "") + '" role="gridcell"' +
+        (on ? ' aria-current="date" aria-label="' + L.escapeHtml(v.text.dateLong) + ' — to‘y kuni"' : "") + ">" + d + "</span>";
+    }
+    grid.innerHTML = html;
+  }
+
   function renderStory(cfg) {
     var list = L.$('[data-slot="story"]');
     var items = cfg.storyContent || [];
@@ -165,8 +183,13 @@
         : "Iltimos, ishtirokingizni oldindan bildiring — bu bizga tayyorgarlikni to‘g‘ri rejalashtirishga yordam beradi.",
       rsvpContact: rsvp.contactNote || "",
       initialGroom: v.groom.charAt(0),
-      initialBride: v.bride.charAt(0)
+      initialBride: v.bride.charAt(0),
+      groom: v.groom,
+      bride: v.bride,
+      timeLabel: "Soat " + v.text.time,
+      monthYear: v.text.monthName + " " + v.text.year
     }));
+    renderCalendar(v);
     splitLetters();
     renderScenes(cfg);
     renderMarquee(v);
@@ -181,6 +204,12 @@
     var map = L.$("[data-map-link]");
     map.href = v.mapUrl;
     if (v.mapIsSearch) map.setAttribute("data-map-search", "");
+    // Turn-by-turn directions from wherever the guest is.
+    var dir = L.$("[data-directions-link]");
+    if (dir) {
+      dir.href = "https://www.google.com/maps/dir/?api=1&destination=" +
+        encodeURIComponent([cfg.venueName, cfg.venueAddress, cfg.venueCity].filter(Boolean).join(", "));
+    }
 
     if (v.date) document.title = v.text.namesInline + " — to‘yga taklifnoma";
   };

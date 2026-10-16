@@ -1,6 +1,6 @@
 /* ==========================================================================
    Render the invitation as a vertical video: dist/taklifnoma-video.mp4
-   (1080×1920, 30 fps, H.264 + AAC, with "Asadov Silencio.m4a").
+   (1080×1920, 30 fps, H.264 + AAC, with the invitation's music track).
 
      node tools/render-video.cjs            # needs Playwright + ffmpeg
 
@@ -24,7 +24,7 @@ const VIEW = { width: 432, height: 768, scale: 2.5 }; // → 1080×1920
 const VIDEO_NOW = process.env.VIDEO_NOW || "2026-09-06T10:00";
 const OUT = path.join(ROOT, "dist", "taklifnoma-video.mp4");
 const FRAMES = path.join(ROOT, "dist", ".frames");
-const MUSIC = path.join(ROOT, "assets", "audio", "Asadov Silencio.m4a");
+const MUSIC = path.join(ROOT, "assets", "audio", "taklifnoma-musiqa.m4a");
 
 function loadPlaywright() {
   for (const c of ["playwright", "/opt/node-tools/node_modules/playwright"]) {
@@ -164,20 +164,21 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
       await shoot();
     }
   }
-  async function visit(selector, holdSeconds, offset = 64) {
+  async function visit(selector, holdSeconds, offset = 64, scrollSeconds = 0) {
     const top = await page.evaluate(({ s, o }) => {
       const el = document.querySelector(s);
       return el.getBoundingClientRect().top + window.scrollY - o;
     }, { s: selector, o: offset });
     const dist = Math.abs(top - (await page.evaluate(() => window.scrollY)));
-    await scrollTo(top, Math.min(2.6, Math.max(1.3, dist / 650)));
+    await scrollTo(top, scrollSeconds || Math.min(2.6, Math.max(1.3, dist / 650)));
     await hold(holdSeconds);
   }
 
   console.log("Rendering frames…");
-  // 1 · The velvet curtain: the gold crest draws itself.
-  await hold(3.6);
-  // 2 · The guest taps "Taklifnomani ochish": music starts, the curtain parts, the hero comes alive.
+  // Timed to the 27-second track, like the reference video (music from the first frame).
+  // 1 · The lace envelope; the wax seal pulses.
+  await hold(2.4);
+  // 2 · Tap on the seal: flap opens, card rises, zoom into the hero; names are written in.
   const btn = await page.locator("[data-open-invitation]").boundingBox();
   await page.evaluate(({ x, y }) => {
     const t = document.createElement("div");
@@ -185,37 +186,18 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 900);
   }, { x: btn.x + btn.width / 2, y: btn.y + btn.height / 2 });
-  await hold(0.35);
+  await hold(0.3);
   await page.evaluate(() => document.querySelector("[data-open-invitation]").click());
-  musicAt = videoTime;
-  await hold(5.6);
-  // 3 · Walk through the invitation.
-  await visit(".invitation__card", 3.4, 24);
-  await visit(".invitation__body", 2.0, 220);
-  await visit("#hikoya", 1.4);
-  for (let i = 1; i <= 4; i++) await visit(`.chapter:nth-of-type(${i})`, 2.0);
-  await visit("#tafsilotlar", 1.6);
-  await visit(".details__list", 1.8, 120);
-  await visit("#sanoq", 3.4, 0);
-  await visit("#galereya", 1.6);
-  // Lightbox: open a photo, swipe through two more.
-  await page.evaluate(() => document.querySelector("[data-gallery-index='0']").click());
-  await page.waitForTimeout(250);
-  await hold(1.6);
-  for (let i = 0; i < 2; i++) {
-    await page.keyboard.press("ArrowRight");
-    await hold(0.3);
-    await page.waitForTimeout(250);
-    await hold(1.3);
-  }
-  await page.keyboard.press("Escape");
-  await hold(0.6);
-  await visit(".gallery__item:nth-child(4)", 1.4);
-  await visit("#manzil", 2.6, 0);
-  await visit("#javob", 1.8);
-  await visit(".rsvp__card", 1.8, 90);
-  // 4 · Final scene.
-  await visit("#yakun", 6.0, 0);
+  musicAt = 0;
+  await hold(6.0);
+  // 3 · "Sizni kutamiz" card.
+  await visit(".invitation__card", 2.2, 70, 1.3);
+  // 4 · Calendar with the sealed day and the countdown.
+  await visit(".calendar-card", 3.1, 64, 2.4);
+  // 5 · Venue card with the map buttons.
+  await visit(".location-card", 2.7, 64, 2.4);
+  // 6 · Finale.
+  await visit("#yakun", 2.5, 0, 2.0);
 
   await browser.close();
   server.close();
@@ -231,7 +213,7 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
     "-filter_complex",
     // Video: soft fade from and to warm white. Audio: enters on the tap, gentle fade in/out.
     `[0:v]fade=t=in:st=0:d=0.8:color=0xFBF7F1,fade=t=out:st=${(duration - 1.2).toFixed(2)}:d=1.2:color=0xFBF7F1,format=yuv420p[v];` +
-    `[1:a]afade=t=in:st=0:d=2,adelay=${Math.round(musicAt * 1000)}|${Math.round(musicAt * 1000)},` +
+    `[1:a]afade=t=in:st=0:d=0.5,adelay=${Math.round(musicAt * 1000)}|${Math.round(musicAt * 1000)},` +
     `afade=t=out:st=${fadeOut}:d=3,atrim=0:${duration.toFixed(2)},volume=0.9[a]`,
     "-map", "[v]", "-map", "[a]",
     "-c:v", "libx264", "-preset", "slow", "-crf", "21", "-profile:v", "high", "-r", String(FPS),

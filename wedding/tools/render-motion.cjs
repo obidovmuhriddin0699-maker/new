@@ -1,7 +1,7 @@
 /* ==========================================================================
    Render the motion-design invitation (motion/index.html) to
-   dist/taklifnoma-motion.mp4 — 1080×1920, 30 fps, H.264 + AAC with
-   "Asadov Silencio.m4a".
+   dist/taklifnoma-motion.mp4 — 1080×1920, 30 fps, H.264 + AAC with the
+   invitation music (looped). This piece uses the earlier Art Deco design.
 
      node tools/render-motion.cjs              # full film
      node tools/render-motion.cjs --preview    # a few stills into dist/.motion-preview/
@@ -19,7 +19,7 @@ const FPS = 30;
 const DURATION = 48;
 const OUT = path.join(ROOT, "dist", "taklifnoma-motion.mp4");
 const FRAMES = path.join(ROOT, "dist", ".motion-frames");
-const MUSIC = path.join(ROOT, "assets", "audio", "Asadov Silencio.m4a");
+const MUSIC = path.join(ROOT, "assets", "audio", "taklifnoma-musiqa.m4a");
 const PREVIEW = process.argv.includes("--preview");
 
 function loadPlaywright() {
@@ -62,7 +62,7 @@ function loadPlaywright() {
     execFileSync("ffmpeg", [
       "-y", "-loglevel", "error",
       "-framerate", String(FPS), "-i", path.join(FRAMES, "f%05d.jpg"),
-      "-i", MUSIC,
+      "-stream_loop", "-1", "-i", MUSIC, // the 27 s track loops under the 48 s film
       "-filter_complex",
       `[0:v]format=yuv420p[v];[1:a]afade=t=in:st=0:d=2,afade=t=out:st=${DURATION - 3}:d=3,atrim=0:${DURATION}[a]`,
       "-map", "[v]", "-map", "[a]",

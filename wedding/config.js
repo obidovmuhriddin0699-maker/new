@@ -30,18 +30,18 @@ window.WEDDING_CONFIG = {
   locationImage: "bouquet-bench", // photo next to the venue details ("" to hide)
 
   opening: {
-    eyebrow: "To‘yga taklifnoma",
-    subtitle: "Hayotimizning eng go‘zal kunida sizni yonimizda ko‘rishdan mamnun bo‘lamiz.",
+    eyebrow: "Taklifnoma",
+    subtitle: "Ikki qalb bir taqdirni tanladi — endi u bizning umumiy yo‘limiz.",
     button: "Taklifnomani ochish",
   },
 
   invitationText: {
-    eyebrow: "Taklifnoma",
-    greeting: "Qadrli mehmonimiz!",
-    lead: "Ikki qalbni bir umrga bog‘laydigan kunimizni siz bilan birga nishonlashni istaymiz.",
+    eyebrow: "Aziz mehmonimiz",
+    greeting: "Sizni kutamiz",
+    lead: "",
     body: [
-      "Sizni nikoh to‘yimizga lutfan taklif etamiz. Hayotimizning bu yangi sahifasini eng yaqin insonlarimiz davrasida boshlash biz uchun katta baxt.",
-      "Tashrifingiz va samimiy duolaringiz biz uchun eng qimmatli sovg‘a bo‘ladi.",
+      "Hayotimizdagi eng go‘zal kunni — nikoh to‘yimizni siz bilan birga nishonlashni istaymiz.",
+      "Mehrimizga guvoh, quvonchimizga sherik bo‘ling.",
     ],
     signature: "Hurmat bilan, Kamron va Farangiz",
   },
@@ -60,10 +60,7 @@ window.WEDDING_CONFIG = {
   // What lives behind each section: a film id (from `videos`) or a photo id (from
   // `images`, gently animated). "" = plain noir.
   scenes: {
-    opening: "ballroom-couple",
-    invitation: "chandelier-embrace",
-    countdown: "street-embrace",
-    finale: "sparklers",
+    opening: "ballroom-couple", // plays softly inside the arch on the first screen
   },
 
   // "Bizning hikoyamiz". `label` is free text (a year, a season, a chapter).
@@ -80,7 +77,7 @@ window.WEDDING_CONFIG = {
   galleryImages: ["chandelier-embrace", "first-dance-bw", "sparklers", "ballroom-still", "street-hug", "lace-hands"],
 
   finalScene: {
-    message: "Sevgimizning eng go‘zal lahzasida yonimizda bo‘lishingizni chin dildan kutib qolamiz.",
+    message: "Bizning baxtli kunimizda sizni kutib qolamiz.",
   },
 
   // Every photo on the site. Files live in assets/images/{id}-{width}.webp.
@@ -96,9 +93,10 @@ window.WEDDING_CONFIG = {
     "lace-hands":         { widths: [480, 720], ratio: "9/16",     alt: "To‘rli yengli kelin kuyovning qo‘lidan tutgan" },
   },
 
-  // Played only after the guest presses "Taklifnomani ochish".
-  backgroundMusic: "assets/audio/Asadov Silencio.m4a",
-  musicTitle: "Asadov — Silencio",
+  // Played only after the guest taps the wax seal. The track supplied with the
+  // reference video for this design (27 s, loops seamlessly on the site).
+  backgroundMusic: "assets/audio/taklifnoma-musiqa.m4a",
+  musicTitle: "",
   musicVolume: 0.4,
 
   rsvp: {
@@ -116,13 +114,13 @@ window.WEDDING_CONFIG = {
 
   // Colour tokens (any CSS colour). Applied as CSS custom properties.
   colors: {
-    ivory: "#FBF7F1",
-    cream: "#F4ECE0",
-    champagne: "#EADCC6",
-    beige: "#DCCBB3",
-    taupe: "#665748",
-    ink: "#2F2822",
-    gold: "#A88A5C",      // decorative lines and large accents
-    goldDeep: "#7E6440",  // small gold text (meets contrast on ivory)
+    ivory: "#FBF8F2",
+    cream: "#F3EEE4",
+    champagne: "#E9E2D2",
+    beige: "#D9D2C0",
+    taupe: "#5E5C4E",     // body text
+    ink: "#3F3E34",
+    gold: "#B8955A",      // lines and accents
+    goldDeep: "#7F6232",  // small gold text (meets contrast on ivory)
   },
 };

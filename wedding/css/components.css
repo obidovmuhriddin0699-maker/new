@@ -19,12 +19,12 @@
 }
 .is-opened .topbar { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
 .is-opened .topbar > * { pointer-events: auto; }
-.topbar { color: var(--on-dark); }
+.topbar { color: var(--ink); }
 .topbar.is-solid {
-  background: rgb(14 12 10 / 0.9);
+  background: rgb(251 248 242 / 0.92);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
   backdrop-filter: blur(14px) saturate(1.2);
-  box-shadow: 0 1px 0 rgb(214 186 124 / 0.25);
+  box-shadow: 0 1px 0 var(--line);
 }
 .topbar.is-hidden { transform: translateY(-110%); }
 .topbar__mark {
@@ -32,8 +32,10 @@
   font-size: 1.35rem;
   letter-spacing: 0.06em;
   text-decoration: none;
-  color: var(--gold-light);
-  padding: 0.35rem 0.25rem;
+  font-family: var(--script);
+  font-size: 1.7rem;
+  color: var(--gold-deep);
+  padding: 0.1rem 0.25rem;
 }
 .topbar__menu {
   display: inline-flex;
@@ -59,8 +61,8 @@
   z-index: 60;
   display: grid;
   place-items: center;
-  background: rgb(14 12 10 / 0.96);
-  color: var(--on-dark);
+  background: rgb(251 248 242 / 0.97);
+  color: var(--ink);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   opacity: 0;
@@ -98,9 +100,9 @@
   font-size: 0.7rem;
   letter-spacing: 0.2em;
   vertical-align: 0.9em;
-  color: var(--gold-light);
+  color: var(--gold-deep);
 }
-.menu__list a:hover { color: var(--gold-light); transform: translateX(4px); }
+.menu__list a:hover { color: var(--gold-deep); transform: translateX(4px); }
 .menu__list li {
   opacity: 0;
   transform: translateY(14px);
@@ -118,7 +120,7 @@
   font-size: var(--fs-xs);
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--on-dark-soft);
+  color: var(--taupe);
 }
 
 /* ---------- Music toggle ---------- */
@@ -132,9 +134,9 @@
   gap: 0.65rem;
   min-height: 3rem;
   padding: 0.6rem 1.05rem 0.6rem 0.95rem;
-  border: 1px solid var(--gold-line);
+  border: 1px solid rgb(127 98 50 / 0.35);
   border-radius: 999px;
-  background: rgb(14 12 10 / 0.72);
+  background: rgb(251 248 242 / 0.9);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   box-shadow: 0 10px 30px -18px rgb(47 40 34 / 0.5);
@@ -142,7 +144,7 @@
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--gold-light);
+  color: var(--gold-deep);
   animation: rise 0.8s var(--ease) both;
   transition: background-color 0.4s var(--ease), border-color 0.4s var(--ease);
 }

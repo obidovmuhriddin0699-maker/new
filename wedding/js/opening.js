@@ -1,9 +1,10 @@
 /* ==========================================================================
    opening.js — the "Taklifnomani ochish" gate.
-   Before opening: page locked at the top behind a velvet curtain, everything
-   after the opening is inert. On click: music starts (inside the user
-   gesture), the curtain parts and the hero film, names and gold dust come
-   alive. The page then unlocks; a #section deep link is honoured.
+   Before opening: page locked at the top behind a lace envelope, everything
+   after the opening is inert. On tapping the wax seal: music starts (inside
+   the user gesture), the flap opens, the card rises and the view zooms into
+   it; the hero arch draws itself and the names are written in. The page then
+   unlocks; a #section deep link is honoured.
    ========================================================================== */
 (function () {
   "use strict";
@@ -45,7 +46,7 @@
     if (options.music !== false && L.audio) L.audio.start();
     else if (L.audio) L.audio.reveal();
 
-    // The doors swing open (CSS), sparklers fire (dust.js) and the hero comes alive.
+    // The envelope opens (CSS) and the hero comes alive.
     root.classList.add("is-opened");
     document.dispatchEvent(new CustomEvent("invitation:open"));
 
@@ -63,7 +64,7 @@
       } else {
         document.getElementById("opening-title").focus({ preventScroll: true });
       }
-    }, reduced ? 0 : 1200);
+    }, reduced ? 0 : 2600); // after the envelope has opened and zoomed into the card
   }
 
   window.LITC.opening = {

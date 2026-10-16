@@ -165,7 +165,7 @@ function contrast(hex1, hex2) {
         const overflow = document.documentElement.scrollWidth - window.innerWidth;
         const clipped = [];
         document.querySelectorAll("main *, footer *").forEach((el) => {
-          if (el.closest(".scene__media, .curtain, .dust, .rays, .marquee, .visually-hidden, [hidden], .field--trap")) return;
+          if (el.closest(".scene__media, .curtain, .dust, .rays, .marquee, .corner-floral, .visually-hidden, [hidden], .field--trap")) return;
           const cs = getComputedStyle(el);
           if (cs.display === "none" || cs.visibility === "hidden") return;
           const r = el.getBoundingClientRect();
@@ -180,9 +180,9 @@ function contrast(hex1, hex2) {
       assert(!report.clipped.length, `elements outside the viewport: ${report.clipped.join("; ")}`);
       assert(!report.broken.length, `images failed to load: ${report.broken.join(", ")}`);
       assert(!report.noDims.length, `images without width/height (layout shift): ${report.noDims.join(", ")}`);
-      assert(report.count >= 8, `expected the gallery and location photos, found ${report.count}`);
+      assert(report.count >= 7, `expected the gallery and location photos, found ${report.count}`);
       const films = await page.evaluate(() => [...document.querySelectorAll("video[data-video]")].map((v) => ({ id: v.getAttribute("data-video"), ok: v.readyState >= 2 || !v.src })));
-      assert(films.length === 6, `expected 6 films (2 scenes + 4 chapters), found ${films.length}`);
+      assert(films.length === 5, `expected 5 films (hero arch + 4 chapters), found ${films.length}`);
       const brokenFilms = films.filter((f) => !f.ok);
       assert(!brokenFilms.length, `films failed to load: ${brokenFilms.map((f) => f.id).join(", ")}`);
       assert(!page.problems.length, page.problems.join("\n"));
@@ -202,11 +202,11 @@ function contrast(hex1, hex2) {
       for (let i = 1; i < boxes.length; i++) assert(boxes[i].top >= boxes[i - 1].bottom - 1, `${boxes[i].s} overlaps ${boxes[i - 1].s}`);
       assert(boxes[boxes.length - 1].bottom <= h, `${boxes[boxes.length - 1].s} below the fold`);
     };
-    check(await order([".crest", ".curtain__eyebrow", ".curtain__names", ".curtain__date", ".curtain__button"]), 640);
+    check(await order([".curtain__eyebrow", ".curtain__names", ".curtain__date", ".envelope", ".curtain__hint"]), 640);
     await page.click("[data-open-invitation]", { force: true });
     await page.waitForTimeout(200);
     await settle(page);
-    check(await order([".opening__eyebrow", ".opening__title", ".opening__date", ".opening__subtitle", ".scroll-cue"]), 640);
+    check(await order([".opening__eyebrow", ".opening__title", ".opening__date", ".opening__time", ".scroll-cue"]), 640);
     await page.context().close();
   });
 
@@ -263,7 +263,7 @@ function contrast(hex1, hex2) {
     assert(audioRequests.length === 0, "audio was downloaded before the guest opened the invitation");
     await page.click("[data-open-invitation]", { force: true });
     await page.waitForFunction(() => document.querySelector("[data-music-toggle]").getAttribute("aria-pressed") === "true", null, { timeout: 5000 });
-    assert(decodeURIComponent(audioRequests[0] || "").endsWith("assets/audio/Asadov Silencio.m4a"), `wrong audio file: ${audioRequests[0]}`);
+    assert(decodeURIComponent(audioRequests[0] || "").endsWith("assets/audio/taklifnoma-musiqa.m4a"), `wrong audio file: ${audioRequests[0]}`);
     const label = await page.getAttribute("[data-music-toggle]", "aria-label");
     assert(label === "Musiqani o‘chirish", `toggle label: ${label}`);
     await page.click("[data-music-toggle]");
@@ -402,7 +402,7 @@ function contrast(hex1, hex2) {
 
   // ---------------------------------------------------------------- location + menu
   console.log("\nLocation and navigation");
-  await test("“Xaritada ochish” opens a map search for the venue in a new tab", async () => {
+  await test("“Xaritada ko‘rish” and “Yo‘l ko‘rsatish” open the map and directions in a new tab", async () => {
     const page = await newPage();
     await openInvitation(page);
     const link = page.locator("[data-map-link]");
@@ -410,13 +410,16 @@ function contrast(hex1, hex2) {
     assert(/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/.test(href), href);
     assert(decodeURIComponent(href).includes("Andijon shahri"), href);
     assert(await link.getAttribute("target") === "_blank" && /noopener/.test(await link.getAttribute("rel")), "target/rel");
-    assert(/Xaritada ochish/.test(await link.textContent()), "link text");
+    assert(/Xaritada ko‘rish/.test(await link.textContent()), "link text");
+    const dir = await page.getAttribute("[data-directions-link]", "href");
+    assert(/^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=/.test(dir) && decodeURIComponent(dir).includes("Andijon shahri"), dir);
     await page.context().close();
   });
 
   await test("deep link (#galereya) opens on that section after the gate", async () => {
     const page = await newPage();
     await page.goto(base + "/#galereya", { waitUntil: "load" });
+    await page.waitForTimeout(400); // the browser's own fragment jump may land after "load"; the lock undoes it
     assert(await page.evaluate(() => window.scrollY) === 0, "should stay on the opening until the guest opens it");
     await page.click("[data-open-invitation]", { force: true });
     await page.waitForFunction(() => !document.documentElement.classList.contains("is-locked"));
@@ -586,14 +589,14 @@ function contrast(hex1, hex2) {
 
   await test("colour contrast of text tokens meets WCAG AA", async () => {
     const pairs = [
-      ["#2F2822", "#FBF7F1", 4.5, "ink on ivory"],
-      ["#665748", "#FBF7F1", 4.5, "taupe on ivory"],
-      ["#665748", "#F4ECE0", 4.5, "taupe on cream"],
-      ["#665748", "#EADCC6", 4.5, "taupe on champagne"],
-      ["#7E6440", "#FBF7F1", 4.5, "gold-deep on ivory"],
-      ["#7E6440", "#F4ECE0", 4.5, "gold-deep on cream"],
-      ["#7E6440", "#EADCC6", 3.0, "gold-deep large text on champagne"],
-      ["#FBF7F1", "#2F2822", 4.5, "button text"],
+      ["#3F3E34", "#FBF8F2", 4.5, "ink on ivory"],
+      ["#5E5C4E", "#FBF8F2", 4.5, "taupe on ivory"],
+      ["#5E5C4E", "#F3EEE4", 4.5, "taupe on cream"],
+      ["#7F6232", "#FBF8F2", 4.5, "gold-deep on ivory"],
+      ["#7F6232", "#F3EEE4", 4.5, "gold-deep on cream"],
+      ["#56644F", "#FFFEFB", 4.5, "sage-deep labels on card"],
+      ["#3F4A39", "#AEB9A2", 4.5, "envelope date / hint on sage"],
+      ["#FFFDF6", "#7F6232", 4.5, "map button text"],
       ["#9A4334", "#FFFEFB", 4.5, "error text"]
     ];
     const fails = pairs.filter(([a, b, min]) => contrast(a, b) < min).map(([a, b, min, n]) => `${n}: ${contrast(a, b).toFixed(2)} < ${min}`);
@@ -608,7 +611,7 @@ function contrast(hex1, hex2) {
     await page.goto("file://" + path.join(ROOT, "index.html"), { waitUntil: "load" });
     await page.click("[data-open-invitation]", { force: true });
     await page.waitForFunction(() => !document.documentElement.classList.contains("is-locked"));
-    const ok = await page.evaluate(() => document.querySelector("#tafsilotlar .section-title").textContent.includes("Farangiz"));
+    const ok = await page.evaluate(() => document.querySelector('#opening-title [data-bind="bride"]').textContent.includes("Farangiz"));
     assert(ok, "content did not render from file://");
     assert(!page.problems.filter((p) => !/requestfailed/.test(p)).length, page.problems.join("\n"));
     await page.context().close();

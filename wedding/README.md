@@ -1,6 +1,6 @@
-# Kamron & Farangiz — Crystal Ballroom wedding invitation
+# Kamron & Farangiz — sage & ivory envelope invitation
 
-A cinematic, mobile-first wedding invitation website in a modern Art Deco "crystal ballroom" style (noir, champagne gold, crystal sparkle) with living film backgrounds. Pure HTML, CSS and vanilla
+A cinematic, mobile-first wedding invitation website in a soft sage-and-ivory style: a lace envelope sealed with gold wax, calligraphy, floral corners and gentle gold details. Pure HTML, CSS and vanilla
 JavaScript: no framework, no build step, no runtime dependencies.
 
 > **⚠️ Before sharing:** the configured date, **6 October 2026, 16:00**, has already
@@ -84,9 +84,9 @@ music downloaded only on click), so prefer it for hosting when possible.
 
 ## Video version: `dist/taklifnoma-video.mp4`
 
-A 73-second vertical video (1080×1920, 30 fps, H.264/AAC, about 17 MB) of the real site.
-It shows the Art Deco doors, the tap on "Taklifnomani ochish", the doors opening with sparklers, and every section
-through to the final scene, with "Asadov — Silencio" starting at the tap. It's ready for
+A 27-second vertical video (1080×1920, 30 fps, H.264/AAC) of the real site, timed to the music like the reference.
+It shows the envelope, the tap on the wax seal, the envelope opening into the hero, and the main cards
+through to the final scene, with the invitation music. It's ready for
 Telegram, Instagram Stories and WhatsApp.
 
 ```bash
@@ -100,8 +100,8 @@ the date is confirmed**, and pick a `VIDEO_NOW` shortly before you send it.
 
 ## Motion-design video: `dist/taklifnoma-motion.mp4`
 
-A 48-second cinematic motion-graphics invitation (1080×1920, 30 fps, with "Asadov —
-Silencio"). It's a composed piece in its own right, built in `motion/` and not a recording
+A 48-second cinematic motion-graphics invitation (1080×1920, 30 fps, with the invitation
+music, looped). It uses the earlier Art Deco "Crystal Ballroom" design. It's a composed piece in its own right, built in `motion/` and not a recording
 of the website:
 
 | Time | Scene |
@@ -133,7 +133,7 @@ wedding/
 ├── css/
 │   ├── fonts.css         self-hosted Instrument Serif + Manrope (OFL), latin + latin-ext
 │   ├── base.css          tokens, reset, typography, buttons
-│   ├── opening.css       video scenes, Art Deco door gate, emblem, sunburst, hero
+│   ├── opening.css       lace-envelope gate, wax seal, ornate arch hero, floral corners
 │   ├── sections.css      invitation, story, details, countdown, gallery, location, finale
 │   ├── components.css    top bar, menu, music toggle, lightbox, RSVP form
 │   └── motion.css        intro reveal, scroll reveals, reduced-motion rules
@@ -141,8 +141,8 @@ wedding/
 │   ├── core.js           config → view model, time-zone maths, <picture> builder
 │   ├── render.js         fills the page from config (scenes, story films, marquee)
 │   ├── video.js          films: load near the screen, play while visible, poster fallback
-│   ├── dust.js           sparkle engine: gold dust, crystal glints, sparkler fountains
-│   ├── opening.js        the "Taklifnomani ochish" door gate
+│   ├── dust.js           sparkle engine: falling gold flakes (light pages), glints, fountains
+│   ├── opening.js        the wax-seal envelope gate
 │   ├── audio.js          music (user-initiated only), toggle, missing-file handling
 │   ├── motion.js         IntersectionObserver reveals, parallax, top bar
 │   ├── nav.js            section menu
@@ -153,7 +153,7 @@ wedding/
 ├── assets/
 │   ├── images/           WebP photos, two widths each
 │   ├── video/            six silent film loops (MP4 + WebM) and their posters
-│   ├── audio/            Asadov Silencio.m4a
+│   ├── audio/            taklifnoma-musiqa.m4a
 │   ├── fonts/  icons/  textures/
 ├── docs/RSVP.md          connecting the form to Google Sheets / Formspree
 ├── tests/e2e.cjs         Playwright end-to-end suite
@@ -163,16 +163,16 @@ wedding/
 
 ## 4. Music
 
-`assets/audio/Asadov Silencio.m4a` is the supplied track, unchanged. It is:
+`assets/audio/taklifnoma-musiqa.m4a` is the track taken from the reference video supplied
+for this design (27 s; it loops on the site). Its title and rights holder aren't known, so
+check you may use it before publishing. The music:
 
-- **never started automatically.** It begins only inside the guest's click on
-  "Taklifnomani ochish". It isn't even downloaded before then (`preload="none"`);
-- faded in gently, looped, paused while the tab is hidden, and resumed on return;
-- controlled by the persistent "Musiqa" button (bottom right, 48px touch target);
-- **honest when unavailable.** If the file is missing, or the browser can't decode AAC,
-  the button shows "Musiqa yo‘q" and nothing pretends to play. All current Chrome,
-  Safari (macOS/iOS), Firefox, Edge and Android browsers decode AAC. Some Linux builds of
-  Chromium don't.
+- **never starts automatically.** It begins only when the guest taps the wax seal, and it
+  isn't downloaded before then (`preload="none"`);
+- fades in gently, loops, pauses while the tab is hidden and resumes on return;
+- is controlled by the persistent "Musiqa" button;
+- **is honest when unavailable.** A missing file or a browser without AAC shows
+  "Musiqa yo‘q" instead of pretending to play.
 
 ## 5. RSVP
 
@@ -200,26 +200,27 @@ take once the date is confirmed.
 
 ## 7. Design system (summary)
 
-- **Style:** modern Art Deco "crystal ballroom". Deep noir film scenes alternate with calm
-  ivory sections; champagne gold is the accent, with crystal-white sparkle.
-- **Logo:** an Art Deco arch emblem (stepped shoulders, sunburst fan, diamond apex) with the
-  couple's monogram. It draws itself line by line on the gate and returns in the finale; the
-  favicon, home-screen icon and link preview use it too.
-- **Gate:** two Art Deco doors with a gold arch pattern swing open in 3D. Light pours through
-  the gap and sparkler fountains burst up from the bottom corners.
-- **Hero:** names in gold foil revealed letter by letter, with a bright glint sweeping across
-  them every few seconds and a slowly turning deco sunburst behind.
-- **Sparkle engine (`js/dust.js`):** rising gold dust, crystal star glints that flare like
-  light on a chandelier, and sparkler fountains (a burst at the opening, continuous in the
-  finale). Each particle is a pure function of time.
-- **Ornaments:** stepped deco corners on cards, fan-and-diamond dividers, gold-rimmed arches
-  around films and photos, a gold marquee band, glass cards over films, warm light leaks.
-- **Countdown:** each digit rolls in when it changes.
-- **Films as backgrounds (`config.scenes`):** full-bleed on phones; on wide screens the
-  portrait film sits in a tall gold arch over a blurred copy of itself. Photos can be scenes
-  too, with a slow cinematic drift.
-- **Accessibility:** `prefers-reduced-motion`, Save-Data and iOS Low Power Mode switch the
-  films to posters and turn off the doors, sparkles, glints and rays.
+The look follows the reference video supplied for this version (a sage-and-ivory envelope
+invitation). All artwork is original: the template's own illustrations are not used.
+
+- **Palette:** sage `#A9B49E` / `#56644F`, ivory `#FBF8F2`, cream `#F3EEE4`, warm gold `#B8955A`,
+  with `#7F6232` for small gold text and `#5E5C4E` for body text.
+- **Type:** Great Vibes calligraphy for names and titles, Instrument Serif for dates and
+  italics, Manrope for text and controls.
+- **Gate:** a lace envelope on sage with white-rose corners (`tools/generate_florals.py`).
+  Tapping the gold wax seal (K&F) lifts the seal, opens the flap in 3D and slides the card
+  out; the view then zooms into the card.
+- **Hero:** an ornate gold arch that draws itself, with the ballroom film softly fading
+  inside it. The names are "written" left to right like a pen stroke, and gold flakes
+  drift down.
+- **Cards:** a "Sizni kutamiz" message card; a calendar card with the month grid, the
+  wedding day marked by a small gold wax seal, the time, the countdown in boxes (digits
+  roll in) and "Kalendarga qo‘shish"; a venue card with an arched photo and
+  "Xaritada ko‘rish" / "Yo‘l ko‘rsatish" (Google Maps directions) buttons.
+- **Kept and restyled:** story films in gold-rimmed arches, the gallery and lightbox,
+  RSVP, the menu and the music button.
+- **Accessibility:** reduced motion turns off the envelope animation, writing, flakes and
+  film drift; every control is labelled; colour contrast is checked by the tests.
 
 ## 8. Testing
 

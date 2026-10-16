@@ -7,7 +7,7 @@
   <!-- Link previews (Telegram, WhatsApp…) read these tags without running JS, so they
        are kept static here. Update them together with config.js. -->
   <meta name="description" content="Kamron va Farangizning nikoh to‘yiga lutfan taklif etamiz. Andijon shahri.">
-  <meta name="theme-color" content="#0E0C0A">
+  <meta name="theme-color" content="#E9E3D6">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Kamron & Farangiz — to‘yga taklifnoma">
   <meta property="og:description" content="Hayotimizning eng go‘zal kunida sizni yonimizda ko‘rishdan mamnun bo‘lamiz.">
@@ -18,9 +18,9 @@
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 
+  <link rel="preload" href="assets/fonts/GreatVibes-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/InstrumentSerif-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/Manrope-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/video/ballroom-couple.webp" as="image">
 
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/base.css">
@@ -35,58 +35,30 @@
   </script>
 </head>
 <body>
-  <!-- Gold ornament library: one gradient + reusable symbols (crest, filigree, divider). -->
+  <!-- Ornament library: gradients, original floral artwork, wax seal. -->
   <svg class="svg-defs" aria-hidden="true" focusable="false">
     <defs>
       <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#8A6A2E"/>
-        <stop offset=".3" stop-color="#EBD39A"/>
-        <stop offset=".55" stop-color="#B8903F"/>
-        <stop offset=".8" stop-color="#F5E6B8"/>
-        <stop offset="1" stop-color="#9A7535"/>
+        <stop offset="0" stop-color="#8E6C35"/><stop offset=".3" stop-color="#E2C68C"/>
+        <stop offset=".55" stop-color="#B08A4C"/><stop offset=".8" stop-color="#EBD7A6"/><stop offset="1" stop-color="#93703A"/>
       </linearGradient>
-      <symbol id="filigree" viewBox="0 0 64 64">
-        <path d="M2 62V2h60" fill="none" stroke="url(#gold)" stroke-width="1.2"/>
-        <path d="M9 62V18h9V9h44" fill="none" stroke="url(#gold)" stroke-width=".7"/>
-        <path d="M16 62V25h9v-9h37" fill="none" stroke="url(#gold)" stroke-width=".45"/>
-        <path d="M2 2l9 9" stroke="url(#gold)" stroke-width=".8"/>
-        <path d="M11 6.5l4.5 4.5-4.5 4.5-4.5-4.5z" fill="url(#gold)"/>
+      <radialGradient id="wax" cx=".38" cy=".32" r=".75">
+        <stop offset="0" stop-color="#F4DFA8"/><stop offset=".35" stop-color="#D2AE66"/>
+        <stop offset=".75" stop-color="#A9823F"/><stop offset="1" stop-color="#7E5E2B"/>
+      </radialGradient>
+      <linearGradient id="petal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFEFB"/><stop offset="1" stop-color="#EFE7D6"/></linearGradient><linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A9B79A"/><stop offset="1" stop-color="#6F8063"/></linearGradient><linearGradient id="leaf2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C6D0B8"/><stop offset="1" stop-color="#8E9E80"/></linearGradient>
+      <symbol id="floral-corner" viewBox="0 0 260 260"><path d="M12.0 14.0 L17.8 16.2 L23.5 18.4 L29.2 20.6 L35.0 22.7 L40.8 24.9 L46.5 27.0 L52.2 29.0 L58.0 31.0 L63.8 33.0 L69.5 34.9 L75.2 36.8 L81.0 38.5 L86.8 40.2 L92.5 41.8 L98.2 43.4 L104.0 44.8 L109.8 46.2 L115.5 47.4 L121.2 48.6 L127.0 49.6 L132.8 50.6 L138.5 51.4 L144.2 52.1 L150.0 52.7 L155.8 53.2 L161.5 53.6 L167.2 53.9 L173.0 54.0 L178.8 54.0 L184.5 53.9 L190.2 53.6 L196.0 53.3 L201.8 52.8 L207.5 52.2 L213.2 51.5 L219.0 50.7 L224.8 49.8 L230.5 48.7 L236.2 47.6 L242.0 46.3" fill="none" stroke="#7D8C71" stroke-width="1.1"/><path d="M14.0 12.0 L16.2 17.8 L18.4 23.5 L20.6 29.2 L22.7 35.0 L24.9 40.8 L27.0 46.5 L29.0 52.2 L31.0 58.0 L33.0 63.8 L34.9 69.5 L36.8 75.2 L38.5 81.0 L40.2 86.8 L41.8 92.5 L43.4 98.2 L44.8 104.0 L46.2 109.8 L47.4 115.5 L48.6 121.2 L49.6 127.0 L50.6 132.8 L51.4 138.5 L52.1 144.2 L52.7 150.0 L53.2 155.8 L53.6 161.5 L53.9 167.2 L54.0 173.0 L54.0 178.8 L53.9 184.5 L53.6 190.2 L53.3 196.0 L52.8 201.8 L52.2 207.5 L51.5 213.2 L50.7 219.0 L49.8 224.8 L48.7 230.5 L47.6 236.2 L46.3 242.0" fill="none" stroke="#7D8C71" stroke-width="1.1"/><path d="M35.0 22.7 Q31.1 34.5 42.0 40.4 Q45.9 28.6 35.0 22.7Z" fill="url(#leaf)"/><path d="M35.0 22.7 L42.0 40.4" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M58.0 31.0 Q70.4 33.4 74.8 21.6 Q62.5 19.3 58.0 31.0Z" fill="url(#leaf)"/><path d="M58.0 31.0 L74.8 21.6" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M81.0 38.5 Q77.5 52.2 90.3 58.0 Q93.8 44.4 81.0 38.5Z" fill="url(#leaf2)"/><path d="M81.0 38.5 L90.3 58.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M104.0 44.8 Q115.3 45.9 118.2 35.0 Q107.0 33.9 104.0 44.8Z" fill="url(#leaf)"/><path d="M104.0 44.8 L118.2 35.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M127.0 49.6 Q125.6 60.7 136.2 64.0 Q137.6 53.0 127.0 49.6Z" fill="url(#leaf)"/><path d="M127.0 49.6 L136.2 64.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M150.0 52.7 Q161.1 52.1 162.5 41.1 Q151.3 41.7 150.0 52.7Z" fill="url(#leaf2)"/><path d="M150.0 52.7 L162.5 41.1" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M173.0 54.0 Q173.3 62.6 181.9 63.9 Q181.6 55.2 173.0 54.0Z" fill="url(#leaf)"/><path d="M173.0 54.0 L181.9 63.9" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M196.0 53.3 Q205.7 51.1 205.3 41.1 Q195.5 43.3 196.0 53.3Z" fill="url(#leaf)"/><path d="M196.0 53.3 L205.3 41.1" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M219.0 50.7 Q221.0 60.7 231.2 60.5 Q229.2 50.5 219.0 50.7Z" fill="url(#leaf2)"/><path d="M219.0 50.7 L231.2 60.5" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><ellipse cx="115.5" cy="47.4" rx="4.6" ry="6.6" transform="rotate(101 115.5 47.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M111.6 46.7 Q106.4 44.6 103.5 49.4 Q108.7 51.4 111.6 46.7Z" fill="url(#leaf2)"/><path d="M111.6 46.7 L103.5 49.4" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M111.6 46.7 Q110.8 41.1 105.2 41.0 Q106.0 46.5 111.6 46.7Z" fill="url(#leaf2)"/><path d="M111.6 46.7 L105.2 41.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><ellipse cx="184.5" cy="53.9" rx="3.6" ry="5.2" transform="rotate(88 184.5 53.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M181.4 54.0 Q177.0 53.4 175.7 57.6 Q180.1 58.2 181.4 54.0Z" fill="url(#leaf2)"/><path d="M181.4 54.0 L175.7 57.6" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M181.4 54.0 Q179.7 49.9 175.4 50.9 Q177.1 54.9 181.4 54.0Z" fill="url(#leaf2)"/><path d="M181.4 54.0 L175.4 50.9" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><ellipse cx="230.5" cy="48.7" rx="3.9" ry="5.6" transform="rotate(79 230.5 48.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M227.2 49.4 Q222.4 49.5 221.7 54.2 Q226.5 54.1 227.2 49.4Z" fill="url(#leaf2)"/><path d="M227.2 49.4 L221.7 54.2" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M227.2 49.4 Q224.7 45.3 220.3 47.0 Q222.8 51.1 227.2 49.4Z" fill="url(#leaf2)"/><path d="M227.2 49.4 L220.3 47.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><circle cx="35.0" cy="35.6" r="1.9" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="33.7" cy="40.5" r="2.2" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="50.8" cy="30.2" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="61.7" cy="37.5" r="1.3" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="66.6" cy="29.5" r="1.2" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="74.2" cy="35.1" r="2.0" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="104.5" cy="48.8" r="1.7" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="108.5" cy="43.6" r="1.5" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="117.9" cy="58.7" r="2.0" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="138.6" cy="45.4" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="126.8" cy="38.6" r="2.0" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="130.0" cy="60.3" r="1.6" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="174.3" cy="63.3" r="1.2" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="153.4" cy="65.1" r="1.7" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="175.0" cy="50.7" r="1.3" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="193.9" cy="61.4" r="1.5" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="178.7" cy="49.0" r="2.2" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="197.5" cy="42.9" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="207.8" cy="38.4" r="2.0" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="210.0" cy="52.4" r="1.6" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="210.3" cy="57.2" r="1.3" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><path d="M22.7 35.0 Q10.3 40.1 13.2 53.2 Q25.6 48.1 22.7 35.0Z" fill="url(#leaf)"/><path d="M22.7 35.0 L13.2 53.2" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M31.0 58.0 Q35.7 67.2 45.5 64.2 Q40.9 55.0 31.0 58.0Z" fill="url(#leaf)"/><path d="M31.0 58.0 L45.5 64.2" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M38.5 81.0 Q27.6 84.6 29.3 96.0 Q40.2 92.3 38.5 81.0Z" fill="url(#leaf2)"/><path d="M38.5 81.0 L29.3 96.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M44.8 104.0 Q48.4 113.3 58.2 111.4 Q54.6 102.0 44.8 104.0Z" fill="url(#leaf)"/><path d="M44.8 104.0 L58.2 111.4" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M49.6 127.0 Q39.9 128.9 40.2 138.8 Q49.9 136.9 49.6 127.0Z" fill="url(#leaf)"/><path d="M49.6 127.0 L40.2 138.8" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M52.7 150.0 Q55.7 162.8 68.8 162.2 Q65.9 149.3 52.7 150.0Z" fill="url(#leaf2)"/><path d="M52.7 150.0 L68.8 162.2" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M54.0 173.0 Q42.1 173.4 40.5 185.2 Q52.3 184.8 54.0 173.0Z" fill="url(#leaf)"/><path d="M54.0 173.0 L40.5 185.2" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M53.3 196.0 Q53.8 204.9 62.6 205.9 Q62.1 197.0 53.3 196.0Z" fill="url(#leaf)"/><path d="M53.3 196.0 L62.6 205.9" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M50.7 219.0 Q39.2 217.5 35.8 228.6 Q47.3 230.0 50.7 219.0Z" fill="url(#leaf2)"/><path d="M50.7 219.0 L35.8 228.6" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><ellipse cx="47.4" cy="115.5" rx="3.8" ry="5.4" transform="rotate(169 47.4 115.5)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M46.8 112.3 Q46.7 107.7 42.1 107.0 Q42.2 111.6 46.8 112.3Z" fill="url(#leaf2)"/><path d="M46.8 112.3 L42.1 107.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M46.8 112.3 Q50.7 109.9 49.1 105.6 Q45.1 108.0 46.8 112.3Z" fill="url(#leaf2)"/><path d="M46.8 112.3 L49.1 105.6" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><ellipse cx="53.9" cy="184.5" rx="4.1" ry="5.8" transform="rotate(182 53.9 184.5)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M54.0 181.0 Q55.1 176.2 50.5 174.4 Q49.5 179.2 54.0 181.0Z" fill="url(#leaf2)"/><path d="M54.0 181.0 L50.5 174.4" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M54.0 181.0 Q58.7 179.5 58.0 174.7 Q53.4 176.2 54.0 181.0Z" fill="url(#leaf2)"/><path d="M54.0 181.0 L58.0 174.7" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><ellipse cx="48.7" cy="230.5" rx="4.7" ry="6.7" transform="rotate(191 48.7 230.5)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M49.5 226.6 Q51.6 221.2 46.7 218.3 Q44.6 223.6 49.5 226.6Z" fill="url(#leaf2)"/><path d="M49.5 226.6 L46.7 218.3" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M49.5 226.6 Q55.1 225.7 55.3 220.0 Q49.6 220.9 49.5 226.6Z" fill="url(#leaf2)"/><path d="M49.5 226.6 L55.3 220.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><circle cx="30.9" cy="35.3" r="2.2" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="18.9" cy="39.7" r="2.0" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="22.2" cy="40.8" r="1.3" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="25.3" cy="77.6" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="39.6" cy="71.7" r="1.7" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="49.6" cy="74.8" r="1.8" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="55.1" cy="95.1" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="56.3" cy="112.9" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="36.1" cy="110.7" r="2.1" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="42.1" cy="145.4" r="2.1" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="53.5" cy="130.6" r="1.3" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="37.7" cy="145.7" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="59.3" cy="154.7" r="2.0" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="56.3" cy="155.7" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="59.8" cy="149.4" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="55.3" cy="200.1" r="1.8" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="47.5" cy="201.9" r="1.4" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="40.1" cy="183.8" r="1.6" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="38.4" cy="209.9" r="1.6" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="52.7" cy="208.7" r="1.6" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><circle cx="61.6" cy="232.5" r="1.9" fill="#FFFDF8" stroke="#D9CFBC" stroke-width=".4"/><g transform="rotate(10 46.0 44.0)"><circle cx="46.0" cy="44.0" r="30.0" fill="url(#petal)" stroke="#D8CDB6" stroke-width=".6"/><ellipse cx="61.7" cy="44.0" rx="14.2" ry="10.3" transform="rotate(90 61.7 44.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="55.8" cy="56.3" rx="14.2" ry="10.3" transform="rotate(141 55.8 56.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="42.5" cy="59.3" rx="14.2" ry="10.3" transform="rotate(193 42.5 59.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="31.9" cy="50.8" rx="14.2" ry="10.3" transform="rotate(244 31.9 50.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="31.9" cy="37.2" rx="14.2" ry="10.3" transform="rotate(296 31.9 37.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="42.5" cy="28.7" rx="14.2" ry="10.3" transform="rotate(347 42.5 28.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="55.8" cy="31.7" rx="14.2" ry="10.3" transform="rotate(399 55.8 31.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="57.2" cy="48.8" rx="11.1" ry="8.0" transform="rotate(113 57.2 48.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="47.5" cy="56.1" rx="11.1" ry="8.0" transform="rotate(173 47.5 56.1)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="36.3" cy="51.4" rx="11.1" ry="8.0" transform="rotate(233 36.3 51.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="34.8" cy="39.2" rx="11.1" ry="8.0" transform="rotate(293 34.8 39.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="44.5" cy="31.9" rx="11.1" ry="8.0" transform="rotate(353 44.5 31.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="55.7" cy="36.6" rx="11.1" ry="8.0" transform="rotate(413 55.7 36.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="52.0" cy="50.2" rx="7.8" ry="5.6" transform="rotate(136 52.0 50.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="42.0" cy="51.6" rx="7.8" ry="5.6" transform="rotate(208 42.0 51.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="37.5" cy="42.5" rx="7.8" ry="5.6" transform="rotate(280 37.5 42.5)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="44.8" cy="35.5" rx="7.8" ry="5.6" transform="rotate(352 44.8 35.5)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="53.7" cy="40.2" rx="7.8" ry="5.6" transform="rotate(424 53.7 40.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M46.0 44.0 L46.6 44.2 L47.0 44.8 L46.9 45.6 L46.4 46.5 L45.4 47.1 L44.1 47.3 L42.6 46.8 L41.3 45.7 L40.3 44.0 L40.1 41.8 L40.7 39.5 L42.3 37.4 L44.7 35.9 L47.6 35.3 L50.8 35.9 L53.8 37.6 L56.1 40.5" fill="none" stroke="#C9B994" stroke-width=".7"/></g><g transform="rotate(40 104.0 30.0)"><circle cx="104.0" cy="30.0" r="19.0" fill="url(#petal)" stroke="#D8CDB6" stroke-width=".6"/><ellipse cx="113.9" cy="30.0" rx="9.0" ry="6.5" transform="rotate(90 113.9 30.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="110.2" cy="37.8" rx="9.0" ry="6.5" transform="rotate(141 110.2 37.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="101.8" cy="39.7" rx="9.0" ry="6.5" transform="rotate(193 101.8 39.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="95.1" cy="34.3" rx="9.0" ry="6.5" transform="rotate(244 95.1 34.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="95.1" cy="25.7" rx="9.0" ry="6.5" transform="rotate(296 95.1 25.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="101.8" cy="20.3" rx="9.0" ry="6.5" transform="rotate(347 101.8 20.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="110.2" cy="22.2" rx="9.0" ry="6.5" transform="rotate(399 110.2 22.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="111.1" cy="33.0" rx="7.0" ry="5.1" transform="rotate(113 111.1 33.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="105.0" cy="37.7" rx="7.0" ry="5.1" transform="rotate(173 105.0 37.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="97.8" cy="34.7" rx="7.0" ry="5.1" transform="rotate(233 97.8 34.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="96.9" cy="27.0" rx="7.0" ry="5.1" transform="rotate(293 96.9 27.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="103.0" cy="22.3" rx="7.0" ry="5.1" transform="rotate(353 103.0 22.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="110.2" cy="25.3" rx="7.0" ry="5.1" transform="rotate(413 110.2 25.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="107.8" cy="33.9" rx="4.9" ry="3.6" transform="rotate(136 107.8 33.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="101.5" cy="34.8" rx="4.9" ry="3.6" transform="rotate(208 101.5 34.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="98.6" cy="29.1" rx="4.9" ry="3.6" transform="rotate(280 98.6 29.1)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="103.2" cy="24.6" rx="4.9" ry="3.6" transform="rotate(352 103.2 24.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="108.9" cy="27.6" rx="4.9" ry="3.6" transform="rotate(424 108.9 27.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M104.0 30.0 L104.4 30.1 L104.6 30.5 L104.6 31.0 L104.3 31.6 L103.6 32.0 L102.8 32.1 L101.8 31.8 L101.0 31.1 L100.4 30.0 L100.3 28.6 L100.7 27.1 L101.7 25.8 L103.2 24.9 L105.0 24.5 L107.1 24.9 L109.0 26.0 L110.4 27.8" fill="none" stroke="#C9B994" stroke-width=".7"/></g><g transform="rotate(-20 28.0 104.0)"><circle cx="28.0" cy="104.0" r="18.0" fill="url(#petal)" stroke="#D8CDB6" stroke-width=".6"/><ellipse cx="37.4" cy="104.0" rx="8.5" ry="6.2" transform="rotate(90 37.4 104.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="33.9" cy="111.4" rx="8.5" ry="6.2" transform="rotate(141 33.9 111.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="25.9" cy="113.2" rx="8.5" ry="6.2" transform="rotate(193 25.9 113.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="19.5" cy="108.1" rx="8.5" ry="6.2" transform="rotate(244 19.5 108.1)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="19.5" cy="99.9" rx="8.5" ry="6.2" transform="rotate(296 19.5 99.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="25.9" cy="94.8" rx="8.5" ry="6.2" transform="rotate(347 25.9 94.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="33.9" cy="96.6" rx="8.5" ry="6.2" transform="rotate(399 33.9 96.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="34.7" cy="106.9" rx="6.7" ry="4.8" transform="rotate(113 34.7 106.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="28.9" cy="111.3" rx="6.7" ry="4.8" transform="rotate(173 28.9 111.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="22.2" cy="108.4" rx="6.7" ry="4.8" transform="rotate(233 22.2 108.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="21.3" cy="101.1" rx="6.7" ry="4.8" transform="rotate(293 21.3 101.1)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="27.1" cy="96.7" rx="6.7" ry="4.8" transform="rotate(353 27.1 96.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="33.8" cy="99.6" rx="6.7" ry="4.8" transform="rotate(413 33.8 99.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="31.6" cy="107.7" rx="4.7" ry="3.4" transform="rotate(136 31.6 107.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="25.6" cy="108.6" rx="4.7" ry="3.4" transform="rotate(208 25.6 108.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="22.9" cy="103.1" rx="4.7" ry="3.4" transform="rotate(280 22.9 103.1)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="27.3" cy="98.9" rx="4.7" ry="3.4" transform="rotate(352 27.3 98.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="32.6" cy="101.7" rx="4.7" ry="3.4" transform="rotate(424 32.6 101.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M28.0 104.0 L28.4 104.1 L28.6 104.5 L28.6 105.0 L28.3 105.5 L27.7 105.9 L26.9 106.0 L26.0 105.7 L25.2 105.0 L24.6 104.0 L24.5 102.7 L24.8 101.3 L25.8 100.0 L27.2 99.2 L29.0 98.8 L30.9 99.1 L32.7 100.2 L34.1 101.9" fill="none" stroke="#C9B994" stroke-width=".7"/></g><path d="M70.0 70.0 Q71.5 86.9 88.4 88.4 Q86.9 71.5 70.0 70.0Z" fill="url(#leaf)"/><path d="M70.0 70.0 L88.4 88.4" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M64.0 78.0 Q59.1 91.5 71.5 98.7 Q76.4 85.2 64.0 78.0Z" fill="url(#leaf2)"/><path d="M64.0 78.0 L71.5 98.7" stroke="#6F7F64" stroke-width=".4" opacity=".6"/></symbol>
+      <symbol id="floral-spray" viewBox="0 0 240 70"><path d="M10 40 Q70 28 120 36 Q170 44 230 30" fill="none" stroke="#7D8C71" stroke-width="1"/><path d="M24.0 42.6 Q17.0 36.7 10.0 42.6 Q17.0 48.5 24.0 42.6Z" fill="url(#leaf2)"/><path d="M24.0 42.6 L10.0 42.6" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M42.0 43.3 Q51.1 43.3 52.7 34.3 Q43.6 34.3 42.0 43.3Z" fill="url(#leaf)"/><path d="M42.0 43.3 L52.7 34.3" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M60.0 42.6 Q53.0 36.8 46.0 42.6 Q53.0 48.5 60.0 42.6Z" fill="url(#leaf)"/><path d="M60.0 42.6 L46.0 42.6" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M78.0 40.7 Q87.1 40.7 88.7 31.7 Q79.6 31.7 78.0 40.7Z" fill="url(#leaf2)"/><path d="M78.0 40.7 L88.7 31.7" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M96.0 38.0 Q89.0 32.2 82.0 38.0 Q89.0 43.9 96.0 38.0Z" fill="url(#leaf)"/><path d="M96.0 38.0 L82.0 38.0" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M114.0 35.5 Q123.1 35.5 124.7 26.5 Q115.6 26.5 114.0 35.5Z" fill="url(#leaf)"/><path d="M114.0 35.5 L124.7 26.5" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M132.0 33.8 Q125.0 27.9 118.0 33.8 Q125.0 39.6 132.0 33.8Z" fill="url(#leaf2)"/><path d="M132.0 33.8 L118.0 33.8" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M150.0 33.4 Q159.1 33.4 160.7 24.4 Q151.6 24.4 150.0 33.4Z" fill="url(#leaf)"/><path d="M150.0 33.4 L160.7 24.4" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M168.0 34.3 Q161.0 28.4 154.0 34.3 Q161.0 40.2 168.0 34.3Z" fill="url(#leaf)"/><path d="M168.0 34.3 L154.0 34.3" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M186.0 36.1 Q195.1 36.2 196.7 27.1 Q187.6 27.1 186.0 36.1Z" fill="url(#leaf2)"/><path d="M186.0 36.1 L196.7 27.1" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M204.0 38.1 Q197.0 32.2 190.0 38.1 Q197.0 44.0 204.0 38.1Z" fill="url(#leaf)"/><path d="M204.0 38.1 L190.0 38.1" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><g transform="rotate(0 120.0 34.0)"><circle cx="120.0" cy="34.0" r="14.0" fill="url(#petal)" stroke="#D8CDB6" stroke-width=".6"/><ellipse cx="127.3" cy="34.0" rx="6.6" ry="4.8" transform="rotate(90 127.3 34.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="124.6" cy="39.7" rx="6.6" ry="4.8" transform="rotate(141 124.6 39.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="118.4" cy="41.1" rx="6.6" ry="4.8" transform="rotate(193 118.4 41.1)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="113.4" cy="37.2" rx="6.6" ry="4.8" transform="rotate(244 113.4 37.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="113.4" cy="30.8" rx="6.6" ry="4.8" transform="rotate(296 113.4 30.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="118.4" cy="26.9" rx="6.6" ry="4.8" transform="rotate(347 118.4 26.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="124.6" cy="28.3" rx="6.6" ry="4.8" transform="rotate(399 124.6 28.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="125.2" cy="36.2" rx="5.2" ry="3.7" transform="rotate(113 125.2 36.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="120.7" cy="39.7" rx="5.2" ry="3.7" transform="rotate(173 120.7 39.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="115.5" cy="37.4" rx="5.2" ry="3.7" transform="rotate(233 115.5 37.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="114.8" cy="31.8" rx="5.2" ry="3.7" transform="rotate(293 114.8 31.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="119.3" cy="28.3" rx="5.2" ry="3.7" transform="rotate(353 119.3 28.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="124.5" cy="30.6" rx="5.2" ry="3.7" transform="rotate(413 124.5 30.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="122.8" cy="36.9" rx="3.6" ry="2.6" transform="rotate(136 122.8 36.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="118.1" cy="37.5" rx="3.6" ry="2.6" transform="rotate(208 118.1 37.5)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="116.1" cy="33.3" rx="3.6" ry="2.6" transform="rotate(280 116.1 33.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="119.4" cy="30.0" rx="3.6" ry="2.6" transform="rotate(352 119.4 30.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="123.6" cy="32.2" rx="3.6" ry="2.6" transform="rotate(424 123.6 32.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M120.0 34.0 L120.3 34.1 L120.4 34.4 L120.4 34.8 L120.2 35.2 L119.7 35.4 L119.1 35.5 L118.4 35.3 L117.8 34.8 L117.4 34.0 L117.2 33.0 L117.5 31.9 L118.3 30.9 L119.4 30.2 L120.8 30.0 L122.3 30.2 L123.6 31.0 L124.7 32.4" fill="none" stroke="#C9B994" stroke-width=".7"/></g><g transform="rotate(30 92.0 38.0)"><circle cx="92.0" cy="38.0" r="9.0" fill="url(#petal)" stroke="#D8CDB6" stroke-width=".6"/><ellipse cx="96.7" cy="38.0" rx="4.3" ry="3.1" transform="rotate(90 96.7 38.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="94.9" cy="41.7" rx="4.3" ry="3.1" transform="rotate(141 94.9 41.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="91.0" cy="42.6" rx="4.3" ry="3.1" transform="rotate(193 91.0 42.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="87.8" cy="40.0" rx="4.3" ry="3.1" transform="rotate(244 87.8 40.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="87.8" cy="36.0" rx="4.3" ry="3.1" transform="rotate(296 87.8 36.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="91.0" cy="33.4" rx="4.3" ry="3.1" transform="rotate(347 91.0 33.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="94.9" cy="34.3" rx="4.3" ry="3.1" transform="rotate(399 94.9 34.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="95.4" cy="39.4" rx="3.3" ry="2.4" transform="rotate(113 95.4 39.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="92.5" cy="41.6" rx="3.3" ry="2.4" transform="rotate(173 92.5 41.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="89.1" cy="40.2" rx="3.3" ry="2.4" transform="rotate(233 89.1 40.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="88.6" cy="36.6" rx="3.3" ry="2.4" transform="rotate(293 88.6 36.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="91.5" cy="34.4" rx="3.3" ry="2.4" transform="rotate(353 91.5 34.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="94.9" cy="35.8" rx="3.3" ry="2.4" transform="rotate(413 94.9 35.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="93.8" cy="39.8" rx="2.3" ry="1.7" transform="rotate(136 93.8 39.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="90.8" cy="40.3" rx="2.3" ry="1.7" transform="rotate(208 90.8 40.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="89.5" cy="37.6" rx="2.3" ry="1.7" transform="rotate(280 89.5 37.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="91.6" cy="35.5" rx="2.3" ry="1.7" transform="rotate(352 91.6 35.5)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="94.3" cy="36.9" rx="2.3" ry="1.7" transform="rotate(424 94.3 36.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M92.0 38.0 L92.2 38.1 L92.3 38.2 L92.3 38.5 L92.1 38.7 L91.8 38.9 L91.4 39.0 L91.0 38.8 L90.6 38.5 L90.3 38.0 L90.2 37.3 L90.4 36.6 L90.9 36.0 L91.6 35.6 L92.5 35.4 L93.5 35.6 L94.3 36.1 L95.0 36.9" fill="none" stroke="#C9B994" stroke-width=".7"/></g><g transform="rotate(-30 148.0 37.0)"><circle cx="148.0" cy="37.0" r="9.0" fill="url(#petal)" stroke="#D8CDB6" stroke-width=".6"/><ellipse cx="152.7" cy="37.0" rx="4.3" ry="3.1" transform="rotate(90 152.7 37.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="150.9" cy="40.7" rx="4.3" ry="3.1" transform="rotate(141 150.9 40.7)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="147.0" cy="41.6" rx="4.3" ry="3.1" transform="rotate(193 147.0 41.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="143.8" cy="39.0" rx="4.3" ry="3.1" transform="rotate(244 143.8 39.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="143.8" cy="35.0" rx="4.3" ry="3.1" transform="rotate(296 143.8 35.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="147.0" cy="32.4" rx="4.3" ry="3.1" transform="rotate(347 147.0 32.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="150.9" cy="33.3" rx="4.3" ry="3.1" transform="rotate(399 150.9 33.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="151.4" cy="38.4" rx="3.3" ry="2.4" transform="rotate(113 151.4 38.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="148.5" cy="40.6" rx="3.3" ry="2.4" transform="rotate(173 148.5 40.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="145.1" cy="39.2" rx="3.3" ry="2.4" transform="rotate(233 145.1 39.2)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="144.6" cy="35.6" rx="3.3" ry="2.4" transform="rotate(293 144.6 35.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="147.5" cy="33.4" rx="3.3" ry="2.4" transform="rotate(353 147.5 33.4)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="150.9" cy="34.8" rx="3.3" ry="2.4" transform="rotate(413 150.9 34.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="149.8" cy="38.8" rx="2.3" ry="1.7" transform="rotate(136 149.8 38.8)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="146.8" cy="39.3" rx="2.3" ry="1.7" transform="rotate(208 146.8 39.3)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="145.5" cy="36.6" rx="2.3" ry="1.7" transform="rotate(280 145.5 36.6)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="147.6" cy="34.5" rx="2.3" ry="1.7" transform="rotate(352 147.6 34.5)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><ellipse cx="150.3" cy="35.9" rx="2.3" ry="1.7" transform="rotate(424 150.3 35.9)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M148.0 37.0 L148.2 37.1 L148.3 37.2 L148.3 37.5 L148.1 37.7 L147.8 37.9 L147.4 38.0 L147.0 37.8 L146.6 37.5 L146.3 37.0 L146.2 36.3 L146.4 35.6 L146.9 35.0 L147.6 34.6 L148.5 34.4 L149.5 34.6 L150.3 35.1 L151.0 35.9" fill="none" stroke="#C9B994" stroke-width=".7"/></g><ellipse cx="60.0" cy="34.0" rx="3.1" ry="4.5" transform="rotate(-70 60.0 34.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M62.5 34.9 Q65.8 36.8 68.3 33.9 Q65.0 32.0 62.5 34.9Z" fill="url(#leaf2)"/><path d="M62.5 34.9 L68.3 33.9" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M62.5 34.9 Q62.5 38.7 66.3 39.4 Q66.3 35.6 62.5 34.9Z" fill="url(#leaf2)"/><path d="M62.5 34.9 L66.3 39.4" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><ellipse cx="184.0" cy="36.0" rx="3.1" ry="4.5" transform="rotate(70 184.0 36.0)" fill="url(#petal)" stroke="#D3C6AC" stroke-width=".5"/><path d="M181.5 36.9 Q177.7 37.6 177.7 41.4 Q181.5 40.7 181.5 36.9Z" fill="url(#leaf2)"/><path d="M181.5 36.9 L177.7 41.4" stroke="#6F7F64" stroke-width=".4" opacity=".6"/><path d="M181.5 36.9 Q179.0 34.0 175.7 35.9 Q178.2 38.8 181.5 36.9Z" fill="url(#leaf2)"/><path d="M181.5 36.9 L175.7 35.9" stroke="#6F7F64" stroke-width=".4" opacity=".6"/></symbol>
+      <symbol id="seal" viewBox="0 0 100 100">
+        <path d="M98.1 50.0 L96.7 56.1 L95.7 62.2 L94.3 68.3 L90.8 73.5 L88.0 79.1 L82.2 82.2 L77.9 86.4 L74.0 91.5 L67.9 93.1 L62.4 96.1 L55.8 93.9 L50.0 97.5 L44.1 94.5 L38.0 94.6 L32.3 92.8 L28.1 88.0 L22.8 85.5 L17.0 83.0 L12.1 79.1 L9.2 73.6 L8.9 67.0 L4.3 62.2 L6.0 55.8 L1.9 50.0 L6.0 44.2 L7.7 38.7 L6.0 31.8 L11.3 27.6 L14.5 22.8 L14.8 14.8 L21.0 12.2 L27.5 11.0 L31.6 5.6 L38.0 5.4 L43.9 3.6 L50.0 3.7 L56.3 2.5 L62.1 4.8 L68.4 5.6 L73.9 8.7 L77.5 14.2 L83.2 16.8 L85.3 22.9 L88.5 27.8 L90.7 33.1 L93.6 38.3 L96.1 43.9Z" fill="url(#wax)"/>
+        <circle cx="50" cy="50" r="35" fill="none" stroke="#8C6A33" stroke-opacity=".55" stroke-width="1.2"/>
+        <circle cx="50" cy="50" r="31" fill="none" stroke="#F6E5B8" stroke-opacity=".5" stroke-width=".6"/>
+        <ellipse cx="38" cy="30" rx="14" ry="7" fill="#FFF6DA" opacity=".35" transform="rotate(-30 38 30)"/>
       </symbol>
-      <symbol id="crest-mini" viewBox="0 0 200 240"><g fill="none" stroke="url(#gold)" stroke-linecap="round">
-<path pathLength="1" d="M38 222 V104 A62 62 0 0 1 162 104 V222" stroke-width="1.3"/>
-<path pathLength="1" d="M46 214 V104 A54 54 0 0 1 154 104 V214" stroke-width="0.7"/>
-<path pathLength="1" d="M30 222 H170" stroke-width="1.1"/>
-<path pathLength="1" d="M30 222 V196 H38 M170 222 V196 H162" stroke-width="0.9"/>
-<path pathLength="1" d="M22 230 H178" stroke-width="0.6"/>
-<path pathLength="1" d="M84.8 113.1 L58.2 104.4" stroke-width="0.8"/>
-<path pathLength="1" d="M85.9 110.4 L68.3 100.9" stroke-width="0.8"/>
-<path pathLength="1" d="M87.5 108.0 L65.6 90.6" stroke-width="0.8"/>
-<path pathLength="1" d="M89.5 106.0 L76.3 90.9" stroke-width="0.8"/>
-<path pathLength="1" d="M91.8 104.3 L77.4 80.2" stroke-width="0.8"/>
-<path pathLength="1" d="M94.4 103.0 L87.4 84.3" stroke-width="0.8"/>
-<path pathLength="1" d="M97.1 102.3 L92.1 74.7" stroke-width="0.8"/>
-<path pathLength="1" d="M100.0 102.0 L100.0 82.0" stroke-width="0.8"/>
-<path pathLength="1" d="M102.9 102.3 L107.9 74.7" stroke-width="0.8"/>
-<path pathLength="1" d="M105.6 103.0 L112.6 84.3" stroke-width="0.8"/>
-<path pathLength="1" d="M108.2 104.3 L122.6 80.2" stroke-width="0.8"/>
-<path pathLength="1" d="M110.5 106.0 L123.7 90.9" stroke-width="0.8"/>
-<path pathLength="1" d="M112.5 108.0 L134.4 90.6" stroke-width="0.8"/>
-<path pathLength="1" d="M114.1 110.4 L131.7 100.9" stroke-width="0.8"/>
-<path pathLength="1" d="M115.2 113.1 L141.8 104.4" stroke-width="0.8"/>
-<path pathLength="1" d="M84 118 A16 16 0 0 1 116 118" stroke-width="0.9"/>
-<path pathLength="1" d="M100 30 L108 40 L100 50 L92 40 Z" stroke-width="1.0"/>
-<path pathLength="1" d="M100 50 V60" stroke-width="0.8"/>
-<path pathLength="1" d="M70 200 H130" stroke-width="0.7"/>
-<path pathLength="1" d="M100 194 L106 200 L100 206 L94 200 Z" stroke-width="0.9"/>
-<path pathLength="1" d="M38 150 H46 M154 150 H162" stroke-width="0.8"/>
-<path pathLength="1" d="M38 180 H46 M154 180 H162" stroke-width="0.8"/>
-      </g></symbol>
-      <symbol id="divider" viewBox="0 0 240 16">
-        <path d="M4 8H92M148 8H236" fill="none" stroke="url(#gold)" stroke-width=".9"/>
-        <path d="M30 4.5H92M148 4.5H210M30 11.5H92M148 11.5H210" fill="none" stroke="url(#gold)" stroke-width=".4"/>
-        <path d="M120 2l6 6-6 6-6-6z" fill="url(#gold)"/>
-        <path d="M100 8a20 20 0 0 1 40 0" fill="none" stroke="url(#gold)" stroke-width=".7"/>
-        <path d="M104 8l-8-5M136 8l8-5M110 6l-4-6M130 6l4-6M120 4V-2" stroke="url(#gold)" stroke-width=".6"/>
+      <symbol id="rings" viewBox="0 0 120 70">
+        <circle cx="48" cy="40" r="22" fill="none" stroke="url(#gold)" stroke-width="3"/>
+        <circle cx="72" cy="40" r="22" fill="none" stroke="url(#gold)" stroke-width="3"/>
+        <path d="M44 14l4-8 4 8-4 4z" fill="url(#gold)"/>
       </symbol>
     </defs>
   </svg>
@@ -120,91 +92,77 @@
   </nav>
 
   <main id="main">
-    <!-- A · Opening: video scene behind a velvet curtain gate -->
-    <section class="opening scene scene--full" id="opening" aria-labelledby="opening-title" data-opening>
-      <div class="scene__media" data-scene="opening" aria-hidden="true"></div>
-      <canvas class="dust" data-dust data-fountains="burst" aria-hidden="true"></canvas>
+    <!-- A · Opening: the hero in an ornate arch, behind the envelope gate -->
+    <section class="opening" id="opening" aria-labelledby="opening-title" data-opening>
+      <div class="opening__bg" aria-hidden="true"></div>
+      <span class="corner-floral corner-floral--tl" aria-hidden="true"><svg viewBox="0 0 260 260"><use href="#floral-corner"/></svg></span>
+      <span class="corner-floral corner-floral--tr" aria-hidden="true"><svg viewBox="0 0 260 260"><use href="#floral-corner"/></svg></span>
+      <canvas class="dust" data-dust data-fall aria-hidden="true"></canvas>
 
-      <div class="rays" aria-hidden="true"></div>
       <div class="opening__stage" data-opening-stage>
-        <p class="eyebrow eyebrow--light opening__eyebrow" data-bind="openingEyebrow" data-hero="1">To‘yga taklifnoma</p>
-        <h1 class="opening__title" id="opening-title" tabindex="-1">
-          <span class="opening__name gold-text" data-split data-bind="groomUpper" data-hero="2">KAMRON</span>
-          <span class="opening__amp" data-hero="3" aria-label="va">&amp;</span>
-          <span class="opening__name gold-text" data-split data-bind="brideUpper" data-hero="4">FARANGIZ</span>
-        </h1>
-        <p class="opening__date" data-bind="dateDots" data-hero="5">06 · 10 · 2026</p>
-        <p class="opening__subtitle" data-bind="openingSubtitle" data-hero="6">Hayotimizning eng go‘zal kunida sizni yonimizda ko‘rishdan mamnun bo‘lamiz.</p>
-        <a class="scroll-cue" href="#taklif" data-scroll-cue data-hero="7">
-          <span>Pastga</span><i aria-hidden="true"></i>
-        </a>
+        <div class="hero-arch" data-hero="1">
+          <svg class="hero-arch__frame" viewBox="0 0 320 520" preserveAspectRatio="none" aria-hidden="true">
+            <path class="hero-arch__line" pathLength="1" d="M10 515V160C10 77 77 10 160 10S310 77 310 160V515"/>
+            <path class="hero-arch__line hero-arch__line--thin" pathLength="1" d="M20 515V162C20 85 83 22 160 22S300 85 300 162V515"/>
+          </svg>
+          <svg class="hero-arch__crown" viewBox="0 0 60 30" aria-hidden="true"><path d="M30 2l5 10 10-4-5 12H20l-5-12 10 4z" fill="none" stroke="url(#gold)" stroke-width="1"/><circle cx="30" cy="25" r="2" fill="url(#gold)"/></svg>
+          <div class="hero-arch__window scene__media" data-scene="opening" aria-hidden="true"></div>
+          <div class="hero-arch__content">
+            <p class="eyebrow opening__eyebrow" data-bind="openingEyebrow" data-hero="2">Taklifnoma</p>
+            <h1 class="opening__title" id="opening-title" tabindex="-1">
+              <span class="opening__name script write" data-bind="groom" data-hero="3">Kamron</span>
+              <span class="opening__amp" data-hero="4" aria-label="va">&amp;</span>
+              <span class="opening__name script write" data-bind="bride" data-hero="5">Farangiz</span>
+            </h1>
+            <p class="opening__subtitle" data-bind="openingSubtitle" data-hero="6">Ikki qalb bir taqdirni tanladi — endi u bizning umumiy yo‘limiz.</p>
+            <p class="opening__date" data-bind="dateDots" data-hero="7">06 · 10 · 2026</p>
+            <p class="opening__time" data-bind="timeLabel" data-hero="7">Soat 16:00</p>
+          </div>
+          <div class="spray spray--arch" aria-hidden="true"><svg viewBox="0 0 240 70"><use href="#floral-spray"/></svg></div>
+        </div>
+        <a class="scroll-cue" href="#taklif" data-scroll-cue data-hero="8"><span>Pastga suring</span><i aria-hidden="true"></i></a>
       </div>
 
-      <!-- The gate: two velvet panels with a gold seam, closed until the guest opens it. -->
+      <!-- The gate: a lace envelope sealed with gold wax. Tap the seal to open. -->
       <div class="curtain" data-curtain>
-        <div class="curtain__panel curtain__panel--left" aria-hidden="true"></div>
-        <div class="curtain__panel curtain__panel--right" aria-hidden="true"></div>
-        <div class="curtain__flash" aria-hidden="true"></div>
+        <span class="corner-floral corner-floral--tl" aria-hidden="true"><svg viewBox="0 0 260 260"><use href="#floral-corner"/></svg></span>
+        <span class="corner-floral corner-floral--tr" aria-hidden="true"><svg viewBox="0 0 260 260"><use href="#floral-corner"/></svg></span>
+        <span class="corner-floral corner-floral--bl" aria-hidden="true"><svg viewBox="0 0 260 260"><use href="#floral-corner"/></svg></span>
+        <span class="corner-floral corner-floral--br" aria-hidden="true"><svg viewBox="0 0 260 260"><use href="#floral-corner"/></svg></span>
         <div class="curtain__content">
-          <svg class="crest emblem" viewBox="0 0 200 240" role="img" aria-label="Kamron va Farangiz monogrammasi">
-            <g class="emblem__lines">
-              <path class="emblem__line" style="--i:0" pathLength="1" d="M38 222 V104 A62 62 0 0 1 162 104 V222" stroke-width="1.3"/>
-              <path class="emblem__line" style="--i:1" pathLength="1" d="M46 214 V104 A54 54 0 0 1 154 104 V214" stroke-width="0.7"/>
-              <path class="emblem__line" style="--i:2" pathLength="1" d="M30 222 H170" stroke-width="1.1"/>
-              <path class="emblem__line" style="--i:3" pathLength="1" d="M30 222 V196 H38 M170 222 V196 H162" stroke-width="0.9"/>
-              <path class="emblem__line" style="--i:4" pathLength="1" d="M22 230 H178" stroke-width="0.6"/>
-              <path class="emblem__line" style="--i:5" pathLength="1" d="M84.8 113.1 L58.2 104.4" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:6" pathLength="1" d="M85.9 110.4 L68.3 100.9" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:7" pathLength="1" d="M87.5 108.0 L65.6 90.6" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:8" pathLength="1" d="M89.5 106.0 L76.3 90.9" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:9" pathLength="1" d="M91.8 104.3 L77.4 80.2" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:10" pathLength="1" d="M94.4 103.0 L87.4 84.3" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:11" pathLength="1" d="M97.1 102.3 L92.1 74.7" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:12" pathLength="1" d="M100.0 102.0 L100.0 82.0" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:13" pathLength="1" d="M102.9 102.3 L107.9 74.7" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:14" pathLength="1" d="M105.6 103.0 L112.6 84.3" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:15" pathLength="1" d="M108.2 104.3 L122.6 80.2" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:16" pathLength="1" d="M110.5 106.0 L123.7 90.9" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:17" pathLength="1" d="M112.5 108.0 L134.4 90.6" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:18" pathLength="1" d="M114.1 110.4 L131.7 100.9" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:19" pathLength="1" d="M115.2 113.1 L141.8 104.4" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:20" pathLength="1" d="M84 118 A16 16 0 0 1 116 118" stroke-width="0.9"/>
-              <path class="emblem__line" style="--i:21" pathLength="1" d="M100 30 L108 40 L100 50 L92 40 Z" stroke-width="1.0"/>
-              <path class="emblem__line" style="--i:22" pathLength="1" d="M100 50 V60" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:23" pathLength="1" d="M70 200 H130" stroke-width="0.7"/>
-              <path class="emblem__line" style="--i:24" pathLength="1" d="M100 194 L106 200 L100 206 L94 200 Z" stroke-width="0.9"/>
-              <path class="emblem__line" style="--i:25" pathLength="1" d="M38 150 H46 M154 150 H162" stroke-width="0.8"/>
-              <path class="emblem__line" style="--i:26" pathLength="1" d="M38 180 H46 M154 180 H162" stroke-width="0.8"/>
-            </g>
-            <text class="crest__mono" x="100" y="172" text-anchor="middle"><tspan data-bind="initialGroom">K</tspan><tspan class="crest__amp" dx="2">&amp;</tspan><tspan dx="2" data-bind="initialBride">F</tspan></text>
-          </svg>
-          <p class="eyebrow eyebrow--light curtain__eyebrow" data-bind="openingEyebrow">To‘yga taklifnoma</p>
-          <p class="curtain__names" data-bind="namesInline">Kamron &amp; Farangiz</p>
+          <p class="eyebrow curtain__eyebrow" data-bind="openingEyebrow">Taklifnoma</p>
+          <p class="curtain__names script" data-bind="namesInline">Kamron &amp; Farangiz</p>
           <p class="curtain__date" data-bind="dateDots">06 · 10 · 2026</p>
-          <button class="btn btn--gold curtain__button" type="button" data-open-invitation>
-            <span data-bind="openingButton">Taklifnomani ochish</span>
-          </button>
+          <div class="envelope">
+            <div class="envelope__back"></div>
+            <div class="envelope__card" aria-hidden="true">
+              <span class="envelope__card-eyebrow">Taklifnoma</span>
+              <span class="envelope__card-names script" data-bind="namesInline">Kamron &amp; Farangiz</span>
+              <span class="envelope__card-date" data-bind="dateDots">06 · 10 · 2026</span>
+            </div>
+            <div class="envelope__front"></div>
+            <div class="envelope__flap"><div class="envelope__flap-inner"></div></div>
+            <button class="seal curtain__button" type="button" data-open-invitation>
+              <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#seal"/>
+                <text class="seal__mono" x="50" y="60" text-anchor="middle"><tspan data-bind="initialGroom">K</tspan><tspan font-size="18">&amp;</tspan><tspan data-bind="initialBride">F</tspan></text>
+              </svg>
+              <span class="visually-hidden" data-bind="openingButton">Taklifnomani ochish</span>
+            </button>
+          </div>
+          <p class="curtain__hint">Ochish uchun muhrni bosing</p>
         </div>
       </div>
     </section>
 
-    <div class="marquee" aria-hidden="true"><div class="marquee__track" data-marquee></div></div>
-
-    <!-- B · Invitation: glass card over a living video background -->
-    <section class="section invitation scene" id="taklif" aria-labelledby="invitation-title" tabindex="-1">
-      <div class="scene__media" data-scene="invitation" aria-hidden="true"></div>
+    <!-- B · Invitation card -->
+    <section class="section invitation" id="taklif" aria-labelledby="invitation-title" tabindex="-1">
       <div class="container container--narrow">
-        <div class="invitation__card frame glass reveal">
-          <span class="frame__corner frame__corner--tl" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#filigree"/></svg></span>
-          <span class="frame__corner frame__corner--tr" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#filigree"/></svg></span>
-          <span class="frame__corner frame__corner--bl" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#filigree"/></svg></span>
-          <span class="frame__corner frame__corner--br" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#filigree"/></svg></span>
-          <p class="eyebrow eyebrow--light" data-bind="invitationEyebrow"></p>
-          <h2 class="invitation__greeting gold-text" id="invitation-title" data-bind="invitationGreeting"></h2>
-          <p class="invitation__lead" data-bind="invitationLead"></p>
-          <div class="gold-divider" aria-hidden="true"><svg viewBox="0 0 240 16"><use href="#divider"/></svg></div>
+        <div class="card invitation__card reveal">
+          <p class="eyebrow" data-bind="invitationEyebrow">Aziz mehmonimiz</p>
+          <h2 class="invitation__greeting script" id="invitation-title" data-bind="invitationGreeting">Sizni kutamiz</h2>
           <div class="invitation__body" data-slot="invitationBody"></div>
           <p class="invitation__signature" data-bind="invitationSignature"></p>
+          <div class="spray" aria-hidden="true"><svg viewBox="0 0 240 70"><use href="#floral-spray"/></svg></div>
         </div>
       </div>
     </section>
@@ -215,7 +173,7 @@
         <header class="section-head">
           <p class="eyebrow reveal">Bizning hikoyamiz</p>
           <h2 class="section-title reveal" id="story-title">Ikki yo‘l, <em>bitta</em> manzil</h2>
-          <div class="gold-divider reveal" aria-hidden="true"><svg viewBox="0 0 240 16"><use href="#divider"/></svg></div>
+          <div class="spray reveal" aria-hidden="true"><svg viewBox="0 0 240 70"><use href="#floral-spray"/></svg></div>
         </header>
         <div class="timeline">
           <div class="timeline__rail" aria-hidden="true"><span data-story-progress></span></div>
@@ -224,49 +182,32 @@
       </div>
     </section>
 
-    <!-- D · Wedding details -->
+    <!-- D · Date & time: calendar with the day sealed in gold, and the countdown -->
     <section class="section details" id="tafsilotlar" aria-labelledby="details-title">
-      <div class="container">
-        <header class="section-head">
-          <p class="eyebrow reveal">To‘y tafsilotlari</p>
-          <h2 class="section-title reveal" id="details-title" data-bind="namesInlineHtml"></h2>
-          <div class="gold-divider reveal" aria-hidden="true"><svg viewBox="0 0 240 16"><use href="#divider"/></svg></div>
-        </header>
-        <div class="details__grid">
-          <div class="details__date reveal" aria-hidden="true">
-            <span class="details__day gold-text" data-bind="day"></span>
-            <span class="details__month" data-bind="monthName"></span>
-            <span class="details__year" data-bind="year"></span>
-          </div>
-          <dl class="details__list">
-            <div class="details__item reveal"><dt>Sana</dt><dd data-bind="dateLong"></dd></div>
-            <div class="details__item reveal"><dt>Hafta kuni</dt><dd data-bind="weekday"></dd></div>
-            <div class="details__item reveal"><dt>Boshlanishi</dt><dd data-bind="time"></dd></div>
-            <div class="details__item reveal"><dt>To‘yxona</dt><dd><span data-bind="venueName"></span><span class="details__city" data-bind="venueCity"></span></dd></div>
-          </dl>
-        </div>
-      </div>
-    </section>
+      <div class="container container--narrow">
+        <div class="card calendar-card reveal">
+          <p class="eyebrow">Sana va vaqt</p>
+          <h2 class="section-script script" id="details-title">Baxtli kunimiz</h2>
+          <p class="calendar__month" data-bind="monthYear">Oktabr 2026</p>
+          <div class="calendar" data-calendar role="grid" aria-label="Oy taqvimi"></div>
+          <p class="calendar__time"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l2.5 1.5"/></svg> <span data-bind="timeLabel">Soat 16:00</span></p>
+          <p class="calendar__sr visually-hidden"><span data-bind="dateLong"></span>, <span data-bind="weekday"></span></p>
 
-    <!-- E · Countdown over the moonlit film -->
-    <section class="section countdown scene" id="sanoq" aria-labelledby="countdown-title">
-      <div class="scene__media" data-scene="countdown" aria-hidden="true"></div>
-      <div class="container">
-        <header class="section-head">
-          <p class="eyebrow eyebrow--light reveal">Kunlar sanog‘i</p>
-          <h2 class="section-title section-title--light reveal" id="countdown-title" data-countdown-title>Baxtli kungacha</h2>
-        </header>
-        <div class="countdown__timer reveal" data-countdown aria-hidden="false">
-          <div class="countdown__cell"><span class="countdown__value"><span class="countdown__digits gold-text" data-unit="days">00</span></span><span class="countdown__label" data-label="days">kun</span></div>
-          <div class="countdown__cell"><span class="countdown__value"><span class="countdown__digits gold-text" data-unit="hours">00</span></span><span class="countdown__label" data-label="hours">soat</span></div>
-          <div class="countdown__cell"><span class="countdown__value"><span class="countdown__digits gold-text" data-unit="minutes">00</span></span><span class="countdown__label" data-label="minutes">daqiqa</span></div>
-          <div class="countdown__cell"><span class="countdown__value"><span class="countdown__digits gold-text" data-unit="seconds">00</span></span><span class="countdown__label" data-label="seconds">soniya</span></div>
-        </div>
-        <p class="countdown__message reveal" data-countdown-message hidden></p>
-        <p class="visually-hidden" aria-live="polite" data-countdown-live></p>
-        <p class="countdown__note reveal" data-bind="countdownNote"></p>
-        <div class="details__actions reveal">
-          <button class="btn btn--gold-outline" type="button" data-add-calendar>Kalendarga qo‘shish</button>
+          <div class="countdown" id="sanoq">
+            <p class="eyebrow countdown__title" data-countdown-title>To‘yimizgacha qoldi</p>
+            <div class="countdown__timer" data-countdown aria-hidden="false">
+              <div class="countdown__cell"><span class="countdown__value"><span class="countdown__digits" data-unit="days">00</span></span><span class="countdown__label" data-label="days">kun</span></div>
+              <div class="countdown__cell"><span class="countdown__value"><span class="countdown__digits" data-unit="hours">00</span></span><span class="countdown__label" data-label="hours">soat</span></div>
+              <div class="countdown__cell"><span class="countdown__value"><span class="countdown__digits" data-unit="minutes">00</span></span><span class="countdown__label" data-label="minutes">daqiqa</span></div>
+              <div class="countdown__cell"><span class="countdown__value"><span class="countdown__digits" data-unit="seconds">00</span></span><span class="countdown__label" data-label="seconds">soniya</span></div>
+            </div>
+            <p class="countdown__message" data-countdown-message hidden></p>
+            <p class="visually-hidden" aria-live="polite" data-countdown-live></p>
+          </div>
+          <button class="btn btn--outline" type="button" data-add-calendar>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>
+            Kalendarga qo‘shish
+          </button>
         </div>
       </div>
     </section>
@@ -277,27 +218,31 @@
         <header class="section-head">
           <p class="eyebrow reveal">Galereya</p>
           <h2 class="section-title reveal" id="gallery-title">Lahzalar <em>xotirasi</em></h2>
-          <div class="gold-divider reveal" aria-hidden="true"><svg viewBox="0 0 240 16"><use href="#divider"/></svg></div>
+          <div class="spray reveal" aria-hidden="true"><svg viewBox="0 0 240 70"><use href="#floral-spray"/></svg></div>
         </header>
         <ul class="gallery__grid" data-slot="gallery"></ul>
       </div>
     </section>
 
-    <!-- G · Location -->
+    <!-- G · Location card -->
     <section class="section location" id="manzil" aria-labelledby="location-title">
-      <div class="container">
-        <div class="location__grid">
-          <figure class="location__photo arch-frame reveal reveal--image" data-slot="locationPhoto"></figure>
-          <div class="location__card">
-            <p class="eyebrow reveal">Manzil</p>
-            <h2 class="location__venue reveal" id="location-title" data-bind="venueName"></h2>
-            <p class="location__city reveal" data-bind="venueCity"></p>
-            <p class="location__address reveal" data-bind="venueAddress"></p>
-            <p class="location__time reveal" data-bind="dateTimeShort"></p>
-            <a class="btn btn--primary reveal" data-map-link target="_blank" rel="noopener">
-              Xaritada ochish <span class="visually-hidden">(yangi oynada)</span>
-            </a>
-          </div>
+      <div class="container container--narrow">
+        <div class="card location-card reveal">
+          <p class="eyebrow">Manzil</p>
+          <h2 class="section-script script location__venue" id="location-title" data-bind="venueName"></h2>
+          <p class="location__city" data-bind="venueCity"></p>
+          <p class="location__address" data-bind="venueAddress"></p>
+          <figure class="location__photo" data-slot="locationPhoto"></figure>
+          <a class="map-btn map-btn--primary" data-map-link target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>
+            <span><strong>Xaritada ko‘rish</strong><small>Google Xaritalar</small></span>
+            <span class="visually-hidden">(yangi oynada)</span>
+          </a>
+          <a class="map-btn" data-directions-link target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+            <span><strong>Yo‘l ko‘rsatish</strong><small>Turgan joyingizdan</small></span>
+            <span class="visually-hidden">(yangi oynada)</span>
+          </a>
         </div>
       </div>
     </section>
@@ -308,15 +253,11 @@
         <header class="section-head">
           <p class="eyebrow reveal">Javob qaytarish</p>
           <h2 class="section-title reveal" id="rsvp-title">Siz bilan <em>bo‘lamizmi?</em></h2>
-          <div class="gold-divider reveal" aria-hidden="true"><svg viewBox="0 0 240 16"><use href="#divider"/></svg></div>
+          <div class="spray reveal" aria-hidden="true"><svg viewBox="0 0 240 70"><use href="#floral-spray"/></svg></div>
           <p class="section-lead reveal" data-bind="rsvpLead"></p>
         </header>
 
-        <div class="rsvp__card frame reveal">
-          <span class="frame__corner frame__corner--tl" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#filigree"/></svg></span>
-          <span class="frame__corner frame__corner--tr" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#filigree"/></svg></span>
-          <span class="frame__corner frame__corner--bl" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#filigree"/></svg></span>
-          <span class="frame__corner frame__corner--br" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#filigree"/></svg></span>
+        <div class="rsvp__card card reveal">
           <form class="rsvp__form" data-rsvp-form novalidate>
             <div class="field">
               <label class="field__label" for="rsvp-name">Ism va familiyangiz</label>
@@ -382,18 +323,16 @@
       </div>
     </section>
 
-    <div class="marquee marquee--light" aria-hidden="true"><div class="marquee__track" data-marquee></div></div>
-
     <!-- I · Final scene -->
-    <section class="finale scene scene--full" id="yakun" aria-labelledby="finale-title">
-      <div class="scene__media" data-scene="finale" aria-hidden="true"></div>
-      <canvas class="dust" data-dust data-fountains="always" aria-hidden="true"></canvas>
+    <section class="finale" id="yakun" aria-labelledby="finale-title">
+      <span class="corner-floral corner-floral--bl" aria-hidden="true"><svg viewBox="0 0 260 260"><use href="#floral-corner"/></svg></span>
+      <span class="corner-floral corner-floral--br" aria-hidden="true"><svg viewBox="0 0 260 260"><use href="#floral-corner"/></svg></span>
+      <canvas class="dust" data-dust data-fall aria-hidden="true"></canvas>
       <div class="finale__content">
-        <svg class="finale__crest reveal" viewBox="0 0 200 240" aria-hidden="true"><use href="#crest-mini"/></svg>
-        <p class="eyebrow eyebrow--light reveal">Sizni kutamiz</p>
-        <h2 class="finale__names gold-text reveal" id="finale-title" data-bind="namesInlineHtml"></h2>
-        <div class="gold-divider reveal" aria-hidden="true"><svg viewBox="0 0 240 16"><use href="#divider"/></svg></div>
+        <svg class="finale__rings reveal" viewBox="0 0 120 70" aria-hidden="true"><use href="#rings"/></svg>
+        <h2 class="section-script script reveal" id="finale-title">Baxtli kunimizda</h2>
         <p class="finale__message reveal" data-bind="finalMessage"></p>
+        <p class="finale__names script reveal" data-bind="namesInline"></p>
         <p class="finale__date reveal" data-bind="dateDots"></p>
       </div>
     </section>
@@ -401,7 +340,6 @@
 
   <footer class="footer">
     <p><span data-bind="namesInline"></span> · <span data-bind="dateDots"></span></p>
-    <p class="footer__credit" data-bind="musicCredit"></p>
   </footer>
 
   <!-- Persistent music control (shown after the invitation is opened) -->

@@ -115,7 +115,7 @@
           message.textContent = "Baxtli kunimiz o‘tdi. Duolaringiz va yonimizda bo‘lganingiz uchun chin dildan minnatdormiz.";
           calendarBtn.hidden = true;
         } else {
-          title.textContent = "Baxtli kungacha";
+          title.textContent = "To‘yimizgacha qoldi";
         }
       }
 

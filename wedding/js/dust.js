@@ -66,9 +66,25 @@
     };
   }
 
+  function flakeSprite() {
+    // A small gold flake for light backgrounds (drawn normally, not additively).
+    var c = document.createElement("canvas");
+    c.width = c.height = 32;
+    var g = c.getContext("2d");
+    var gr = g.createRadialGradient(13, 12, 0, 16, 16, 15);
+    gr.addColorStop(0, "rgba(246, 226, 170, 1)");
+    gr.addColorStop(0.45, "rgba(196, 157, 86, 0.95)");
+    gr.addColorStop(0.8, "rgba(150, 112, 52, 0.5)");
+    gr.addColorStop(1, "rgba(150, 112, 52, 0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 32, 32);
+    return c;
+  }
+
   function Field(canvas, sprites, seed) {
     var ctx = canvas.getContext("2d");
     var mode = canvas.getAttribute("data-fountains") || "";
+    var fall = canvas.hasAttribute("data-fall"); // gold flakes drifting down (light pages)
     var burstAt = null;
     var dust = [], stars = [];
     var w = 0, h = 0, dpr = 1;
@@ -89,6 +105,22 @@
       stars = [];
       for (var j = 0, m = Math.min(26, Math.round((w * h) / 22000)); j < m; j++) {
         stars.push({ x: r(), y: r() * 0.85, size: 10 + r() * 22, period: 2.6 + r() * 4, ph: r() * 10 });
+      }
+    }
+
+    function drawFlakes(t) {
+      for (var i = 0; i < dust.length; i++) {
+        var p = dust[i];
+        var span = h + 40;
+        var y = ((p.y * span + p.speed * 0.9 * t) % span + span) % span - 20;
+        var x = p.x * w + Math.sin(t * p.swayF * 1.6 + p.ph) * p.sway * 1.3;
+        var s1 = Math.sin(t * p.tw + p.ph);
+        // Flakes catch the light as they turn: brightness and size pulse.
+        var a = (0.35 + 0.55 * s1 * s1) * Math.min(1, (h - y) / (h * 0.2));
+        if (a <= 0.02) continue;
+        ctx.globalAlpha = a;
+        var s = 2.2 + p.size * 0.55 * (0.7 + 0.3 * Math.abs(s1));
+        ctx.drawImage(sprites.flake, x - s / 2, y - s / 2, s, s);
       }
     }
 
@@ -173,6 +205,12 @@
       var t = Date.now() / 1000;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
+      if (fall) {
+        drawFlakes(t);
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
+        return;
+      }
       ctx.globalCompositeOperation = "lighter";
       drawDust(t);
       drawStars(t);
@@ -199,7 +237,7 @@
   window.LITC.dust = {
     init: function () {
       if (L.reducedMotion() || !("IntersectionObserver" in window)) return;
-      var sprites = { glow: glowSprite(), star: starSprite() };
+      var sprites = { glow: glowSprite(), star: starSprite(), flake: flakeSprite() };
       L.$$("[data-dust]").forEach(function (canvas, i) { new Field(canvas, sprites, 1337 + i * 101); });
     }
   };
