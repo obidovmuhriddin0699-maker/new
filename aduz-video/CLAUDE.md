@@ -7,8 +7,8 @@ Bu fayl keyingi ishlar uchun "xotira": foydalanuvchi tasdiqlagan uslub, ovoz va 
 - 1–26 ning Instagram versiyalari (`episodeN_ig.html` = asl qism + `reel.js` + `ig_config.js` + `igwrap.js`,
   `make_ig.py`, `ig_audio.py`, `build_ig.sh N`) → `instagram/`. Matnlar `ig_config.js`, post matnlari `instagram/captions.json`.
 - Joylash: Windsor.ai Instagram ulanishi (akkaunt 17841419124058324 = telegram_reklama777, `create_video_post`),
-  video/muqova — GitHub raw havolalari (repo ochiq). Reja `instagram/README.md`: har kuni 18:53 (Toshkent) 1 ta,
-  2026-10-16 dan kuniga 3 ta (09:53, 13:53, 18:53); vazifa trig_01Bp5FitH93XqTyCeTKFUhAs (shu sessiyaga bog'langan).
+  video/muqova — GitHub raw havolalari (repo ochiq). Reja `instagram/README.md`:
+  2026-10-16 dan kuniga 3 ta (12:53, 18:53, 21:53; instagram/STRATEGIYA.md); vazifa trig_01Bp5FitH93XqTyCeTKFUhAs (shu sessiyaga bog'langan).
 - Haqiqiy bot ("Target reklama bot", foydalanuvchi skrinshotlari): rollar Mijoz / Kanal egasi; reklama yaratish →
   WebApp 3 qadam (hudud → kategoriya → kanal: narx, obunachi, ko'rish, ER, bo'sh navbat) → sana/vaqt/interval →
   hisob-kitob → to'lov (hamyon, Click, Payme, demo) → moderatsiya → rejalashtirish. Statistika: kampaniyalar,
