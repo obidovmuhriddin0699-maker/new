@@ -60,9 +60,13 @@ class Settings(BaseSettings):
 
     # --- AI provider ---
     # "mock" is deterministic and for tests/demos only; refused in production.
-    ai_provider: Literal["ollama", "mock"] = "ollama"
+    ai_provider: Literal["ollama", "gemini", "groq", "mock"] = "ollama"
     ollama_base_url: str = "http://localhost:11434"
     ai_model: str = "qwen2.5:3b"
+    gemini_api_key: SecretStr = SecretStr("")
+    gemini_model: str = "gemini-1.5-pro"
+    groq_api_key: SecretStr = SecretStr("")
+    groq_model: str = "llama-3.3-70b-versatile"
     ai_timeout_seconds: float = 120.0
     ai_temperature: float = 0.6
     ai_max_output_tokens: int = 2048

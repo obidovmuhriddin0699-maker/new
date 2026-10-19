@@ -188,10 +188,16 @@ def builtin_response(prompt: str) -> str:
                 "AI Dasturlashni Butunlay O'zgartiradimi?",
                 "2026 Yilda Bilib Olish Shart Bo'lgan AI Trendlari",
             ],
-            "description": "Ushbu videoda sun'iy intellektning so'nggi yutuqlari haqida gaplashamiz.\n\n00:00 - Kirish\n02:30 - Asosiy modellar\n06:15 - Kelajak xulosalari\n\nKanalga obuna bo'ling va videoga layk bosing!",
+            "description": (
+                "Ushbu videoda sun'iy intellekt haqida gaplashamiz.\n\n"
+                "00:00 - Kirish\n02:30 - Asosiy modellar\n06:15 - Xulosalar\n\n"
+                "Kanalga obuna bo'ling!"
+            ),
             "tags": ["sun'iy intellekt", "ai", "texnologiya", "dasturlash", "kelajak"],
             "hashtags": ["#ai", "#texnologiya", "#dasturlash"],
-            "thumbnail_concept": "Katta 'AI KELAJAGI' yozuvi, zamonaviy neon ranglar va robot/odam kontrasti.",
+            "thumbnail_concept": (
+                "Katta 'AI KELAJAGI' yozuvi, zamonaviy neon ranglar va kontrast."
+            ),
             "pinned_comment": "Siz AI haqida qanday fikrdasiz? Izohda o'z fikringizni qoldiring!",
         }
     elif task == "youtube_shorts_script":
