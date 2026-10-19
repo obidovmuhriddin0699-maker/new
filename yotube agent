@@ -1,0 +1,75 @@
+# YouTube Agent & Channel Manager (Muxriddin AI)
+
+YouTube Data API v3 integratsiyasi va AI Agent yordamida:
+1. **Videolarni avtomatik yuklash (Upload)** — Katta hajmdagi videolarni ishonchli (resumable) yuklash.
+2. **Rejalashtirish (Scheduling)** — Videoni ma'lum bir sana va soatda avtomatik e'lon qilish (`publishAt`).
+3. **Kanal va videolar statistikasi (Analytics)** — Obunachilar soni, ko'rishlar, layklar va izohlarni real vaqtda kuzatish.
+4. **AI Kontent Yaratuvchi (AI Agent)** — Yuqori CTR beruvchi sarlavhalar, SEO tavsif, teglar, thumbnail g'oyalari va YouTube Shorts ssenariylari.
+
+---
+
+## 1. Tezkor ishga tushirish (CLI)
+
+Terminal orqali (PowerShell):
+
+```powershell
+# Yordam oynasi
+.\backend\.venv\Scripts\python.exe youtube_agent.py --help
+
+# 1. Google OAuth orqali YouTube hisobingizni ulash
+.\backend\.venv\Scripts\python.exe youtube_agent.py auth
+
+# 2. Kanal statistikasini ko'rish
+.\backend\.venv\Scripts\python.exe youtube_agent.py channel
+
+# 3. So'nggi videolarning ko'rishlar va layklar statistikasini ko'rish
+.\backend\.venv\Scripts\python.exe youtube_agent.py videos
+
+# 4. Videoni yuklash va rejalashtirish
+.\backend\.venv\Scripts\python.exe youtube_agent.py upload "video.mp4" `
+    --title "Sun'iy intellekt kelajagi" `
+    --description "Ushbu videoda sun'iy intellekt haqida batafsil gaplashamiz..." `
+    --tags "ai,texnologiya,kelajak" `
+    --schedule "2026-10-25 18:00"
+
+# 5. AI yordamida YouTube SEO metadata (sarlavha, tavsif, teglar, thumbnail) yaratish
+.\backend\.venv\Scripts\python.exe youtube_agent.py ai-meta "Sun'iy intellekt orqali pul ishlash"
+
+# 6. AI yordamida 45 soniyalik viral YouTube Shorts ssenariysini yaratish
+.\backend\.venv\Scripts\python.exe youtube_agent.py ai-shorts "Dasturchilar bilishi shart bo'lgan 3 ta sir" --seconds 45
+
+# 7. 🔥 TO'LIQ AVTOMATIK VIDEO (.MP4) YARATISH (AI Ssenariy + Ovoz/TTS + Vizual montaj)
+.\backend\.venv\Scripts\python.exe youtube_agent.py generate-video "Sun'iy intellekt kelajagi"
+
+# 8. To'liq video yaratish VA uni darhol YouTube'ga rejalashtirib yuklash:
+.\backend\.venv\Scripts\python.exe youtube_agent.py generate-video "Dasturlash sirlari" `
+    --upload `
+    --schedule "2026-10-25 18:00"
+```
+
+---
+
+## 2. API Endpoints (FastAPI orqali)
+
+Backend ishga tushganda (`http://localhost:8000/docs`), quyidagi API yo'llari mavjud:
+
+- `GET  /api/v1/youtube/oauth/url` — Google OAuth ulanish havolasi
+- `POST /api/v1/youtube/oauth/callback` — Google taqdim etgan kod orqali token olish
+- `GET  /api/v1/youtube/channel` — Kanal umumiy statistikasi
+- `GET  /api/v1/youtube/videos` — So'nggi videolar va metrikalar
+- `GET  /api/v1/youtube/videos/{video_id}` — Aniq bir video statistikasi
+- `POST /api/v1/youtube/upload` — Video yuklash va rejalashtirish
+- `POST /api/v1/youtube/ai/metadata` — AI SEO sarlavha, tavsif va teglar generatsiyasi
+- `POST /api/v1/youtube/ai/shorts-script` — AI Shorts ssenariy generatsiyasi
+
+---
+
+## 3. Sozlamalar (`.env`)
+
+Google Cloud Console (console.cloud.google.com) da YouTube Data API v3 yoqilgan loyihadan OAuth 2.0 ma'lumotlarini oling va `.env` ga kiriting:
+
+```env
+YOUTUBE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+YOUTUBE_CLIENT_SECRET=your-client-secret
+YOUTUBE_REDIRECT_URI=http://localhost:8000/api/v1/youtube/oauth/callback
+```

@@ -181,6 +181,36 @@ def builtin_response(prompt: str) -> str:
                 "Statistika to'liq bo'lmagan formatlarni yana sinab ko'ring.",
             ],
         }
+    elif task == "youtube_metadata":
+        payload = {
+            "titles": [
+                "Sun'iy Intellekt Kelajagi: 5 Muhim O'zgarish",
+                "AI Dasturlashni Butunlay O'zgartiradimi?",
+                "2026 Yilda Bilib Olish Shart Bo'lgan AI Trendlari",
+            ],
+            "description": "Ushbu videoda sun'iy intellektning so'nggi yutuqlari haqida gaplashamiz.\n\n00:00 - Kirish\n02:30 - Asosiy modellar\n06:15 - Kelajak xulosalari\n\nKanalga obuna bo'ling va videoga layk bosing!",
+            "tags": ["sun'iy intellekt", "ai", "texnologiya", "dasturlash", "kelajak"],
+            "hashtags": ["#ai", "#texnologiya", "#dasturlash"],
+            "thumbnail_concept": "Katta 'AI KELAJAGI' yozuvi, zamonaviy neon ranglar va robot/odam kontrasti.",
+            "pinned_comment": "Siz AI haqida qanday fikrdasiz? Izohda o'z fikringizni qoldiring!",
+        }
+    elif task == "youtube_shorts_script":
+        payload = {
+            "title": "AI Haqida 3 Fakt",
+            "hook": "Buni 90% insonlar hali ham bilmaydi!",
+            "script_segments": [
+                "Birinchidan, sun'iy intellekt har kuni yangilanadi.",
+                "Ikkinchidan, u sizning ishingizni 10 barobar tezlashtiradi.",
+                "Uchinchidan, kelajak allaqachon boshlangan.",
+            ],
+            "cta": "Ko'proq ma'lumot olish uchun obuna bo'ling!",
+            "visual_and_audio_cues": [
+                "0-3s: Tezkor montaj va diqqatni tortuvchi sarlavha",
+                "3-30s: Dinamik B-roll va subtitrlar",
+                "30-45s: Kanal logotipi va subscribe animatsiyasi",
+            ],
+            "tags": ["shorts", "texnologiya", "ai", "faktlar"],
+        }
     else:
         payload = {"error": "unknown task"}
     return json.dumps(payload, ensure_ascii=False)

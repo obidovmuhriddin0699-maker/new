@@ -12,6 +12,7 @@ from app.api.v1 import (
     publishing,
     system,
     telegram,
+    youtube,
 )
 
 api_router = APIRouter()
@@ -27,3 +28,4 @@ api_router.include_router(instagram.router)
 api_router.include_router(publishing.router)
 api_router.include_router(publishing.media_router)
 api_router.include_router(analytics.router)
+api_router.include_router(youtube.router)

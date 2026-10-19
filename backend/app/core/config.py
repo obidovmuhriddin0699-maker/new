@@ -124,6 +124,12 @@ class Settings(BaseSettings):
     # Refresh long-lived tokens (60 days) when fewer than this many days remain.
     meta_token_refresh_window_days: int = 15
 
+    # --- YouTube Data API v3 ---
+    youtube_client_id: str = ""
+    youtube_client_secret: SecretStr = SecretStr("")
+    youtube_redirect_uri: str = "http://localhost:8000/api/v1/youtube/oauth/callback"
+    youtube_api_key: str = ""
+
     # --- Publishing (PHASE 8). See docs/PUBLISHING.md.
     # sync: the publish request runs in the API process (simple local dev);
     # celery: it is queued for the worker (recommended for Reels: video processing takes minutes).

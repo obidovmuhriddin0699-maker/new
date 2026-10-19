@@ -19,6 +19,9 @@ dependencies = [
     "celery>=5.4",
     "aiogram>=3.15",
     "python-multipart>=0.0.20",
+    "edge-tts>=7.0",
+    "pillow>=10.0",
+    "imageio-ffmpeg>=0.5",
 ]
 
 [project.optional-dependencies]
