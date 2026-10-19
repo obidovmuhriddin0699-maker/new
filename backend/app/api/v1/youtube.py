@@ -265,3 +265,106 @@ async def generate_shorts_script(
         target_seconds=payload.target_seconds,
     )
     return output
+
+
+class VideoGenerationApiRequest(BaseModel):
+    topic: str = Field(..., min_length=2, max_length=200, description="Shorts mavzusi")
+    language: str = Field(default="uz", description="Til: uz, ru, en")
+    voice: str | None = Field(default=None, description="Maxsus TTS ovoz")
+    seconds: int = Field(default=45, ge=15, le=60, description="Davomiyligi")
+    upload_to_youtube: bool = Field(default=False)
+    access_token: str | None = None
+    refresh_token: str | None = None
+    privacy_status: YouTubePrivacyStatus = Field(default=YouTubePrivacyStatus.PRIVATE)
+    publish_at: datetime | None = None
+
+
+class VideoGenerationApiResponse(BaseModel):
+    title: str
+    hook: str
+    video_url: str
+    file_path: str
+    youtube_video_id: str | None = None
+    youtube_url: str | None = None
+
+
+@router.post("/generate-video", response_model=VideoGenerationApiResponse)
+async def api_generate_video(
+    payload: VideoGenerationApiRequest,
+    current_user: User = Depends(get_current_user),
+) -> VideoGenerationApiResponse:
+    """Generate viral YouTube Shorts video (.mp4) with AI script, Neural TTS and FFmpeg."""
+    from app.integrations.youtube.video_generator import generate_shorts_video
+    from app.services.media_storage import MediaStorage
+
+    ai_provider = create_ai_provider()
+    agent = YouTubeAgent(ai_provider)
+
+    mock_brand = BrandProfile(
+        name="YouTube Shorts",
+        niche="Short Content",
+        voice=["Dinamik", "Qiziqarli", "Tezkor"],
+        topics=["Shorts"],
+        languages=[payload.language],
+        target_audience="Shorts tomoshabinlari",
+    )
+
+    shorts, _ = await agent.generate_shorts_script(
+        mock_brand,
+        language=payload.language,
+        topic=payload.topic,
+        target_seconds=payload.seconds,
+    )
+
+    storage = MediaStorage()
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+        tmp_path = tmp.name
+
+    try:
+        await generate_shorts_video(
+            topic=payload.topic,
+            hook=shorts.hook,
+            segments=shorts.script_segments,
+            cta=shorts.cta,
+            language=payload.language,
+            voice=payload.voice,
+            output_path=tmp_path,
+        )
+
+        with open(tmp_path, "rb") as f:
+            video_bytes = f.read()
+
+        stored = storage.store(video_bytes)
+        video_url = f"/media/{stored.name}"
+
+        yt_id = None
+        yt_url = None
+
+        if payload.upload_to_youtube and payload.access_token:
+            client = _get_youtube_client(
+                access_token=payload.access_token,
+                refresh_token=payload.refresh_token,
+            )
+            upload_req = YouTubeVideoUploadRequest(
+                title=shorts.title[:100],
+                description=f"{shorts.hook}\n\n#shorts #{payload.topic.replace(' ', '')}",
+                tags=shorts.tags,
+                privacy_status=payload.privacy_status,
+                publish_at=payload.publish_at,
+            )
+            yt_resp = await client.upload_video(tmp_path, upload_req)
+            yt_id = yt_resp.video_id
+            yt_url = yt_resp.url
+            await client.aclose()
+
+        return VideoGenerationApiResponse(
+            title=shorts.title,
+            hook=shorts.hook,
+            video_url=video_url,
+            file_path=stored.name,
+            youtube_video_id=yt_id,
+            youtube_url=yt_url,
+        )
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)

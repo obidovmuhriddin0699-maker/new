@@ -14,6 +14,7 @@ const NAV: { href: string; label: string; group?: string }[] = [
   { href: "/calendar", label: "Kalendar" },
   { href: "/media", label: "Media kutubxona" },
   { href: "/instagram", label: "Instagram akkaunt", group: "Integratsiya" },
+  { href: "/youtube", label: "YouTube Studio & Agent" },
   { href: "/analytics", label: "Analitika" },
   { href: "/telegram", label: "Telegram" },
   { href: "/ai-settings", label: "AI sozlamalari", group: "Sozlamalar" },
