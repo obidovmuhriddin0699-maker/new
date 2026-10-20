@@ -13,7 +13,7 @@ video va muqova — GitHub raw havolalari (repo ochiq). 2026-10-16 dan kuniga 3 
 |---|---|---|---|
 | 2026-10-15 | 18:53 | 1 | joylandi (media 17968006389192775) |
 | 2026-10-16 | 12:17 | 4 | joylandi (media 18113383217168204) |
-| 2026-10-20 | 12:53 | 5 | rejada |
+| 2026-10-20 | 12:53 | 5 | noaniq — 10-20 07:53Z joylash so'rovi javobsiz qoldi (timeout), tekshirilmoqda |
 | 2026-10-20 | 18:53 | 6 | rejada |
 | 2026-10-20 | 21:53 | 7 | rejada |
 | 2026-10-21 | 12:53 | 8 | rejada |
