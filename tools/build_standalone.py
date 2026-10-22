@@ -3,19 +3,22 @@
 embedded as data URIs, so dist/index.html opens correctly on its own
 (phone, Telegram file, file://) without the assets/ folder.
 
-Usage:  python3 tools/build_standalone.py        → dist/index.html
+Usage:  python3 tools/build_standalone.py [src.html] [out.html]
+        (default: index.html → dist/index.html)
 Requires: ffmpeg (re-encodes media to lighter, widely compatible formats).
 """
 import base64
 import json
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "index.html"
-OUT = ROOT / "dist" / "index.html"
+SRC = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "index.html"
+OUT = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else ROOT / "dist" / "index.html"
+BASE = SRC.parent  # asset paths in the data are relative to the page
 TMP = Path(tempfile.mkdtemp(prefix="cp-standalone-"))
 
 
@@ -34,8 +37,8 @@ def image_uri(src: str) -> str:
     """JPG → WebP (≈50% smaller); WebP is supported by every current mobile browser."""
     if src in _cache:
         return _cache[src]
-    webp = ROOT / re.sub(r"\.(jpe?g|png)$", ".webp", src, flags=re.I)
-    uri = b64(webp, "image/webp") if webp.exists() else b64(ROOT / src, "image/jpeg")
+    webp = BASE / re.sub(r"\.(jpe?g|png)$", ".webp", src, flags=re.I)
+    uri = b64(webp, "image/webp") if webp.exists() else b64(BASE / src, "image/jpeg")
     _cache[src] = uri
     return uri
 
@@ -44,7 +47,7 @@ def video_uri(src: str) -> str:
     if src in _cache:
         return _cache[src]
     out = TMP / (Path(src).stem + ".mp4")
-    ffmpeg("-i", str(ROOT / src), "-an", "-vf", "scale=540:-2", "-c:v", "libx264",
+    ffmpeg("-i", str(BASE / src), "-an", "-vf", "scale=540:-2", "-c:v", "libx264",
            "-preset", "slow", "-crf", "29", "-profile:v", "main", "-pix_fmt", "yuv420p",
            "-movflags", "+faststart", str(out))
     _cache[src] = b64(out, "video/mp4")
@@ -53,7 +56,7 @@ def video_uri(src: str) -> str:
 
 def audio_uri(src: str) -> str:
     out = TMP / "music.mp3"
-    ffmpeg("-i", str(ROOT / src), "-map", "0:a", "-map_metadata", "-1",
+    ffmpeg("-i", str(BASE / src), "-map", "0:a", "-map_metadata", "-1",
            "-c:a", "libmp3lame", "-b:a", "96k", str(out))
     return b64(out, "audio/mpeg")
 
@@ -76,6 +79,9 @@ def main():
     data = json.loads(m.group(2))
 
     data["hero"]["video"] = video_uri(data["hero"]["video"])
+    for clip in data.get("backdrops", []):
+        clip["src"] = video_uri(clip["src"])
+        clip["poster"] = image_uri(clip["poster"])
     for clip in data.get("film", []):
         clip["src"] = video_uri(clip["src"])
         clip["poster"] = image_uri(clip["poster"])
@@ -92,8 +98,8 @@ def main():
     html = re.sub(r'\s*<link rel="apple-touch-icon"[^>]*>', "", html)
     html = html.replace('href="assets/icons/favicon.svg"',
                         f'href="{b64(ROOT / "assets/icons/favicon.svg", "image/svg+xml")}"')
-    # standalone file never fetches data/wedding.json — embedded data is authoritative
-    html = html.replace("localData: 'data/wedding.json',", "localData: '',")
+    # standalone file never fetches a data file — embedded data is authoritative
+    html = re.sub(r"localData: '[^']*',", "localData: '',", html)
     html = html.replace("if (!/^https?:$/.test(location.protocol)) return inline;",
                         "if (!/^https?:$/.test(location.protocol) || (!CONFIG.apiBase && !CONFIG.localData)) return inline;")
     html = html.replace("if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol))",
@@ -101,7 +107,7 @@ def main():
 
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(html, encoding="utf-8")
-    print(f"{OUT.relative_to(ROOT)}  {OUT.stat().st_size / 1e6:.1f} MB")
+    print(f"{OUT}  {OUT.stat().st_size / 1e6:.1f} MB")
 
 
 if __name__ == "__main__":

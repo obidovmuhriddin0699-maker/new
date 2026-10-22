@@ -1,0 +1,224 @@
+{
+  "slug": "ulugbek-lolahon",
+  "theme": "royal-gold",
+  "groom": "Ulug‘bek",
+  "bride": "Lolahon",
+  "date": "2026-10-30",
+  "time": "16:00",
+  "timezone": "Asia/Tashkent",
+  "venue": {
+    "name": "Qo‘shtepa qishlog‘i",
+    "city": "Pop tumani",
+    "address": "Namangan viloyati",
+    "latitude": "",
+    "longitude": ""
+  },
+  "hero": {
+    "video": "../../assets/video/ring-blossom.mp4",
+    "poster": {
+      "src": "../../assets/images/poster-ring-blossom.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 900,
+      "alt": ""
+    }
+  },
+  "backdrops": [
+    {
+      "src": "../../assets/video/first-dance.mp4",
+      "poster": "../../assets/images/poster-first-dance.jpg"
+    },
+    {
+      "src": "../../assets/video/vow-hands.mp4",
+      "poster": "../../assets/images/poster-vow-hands.jpg"
+    },
+    {
+      "src": "../../assets/video/ring-blossom.mp4",
+      "poster": "../../assets/images/poster-ring-blossom.jpg"
+    },
+    {
+      "src": "../../assets/video/grand-staircase.mp4",
+      "poster": "../../assets/images/poster-grand-staircase.jpg"
+    },
+    {
+      "src": "../../assets/video/hands-ring.mp4",
+      "poster": "../../assets/images/poster-hands-ring.jpg"
+    }
+  ],
+  "invitation": {
+    "greeting": "Assalomu alaykum, aziz va qadrli mehmonlar!",
+    "text": "Alloh taoloning marhamati bilan farzandlarimiz Ulug‘bek va Lolahonning nikoh to‘yi bo‘lib o‘tadi. Ushbu qutlug‘ kunda sizni aziz mehmonimiz sifatida dasturxonimiz atrofida ko‘rishdan baxtiyor bo‘lamiz."
+  },
+  "story": {
+    "title": "Our Story",
+    "text": "Ikki yurak bir yo‘lda uchrashdi. Sabr, hurmat va duolar bilan bu yo‘l bir umrlik baxtga aylanmoqda.",
+    "timeline": [
+      {
+        "key": "FIRST MEETING",
+        "date": "Ilk nigoh",
+        "title": "Tanishuv",
+        "description": "Taqdir bizni bir-birimizga ro‘para qildi. O‘sha kun hammasining boshlanishi bo‘ldi.",
+        "image": {
+          "src": "../../assets/images/still-staircase.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 720,
+          "height": 1280,
+          "alt": "Saroy zinapoyasida kelin va kuyov"
+        }
+      },
+      {
+        "key": "SPECIAL MOMENT",
+        "date": "Va’da",
+        "title": "Unutilmas lahza",
+        "description": "Qo‘llarimiz tutashgan on — so‘zlarsiz berilgan bir umrlik va’da.",
+        "image": {
+          "src": "../../assets/images/still-vow.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 720,
+          "height": 1280,
+          "alt": "Kuyov kelin qo‘liga uzuk taqmoqda"
+        }
+      },
+      {
+        "key": "ENGAGEMENT",
+        "date": "Fotiha",
+        "title": "Unashtiruv",
+        "description": "Oilalarimiz duosi bilan uzuk taqildi va yangi hayotimizga ilk qadam qo‘yildi.",
+        "image": {
+          "src": "../../assets/images/still-ring-light.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 720,
+          "height": 900,
+          "alt": "Gullar orasidagi oltin nikoh uzugi"
+        }
+      },
+      {
+        "key": "WEDDING DAY",
+        "date": "30.10.2026",
+        "title": "To‘y kuni",
+        "description": "Qo‘shtepada, eng yaqinlarimiz davrasida yangi oilamiz boshlanadi. Bu kunni siz bilan baham ko‘rishni istaymiz.",
+        "image": {
+          "src": "../../assets/images/still-dance.jpg",
+          "variants": [
+            "avif",
+            "webp"
+          ],
+          "width": 720,
+          "height": 960,
+          "alt": "Kelin va kuyov raqsi"
+        }
+      }
+    ]
+  },
+  "gallery": [
+    {
+      "src": "../../assets/images/poster-ring-blossom.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 900,
+      "alt": "Oltin uzuk va gullar"
+    },
+    {
+      "src": "../../assets/images/still-dance.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 960,
+      "alt": "Kelin va kuyovning raqsi"
+    },
+    {
+      "src": "../../assets/images/still-hands-veil.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 1280,
+      "alt": "Kelinning qo‘llari"
+    },
+    {
+      "src": "../../assets/images/couple-ring.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 735,
+      "height": 1103,
+      "alt": "Nikoh uzugi"
+    },
+    {
+      "src": "../../assets/images/still-staircase.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 1280,
+      "alt": "Saroy zinapoyasi"
+    },
+    {
+      "src": "../../assets/images/still-vow.jpg",
+      "variants": [
+        "avif",
+        "webp"
+      ],
+      "width": 720,
+      "height": 1280,
+      "alt": "Uzuk taqish lahzasi"
+    }
+  ],
+  "program": [
+    {
+      "time": "16:00",
+      "title": "Mehmonlarni kutib olish"
+    },
+    {
+      "time": "17:00",
+      "title": "Nikoh marosimi"
+    },
+    {
+      "time": "18:00",
+      "title": "Bayram dasturxoni"
+    },
+    {
+      "time": "19:00",
+      "title": "Kelin-kuyov raqsi"
+    },
+    {
+      "time": "20:00",
+      "title": "Tabriklar va bayram dasturi"
+    },
+    {
+      "time": "21:00",
+      "title": "To‘y kechasi"
+    }
+  ],
+  "music": "../../assets/audio/dilbarjon.mp3",
+  "rsvp": {
+    "enabled": true,
+    "deadline": "2026-10-27",
+    "maxGuests": 10,
+    "endpoint": ""
+  },
+  "seo": {
+    "siteUrl": "",
+    "image": "../../assets/images/og-cover.jpg"
+  }
+}

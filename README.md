@@ -29,3 +29,8 @@ Particles · AudioEngine · Countdown (Asia/Tashkent) · Film · Story · Galler
 
 `python3 tools/build_standalone.py` → `dist/index.html` (~7 MB). All photos, videos and music are
 embedded, so this one file opens correctly on its own (phone, Telegram, file://) without `assets/`.
+
+## Sites
+
+- `sites/ulugbek-lolahon/` — Royal Gold theme (obsidian + gold foil type, per-section video backdrops,
+  palace-door intro). Single file: `python3 tools/build_standalone.py sites/ulugbek-lolahon/index.html dist/ulugbek-lolahon/index.html`
