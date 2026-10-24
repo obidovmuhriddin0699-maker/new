@@ -25,14 +25,23 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 IG = os.path.join(HERE, "instagram")
 OUT = os.path.join(IG, "ovozli")
 CACHE = os.path.join(HERE, "build", "tts")  # tayyor bo'laklar: qayta ishga tushirganda kvota sarflanmaydi
-MODEL = os.environ.get("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts")
+# Bepul tarifda har model kuniga ~10 so'rov beradi: biri tugasa keyingisiga o'tiladi (bitta qism — bitta model).
+MODELS = os.environ.get(
+    "GEMINI_TTS_MODEL",
+    "gemini-3.8-flash-tts,gemini-3.1-flash-tts-preview,gemini-2.5-flash-preview-tts,gemini-3.8-flash-lite-tts",
+).split(",")
+_model = 0
 VOICE = os.environ.get("GEMINI_TTS_VOICE", "Charon")
 # Ko'rsatma matn bilan birga yuborilsa, model uni ham ovoz chiqarib o'qiydi — shuning uchun faqat matn.
 RATE = 24000  # Gemini TTS: 24 kHz, 16-bit, mono PCM
 
 
+class DailyQuota(Exception):
+    pass
+
+
 def tts(text, path):
-    cached = os.path.join(CACHE, hashlib.sha1(f"{MODEL}|{VOICE}|{text}".encode()).hexdigest() + ".wav")
+    cached = os.path.join(CACHE, hashlib.sha1(f"{MODELS[_model]}|{VOICE}|{text}".encode()).hexdigest() + ".wav")
     if not os.path.exists(cached):
         _tts(text, cached)
     shutil.copy(cached, path)
@@ -48,7 +57,7 @@ def _tts(text, path):
         },
     }
     req = urllib.request.Request(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent",
+        f"https://generativelanguage.googleapis.com/v1beta/models/{MODELS[_model]}:generateContent",
         data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json", "x-goog-api-key": key},
     )
@@ -58,9 +67,11 @@ def _tts(text, path):
                 data = json.load(r)
             break
         except urllib.error.HTTPError as e:
-            # Bepul tarif: daqiqasiga 3 so'rov — kutib qayta urinamiz.
             if e.code != 429 or attempt == 5:
                 raise
+            if "PerDay" in e.read().decode(errors="replace"):
+                raise DailyQuota(MODELS[_model])
+            # Daqiqalik chegara (3 so'rov) — kutib qayta urinamiz.
             time.sleep(35)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     pcm = base64.b64decode(data["candidates"][0]["content"]["parts"][0]["inlineData"]["data"])
@@ -137,8 +148,17 @@ def main():
     if not test and not os.environ.get("GEMINI_API_KEY"):
         sys.exit("GEMINI_API_KEY topilmadi (muhit sozlamalarida qo'shing yoki --test bilan sinang).")
     os.makedirs(OUT, exist_ok=True)
+    global _model
     for n in eps:
-        build(n, script[n], test)
+        while True:
+            try:
+                build(n, script[n], test)
+                break
+            except DailyQuota as q:
+                _model += 1
+                if _model == len(MODELS):
+                    sys.exit(f"Bugungi kvota barcha modellarda tugadi — {n}-qismdan ertaga davom eting.")
+                print(f"  {q} kunlik kvotasi tugadi — {MODELS[_model]} bilan {n}-qism qaytadan")
 
 
 if __name__ == "__main__":
