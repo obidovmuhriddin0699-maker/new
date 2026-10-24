@@ -129,7 +129,7 @@ def build(n, segments, test):
             # Diktor gapirganda musiqa ~10 dB pasayadi.
             + "[0:a][key]sidechaincompress=threshold=0.03:ratio=8:attack=20:release=350[bed];"
             + "[bed][voice]amix=inputs=2:normalize=0,"
-            + "loudnorm=I=-14:TP=-1.5:LRA=11,alimiter=limit=0.8:level=false[a]"
+            + "loudnorm=I=-14:TP=-1.5:LRA=11,alimiter=limit=0.7:level=false[a]"
         )
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src, *inputs, "-filter_complex", graph,
                         "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "256k",
