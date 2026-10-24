@@ -9,30 +9,39 @@ Matn: instagram/diktor.json ([boshlanish_s, maksimal_s, matn] bo'laklari).
 Natija: instagram/ovozli/ADUZ_N-qism_reels.mp4 (video o'zgarmaydi, musiqa diktor ostida pasayadi).
 """
 import base64
+import hashlib
 import json
 import os
 import subprocess
 import sys
+import shutil
 import tempfile
+import time
+import urllib.error
 import urllib.request
 import wave
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 IG = os.path.join(HERE, "instagram")
 OUT = os.path.join(IG, "ovozli")
-MODEL = os.environ.get("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
+CACHE = os.path.join(HERE, "build", "tts")  # tayyor bo'laklar: qayta ishga tushirganda kvota sarflanmaydi
+MODEL = os.environ.get("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts")
 VOICE = os.environ.get("GEMINI_TTS_VOICE", "Charon")
-STYLE = (
-    "O'zbek tilida, reklama diktori ovozida gapir: ishonchli, jonli, biroz tez, "
-    "har jumla aniq. Matnni o'zgartirmasdan o'qi:\n"
-)
+# Ko'rsatma matn bilan birga yuborilsa, model uni ham ovoz chiqarib o'qiydi — shuning uchun faqat matn.
 RATE = 24000  # Gemini TTS: 24 kHz, 16-bit, mono PCM
 
 
 def tts(text, path):
+    cached = os.path.join(CACHE, hashlib.sha1(f"{MODEL}|{VOICE}|{text}".encode()).hexdigest() + ".wav")
+    if not os.path.exists(cached):
+        _tts(text, cached)
+    shutil.copy(cached, path)
+
+
+def _tts(text, path):
     key = os.environ["GEMINI_API_KEY"]
     body = {
-        "contents": [{"parts": [{"text": STYLE + text}]}],
+        "contents": [{"parts": [{"text": text}]}],
         "generationConfig": {
             "responseModalities": ["AUDIO"],
             "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": VOICE}}},
@@ -43,8 +52,17 @@ def tts(text, path):
         data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json", "x-goog-api-key": key},
     )
-    with urllib.request.urlopen(req, timeout=120) as r:
-        data = json.load(r)
+    for attempt in range(6):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                data = json.load(r)
+            break
+        except urllib.error.HTTPError as e:
+            # Bepul tarif: daqiqasiga 3 so'rov — kutib qayta urinamiz.
+            if e.code != 429 or attempt == 5:
+                raise
+            time.sleep(35)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     pcm = base64.b64decode(data["candidates"][0]["content"]["parts"][0]["inlineData"]["data"])
     with wave.open(path, "wb") as w:
         w.setnchannels(1)
