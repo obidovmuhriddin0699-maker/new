@@ -5,40 +5,40 @@
 - `ADUZ_N-qism_cover.jpg` — muqova (hook kadri). `captions.json` — post matnlari.
 - Qayta yig'ish: `python3 make_ig.py N` → `./build_ig.sh N` (1–27; botga mos qismlar avtomatik `bot_audio.py` bilan).
 
-## Joylash rejasi (foydalanuvchi tanlovi: 2026-10-16 dan kuniga 3 ta)
+## Joylash rejasi (foydalanuvchi tanlovi 2026-10-24: 2026-10-25 dan kuniga 3 ta, 19:00 / 20:00 / 21:00, Gemini diktor ovozi bilan)
 Windsor.ai Instagram ulanishi (`create_video_post`, akkaunt 17841419124058324 = telegram_reklama777) orqali,
-video va muqova — GitHub raw havolalari (repo ochiq). 2026-10-16 dan kuniga 3 ta: 12:53, 18:53, 21:53 (Toshkent) — sahifa statistikasi bo'yicha (`STRATEGIYA.md`). 10-16 18:53 – 10-19 dagi 11 ta post sessiya to'xtagani uchun chiqmadi — qolganlari 2026-10-20 12:53 dan qayta sanalandi (oxirgisi 10-28).
+video va muqova — GitHub raw havolalari (repo ochiq). Ovozli video: `instagram/ovozli/ADUZ_N-qism_reels.mp4` (`GEMINI_API_KEY=... python3 -I voice_gemini.py all`, matn — `instagram/diktor.json`). 10-20 dagi 5- va 6-qism joylangan edi: Windsor 60 s ichida javob bermagan (timeout), lekin post chiqqan — timeout bo'lsa qayta joylanmaydi, "joylandi (timeout)" deb belgilanadi.
 
 | Sana | Vaqt | Qism | Holat |
 |---|---|---|---|
 | 2026-10-15 | 18:53 | 1 | joylandi (media 17968006389192775) |
 | 2026-10-16 | 12:17 | 4 | joylandi (media 18113383217168204) |
-| 2026-10-20 | 12:53 | 5 | noaniq — 10-20 07:53Z joylash so'rovi javobsiz qoldi (timeout), tekshirilmoqda |
-| 2026-10-20 | 18:53 | 6 | noaniq — 10-20 13:54Z joylash so'rovi javobsiz qoldi (timeout), tekshirilmoqda |
-| 2026-10-20 | 21:53 | 7 | rejada |
-| 2026-10-21 | 12:53 | 8 | rejada |
-| 2026-10-21 | 18:53 | 9 | rejada |
-| 2026-10-21 | 21:53 | 12 | rejada |
-| 2026-10-22 | 12:53 | 13 | rejada |
-| 2026-10-22 | 18:53 | 14 | rejada |
-| 2026-10-22 | 21:53 | 16 | rejada |
-| 2026-10-23 | 12:53 | 17 | rejada |
-| 2026-10-23 | 18:53 | 24 | rejada |
-| 2026-10-23 | 21:53 | 25 | rejada |
-| 2026-10-24 | 12:53 | 28 | rejada |
-| 2026-10-24 | 18:53 | 2 (botga mos) | rejada |
-| 2026-10-24 | 21:53 | 3 (botga mos) | rejada |
-| 2026-10-25 | 12:53 | 10 (botga mos) | rejada |
-| 2026-10-25 | 18:53 | 11 (botga mos) | rejada |
-| 2026-10-25 | 21:53 | 15 (botga mos) | rejada |
-| 2026-10-26 | 12:53 | 18 (botga mos) | rejada |
-| 2026-10-26 | 18:53 | 19 (botga mos) | rejada |
-| 2026-10-26 | 21:53 | 20 (botga mos) | rejada |
-| 2026-10-27 | 12:53 | 21 (botga mos) | rejada |
-| 2026-10-27 | 18:53 | 22 (botga mos) | rejada |
-| 2026-10-27 | 21:53 | 23 (botga mos) | rejada |
-| 2026-10-28 | 12:53 | 26 (botga mos) | rejada |
-| 2026-10-28 | 18:53 | 27 (botga mos) | rejada |
+| 2026-10-20 | 12:55 | 5 | joylandi (media 17908650408563692) |
+| 2026-10-20 | 18:57 | 6 | joylandi (media 17894864835615315) |
+| 2026-10-25 | 19:00 | 7 | rejada (ovozli) |
+| 2026-10-25 | 20:00 | 8 | rejada (ovozli) |
+| 2026-10-25 | 21:00 | 9 | rejada (ovozli) |
+| 2026-10-26 | 19:00 | 12 | rejada (ovozli) |
+| 2026-10-26 | 20:00 | 13 | rejada (ovozli) |
+| 2026-10-26 | 21:00 | 14 | rejada (ovozli) |
+| 2026-10-27 | 19:00 | 16 | rejada (ovozli) |
+| 2026-10-27 | 20:00 | 17 | rejada (ovozli) |
+| 2026-10-27 | 21:00 | 24 | rejada (ovozli) |
+| 2026-10-28 | 19:00 | 25 | rejada (ovozli) |
+| 2026-10-28 | 20:00 | 28 | rejada (ovozli) |
+| 2026-10-28 | 21:00 | 2 (botga mos) | rejada (ovozli) |
+| 2026-10-29 | 19:00 | 3 (botga mos) | rejada (ovozli) |
+| 2026-10-29 | 20:00 | 10 (botga mos) | rejada (ovozli) |
+| 2026-10-29 | 21:00 | 11 (botga mos) | rejada (ovozli) |
+| 2026-10-30 | 19:00 | 15 (botga mos) | rejada (ovozli) |
+| 2026-10-30 | 20:00 | 18 (botga mos) | rejada (ovozli) |
+| 2026-10-30 | 21:00 | 19 (botga mos) | rejada (ovozli) |
+| 2026-10-31 | 19:00 | 20 (botga mos) | rejada (ovozli) |
+| 2026-10-31 | 20:00 | 21 (botga mos) | rejada (ovozli) |
+| 2026-10-31 | 21:00 | 22 (botga mos) | rejada (ovozli) |
+| 2026-11-01 | 19:00 | 23 (botga mos) | rejada (ovozli) |
+| 2026-11-01 | 20:00 | 26 (botga mos) | rejada (ovozli) |
+| 2026-11-01 | 21:00 | 27 (botga mos) | rejada (ovozli) |
 
 **Botga mos versiyalar** (2, 3, 10, 11, 15, 18, 19, 20, 21, 22, 23, 26, 27): muammo qismi (0–10.9 s) asl qism bilan bir xil,
 yechim va natija esa Target reklama botining haqiqiy oqimini ko'rsatadi (`igbot.js`): asosiy menyu → reklama yaratish
