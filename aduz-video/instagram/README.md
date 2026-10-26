@@ -19,7 +19,7 @@ video va muqova — GitHub raw havolalari (repo ochiq). Ovozli video: `instagram
 | 2026-10-25 | 20:00 | 8 | joylandi (media 18629717860017695) |
 | 2026-10-25 | 21:00 | 9 | joylandi (media 18120581044950476) |
 | 2026-10-26 | 19:00 | 12 | joylandi (media 17920937433455799) |
-| 2026-10-26 | 20:00 | 13 | rejada (ovozli) |
+| 2026-10-26 | 20:00 | 13 | joylandi (media 18094316087263382) |
 | 2026-10-26 | 21:00 | 14 | rejada (ovozli) |
 | 2026-10-27 | 19:00 | 16 | rejada (ovozli) |
 | 2026-10-27 | 20:00 | 17 | rejada (ovozli) |
