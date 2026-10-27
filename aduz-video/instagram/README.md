@@ -24,22 +24,22 @@ video va muqova — GitHub raw havolalari (repo ochiq). Ovozli video: `instagram
 | 2026-10-27 | 19:00 | 16 | joylandi (media 18107874907973328) |
 | 2026-10-27 | 20:00 | 17 | joylandi (media 18135385249791484) |
 | 2026-10-27 | 21:00 | 24 | joylandi (media 18100153193548717) |
-| 2026-10-28 | 19:00 | S1 (qisqa) | rejada (ovozli) |
+| 2026-10-28 | 19:00 | 15 (botga mos) | rejada (ovozli) |
 | 2026-10-28 | 20:00 | 25 | rejada (ovozli) |
 | 2026-10-28 | 21:00 | 28 | rejada (ovozli) |
-| 2026-10-29 | 19:00 | S2 (qisqa) | rejada (ovozli) |
+| 2026-10-29 | 19:00 | 20 (botga mos) | rejada (ovozli) |
 | 2026-10-29 | 20:00 | 2 (botga mos) | rejada (ovozli) |
 | 2026-10-29 | 21:00 | 3 (botga mos) | rejada (ovozli) |
-| 2026-10-30 | 19:00 | S3 (qisqa) | rejada (ovozli) |
+| 2026-10-30 | 19:00 | 23 (botga mos) | rejada (ovozli) |
 | 2026-10-30 | 20:00 | 10 (botga mos) | rejada (ovozli) |
 | 2026-10-30 | 21:00 | 11 (botga mos) | rejada (ovozli) |
-| 2026-10-31 | 19:00 | 15 (botga mos) | rejada (ovozli) |
+| 2026-10-31 | 19:00 | S1 (qisqa) | foydalanuvchi ovozi kutilmoqda |
 | 2026-10-31 | 20:00 | 18 (botga mos) | rejada (ovozli) |
 | 2026-10-31 | 21:00 | 19 (botga mos) | rejada (ovozli) |
-| 2026-11-01 | 19:00 | 20 (botga mos) | rejada (ovozli) |
+| 2026-11-01 | 19:00 | S2 (qisqa) | foydalanuvchi ovozi kutilmoqda |
 | 2026-11-01 | 20:00 | 21 (botga mos) | rejada (ovozli) |
 | 2026-11-01 | 21:00 | 22 (botga mos) | rejada (ovozli) |
-| 2026-11-02 | 19:00 | 23 (botga mos) | rejada (ovozli) |
+| 2026-11-02 | 19:00 | S3 (qisqa) | foydalanuvchi ovozi kutilmoqda |
 | 2026-11-02 | 20:00 | 26 (botga mos) | rejada (ovozli) |
 | 2026-11-02 | 21:00 | 27 (botga mos) | rejada (ovozli) |
 

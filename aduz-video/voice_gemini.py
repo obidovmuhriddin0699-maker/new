@@ -6,6 +6,7 @@
   python3 -I voice_gemini.py --test 7                       # kalitsiz: ovoz o'rniga signal, faqat mikshni tekshirish
 
 Matn: instagram/diktor.json ([boshlanish_s, maksimal_s, matn] bo'laklari).
+O'z ovozingiz: instagram/ovoz_men/<N>_<bo'lak raqami>.m4a (yoki mp3/ogg/wav) — bo'lsa, shu bo'lak TTS o'rniga shu yozuvdan olinadi.
 Natija: instagram/ovozli/ADUZ_N-qism_reels.mp4 (video o'zgarmaydi, musiqa diktor ostida pasayadi).
 """
 import base64
@@ -108,6 +109,25 @@ def fit(src, dst, max_s):
     return d / tempo
 
 
+def own_recording(n, k):
+    """Foydalanuvchining o'z ovozi: instagram/ovoz_men/<N>_<k>.<m4a|mp3|ogg|...> bo'lsa, TTS o'rniga shu ishlatiladi."""
+    for ext in ("wav", "m4a", "mp3", "ogg", "oga", "opus", "aac", "mp4", "webm"):
+        path = os.path.join(IG, "ovoz_men", f"{n}_{k}.{ext}")
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def prepare_own(src, dst):
+    # Telefon yozuvi: past shovqinni kesish, boshidagi/oxiridagi jimlikni olib tashlash, ovozni tekislash.
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src, "-af",
+                    "highpass=f=80,afftdn=nf=-25,"
+                    "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.05,"
+                    "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.1,areverse,"
+                    "acompressor=threshold=-20dB:ratio=3:attack=5:release=120,loudnorm=I=-16:TP=-2",
+                    "-ac", "1", "-ar", str(RATE), dst], check=True)
+
+
 def build(n, segments, test):
     src = os.path.join(IG, f"ADUZ_{n}-qism_reels.mp4")
     dst = os.path.join(OUT, f"ADUZ_{n}-qism_reels.mp4")
@@ -115,7 +135,11 @@ def build(n, segments, test):
         inputs, delays = [], []
         for i, (start, max_s, text) in enumerate(segments):
             raw, fitted = os.path.join(tmp, f"r{i}.wav"), os.path.join(tmp, f"f{i}.wav")
-            (test_tone if test else tts)(text, raw)
+            own = own_recording(n, i + 1)
+            if own:
+                prepare_own(own, raw)
+            else:
+                (test_tone if test else tts)(text, raw)
             d = fit(raw, fitted, max_s)
             print(f"  {n}-qism [{start:>5.1f}s] {d:4.1f}s  {text}")
             inputs += ["-i", fitted]
