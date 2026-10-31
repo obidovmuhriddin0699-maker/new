@@ -37,7 +37,7 @@ video va muqova — GitHub raw havolalari (repo ochiq). Ovozli video: `instagram
 | 2026-10-31 | 20:00 | 18 (botga mos) | joylandi (media 18183034957453579) |
 | 2026-10-31 | 21:00 | 19 (botga mos) | joylandi (media 18096687296147872) |
 | 2026-11-01 | 19:00 | S2 (qisqa) | foydalanuvchi ovozi kutilmoqda |
-| 2026-11-01 | 20:00 | 21 (botga mos) | rejada (ovozli) |
+| 2026-11-01 | 20:00 | 21 (botga mos) | joylandi (media 18141035188725395) |
 | 2026-11-01 | 21:00 | 22 (botga mos) | rejada (ovozli) |
 | 2026-11-02 | 19:00 | S3 (qisqa) | foydalanuvchi ovozi kutilmoqda |
 | 2026-11-02 | 20:00 | 26 (botga mos) | rejada (ovozli) |
