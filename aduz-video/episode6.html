@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 6-qism</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// ADUZ — 6-qism: "ADUZ kashfiyoti"
+// Scenes for this episode; shared helpers live in lib.js (incl. the motion toolkit).
+// Music is 120 BPM: every cut and impact lands on the 0.5 s grid (see render_6 in audio.py).
+
+const CAPTIONS = [
+  [0.4, 5.0, 'Yangi platforma? Uzun roʻyxatdan oʻtish, hujjatlar, shartnomalar...'],
+  [5.2, 10.5, 'Murakkab boʻlsa-chi? Pulim xavfsizmi? — va siz yana eski usulda qolasiz.'],
+  [11.4, 16.2, 'ADUZ Telegramning ichida: bir bosishda kirasiz, ortiqcha hujjatlarsiz.'],
+  [16.4, 21.7, 'Bitta joyda: kanallar bozori, tekshiruv, kampaniya, statistika va kafolatli toʻlov.'],
+  [22.5, 27.0, 'Roʻyxatdan oʻtishdan birinchi mijozgacha — bir kun ichida.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+
+function rollText(t, values, x, y, size, color, weight = 800) {
+  let i = 0; while (i + 1 < values.length && values[i + 1][0] <= t) i++;
+  const p = eOut(prog(t, values[i][0], values[i][0] + .3));
+  ctx.save(); ctx.beginPath(); ctx.rect(x - 150, y - size, 300, size * 1.25); ctx.clip();
+  if (i > 0 && p < 1) withAlpha(1 - p, () => text(values[i - 1][1], x, y - size * p, size, color, weight, 'center'));
+  withAlpha(i > 0 ? p : 1, () => text(values[i][1], x, y + (i > 0 ? size * (1 - p) : 0), size, color, weight, 'center'));
+  ctx.restore();
+}
+// White line icons used on feature tiles and badges.
+function glyph(kind, x, y, s = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (kind === 'store') { for (const [dx, dy] of [[-13, -13], [13, -13], [-13, 13], [13, 13]]) { rr(dx - 10, dy - 10, 20, 20, 5); ctx.fill(); } }
+  else if (kind === 'target') { for (const r of [24, 14]) { ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke(); } ctx.beginPath(); ctx.arc(0, 0, 5, 0, 7); ctx.fill(); }
+  else if (kind === 'shield') { shield(0, 0, .95, '#fff'); check(1, 2, 21, 'rgba(0,0,0,.35)', 5); }
+  else if (kind === 'plane') { ctx.beginPath(); ctx.moveTo(26, -4); ctx.lineTo(-24, -20); ctx.lineTo(-12, 0); ctx.lineTo(-22, 20); ctx.closePath(); ctx.fill(); }
+  else if (kind === 'chart') { [[-18, 8], [-2, 18], [14, 28]].forEach(([dx, h]) => { rr(dx - 6, 18 - h, 12, h, 3); ctx.fill(); }); }
+  else if (kind === 'lock') { rr(-18, -4, 36, 28, 6); ctx.fill(); ctx.beginPath(); ctx.arc(0, -6, 12, Math.PI, 0); ctx.stroke(); }
+  else if (kind === 'tap') { ctx.beginPath(); ctx.arc(0, 4, 10, 0, 7); ctx.fill(); for (const r of [20, 30]) { ctx.beginPath(); ctx.arc(0, 4, r, -2.6, -.55); ctx.stroke(); } }
+  else if (kind === 'bolt') { ctx.beginPath(); ctx.moveTo(6, -30); ctx.lineTo(-16, 4); ctx.lineTo(0, 4); ctx.lineTo(-6, 30); ctx.lineTo(16, -6); ctx.lineTo(0, -6); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}
+
+// ---------- SCENE 1 — Muammo ----------
+const FIELDS = [
+  ['Ism', 'Jasur'], ['Familiya', 'Karimov'], ['Pasport seriyasi', 'AB 1234567'], ['STIR (INN)', '302 154 889'],
+  ['Bank hisob raqami', '2020 8000 1234 5678'], ['MFO', '00873'], ['Yuridik manzil', 'Fargʻona sh., ...'], ['Shartnoma (PDF)', 'Fayl yuklang'],
+];
+const FOCUS = [1.0, 1.7, 2.4, 3.95, 4.4, 5.0];   // first attempt (pasport errors at 3.1)
+const RESET = 6.3, FOCUS2 = [6.8, 7.6];          // session expires, start again
+const MAZE = (() => {
+  const r = rnd(66), walls = [];
+  for (let gy = 0; gy < 16; gy++) for (let gx = 0; gx < 9; gx++) {
+    if (r() < .55) walls.push([gx * 120 + 120, gy * 120, gx * 120 + 120, gy * 120 + 120, .2 + r() * 9]);
+    if (r() < .55) walls.push([gx * 120, gy * 120 + 120, gx * 120 + 120, gy * 120 + 120, .2 + r() * 9]);
+  }
+  return walls;
+})();
+const IMPACTS1 = [[3.1, 8], [5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46]];
+function fieldFill(i, t) {
+  if (t < RESET) return i < FOCUS.length ? prog(t, FOCUS[i], FOCUS[i] + .5) : 0;
+  return i < FOCUS2.length ? prog(t, FOCUS2[i], FOCUS2[i] + .7) : 0;
+}
+function formScreen(t) {
+  const step = t < 1.7 ? 1 : t < 3.95 ? 2 : t < 5.0 ? 3 : t < RESET ? 4 : 1;
+  ctx.fillStyle = '#17212b'; ctx.fillRect(SX, SY, SW, 170);
+  text('Roʻyxatdan oʻtish', SX + 50, SY + 92, 38, '#fff', 800);
+  text(`Qadam ${step} / 12`, SX + SW - 50, SY + 92, 26, '#7f91a4', 700, 'right');
+  rr(SX + 50, SY + 124, SW - 100, 12, 6); ctx.fillStyle = '#243444'; ctx.fill();
+  rr(SX + 50, SY + 124, (SW - 100) * step / 12, 12, 6); ctx.fillStyle = step === 1 && t > RESET ? C.red : '#4fa3ff'; ctx.fill();
+  // scroll follows the focused field; snaps back to the top after the reset
+  let fc = 0; for (const f of FOCUS) fc += eInOut(prog(t, f, f + .35));
+  const scroll = t < RESET ? 124 * Math.max(0, fc - 2.5) : 124 * Math.max(0, FOCUS.length - 2.5) * (1 - eInOut(prog(t, RESET, RESET + .35)));
+  ctx.save(); ctx.beginPath(); ctx.rect(SX, SY + 170, SW, SH - 170); ctx.clip();
+  const focused = t < RESET ? FOCUS.filter(f => f <= t).length - 1 : FOCUS2.filter(f => f <= t).length - 1;
+  FIELDS.forEach(([label, val], i) => {
+    const y = SY + 200 + i * 124 - scroll, fill = fieldFill(i, t);
+    const err = i === 2 && t > 3.1 && t < 3.95;
+    const ex = err ? Math.sin(t * 60) * 8 * (1 - prog(t, 3.1, 3.5)) : 0;
+    text(label, SX + 50, y + 26, 24, err ? '#ff8a96' : '#7f91a4', 700);
+    rr(SX + 40 + ex, y + 40, SW - 80, 70, 16); ctx.fillStyle = '#182533'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = err ? C.red : i === focused ? '#4fa3ff' : '#2a3a4c'; ctx.stroke();
+    const n = Math.round(val.length * fill);
+    text(n ? val.slice(0, n) : '', SX + 70 + ex, y + 85, 28, '#e9eef3', 600);
+    if (err) text('Notoʻgʻri format!', SX + SW - 60 + ex, y + 26, 22, '#ff8a96', 800, 'right');
+  });
+  ctx.restore();
+  // session-expired modal
+  const mp = eBack(prog(t, 5.7, 5.95)) * (1 - prog(t, RESET - .05, RESET + .1));
+  if (mp > 0) {
+    withAlpha(Math.min(1, mp), () => { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(SX, SY, SW, SH); });
+    scaled(SX + SW / 2, SY + 560, mp, () => {
+      rr(SX + 60, SY + 420, SW - 120, 290, 30); ctx.fillStyle = '#1f2b38'; ctx.fill();
+      ctx.beginPath(); ctx.arc(SX + SW / 2, SY + 488, 36, 0, 7); ctx.fillStyle = C.red; ctx.fill(); cross(SX + SW / 2, SY + 488, 13, '#fff', 7);
+      text('Sessiya muddati tugadi', SX + SW / 2, SY + 572, 32, '#fff', 800, 'center');
+      text('Qaytadan boshlang', SX + SW / 2, SY + 614, 26, '#8a9aab', 500, 'center');
+      rr(SX + SW / 2 - 90, SY + 640, 180, 52, 26); ctx.fillStyle = '#4fa3ff'; ctx.fill();
+      text('OK', SX + SW / 2, SY + 675, 26, '#fff', 800, 'center');
+    });
+  }
+}
+function scene1(t) {
+  const stress = prog(t, 5, 10);
+  problemBg(t, stress);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  camera(1 + .06 * eInOut(prog(t, 0, 10.6)), sr - .01 * stress * Math.sin(t * 1.3), sx, sy, () => {
+    // maze walls appear: the process keeps getting more complicated
+    ctx.lineCap = 'round';
+    for (const [x1, y1, x2, y2, at] of MAZE) {
+      const p = prog(t, at, at + .4);
+      if (p <= 0) continue;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(lerp(x1, x2, eOut(p)), lerp(y1, y2, eOut(p)));
+      ctx.lineWidth = 8; ctx.strokeStyle = `rgba(255,255,255,${.06 + .05 * stress})`; ctx.stroke();
+    }
+    episodeTitle(t, '6-QISM', 'ADUZ kashfiyoti', 62);
+    withAlpha(prog(t, .6, 1.2), () => {
+      ['qadam', 'maydon', 'reklama'].forEach((lab, i) => {
+        const x = 200 + i * 340;
+        rr(x - 150, 228, 300, 100, 22); ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fill();
+        text(lab, x, 312, 26, '#94a3b8', 500, 'center');
+      });
+      rollText(t, [[0, '1/12'], [1.7, '2/12'], [3.95, '3/12'], [5.0, '4/12'], [RESET, '1/12']], 200, 278, 44, t > RESET ? C.red : '#fff');
+      const filled = FIELDS.filter((_, i) => fieldFill(i, t) >= 1).length;
+      text(`${filled} ta`, 540, 278, 44, '#fff', 800, 'center');
+      text('0', 880, 278, 44, C.red, 800, 'center');
+    });
+    const enter = eOut(prog(t, 0, .7));
+    phone('#0e1621', 0, lerp(160, 0, enter), 0, () => {
+      formScreen(t);
+      ctx.fillStyle = `rgba(255,40,60,${.12 * stress})`; ctx.fillRect(SX, SY, SW, SH);
+    });
+    slam(t, 5.6, 'YANA BIR ILOVA?', 340, 560, 46, '#fff', { slab: C.red, rot: -.08, hold: 2.9 });
+    slam(t, 6.6, 'MURAKKAB', 800, 840, 54, '#fff', { slab: C.red, rot: .07, hold: 1.9 });
+    slam(t, 7.6, 'PULIM XAVFSIZMI?', 350, 1420, 46, '#fff', { slab: C.red, rot: .05, hold: .9 });
+  });
+  const dim = prog(t, 8.45, 8.6) * (1 - prog(t, 10.4, 10.6));
+  if (dim > 0) withAlpha(dim * .6, () => { ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, 8.5, W / 2, 900, C.red, 1100);
+  sparks(t, 8.5, W / 2, 900, 61, [C.red, '#ffb4bc', '#ffffff'], 36, 1200);
+  slam(t, 8.5, '12 QADAM', W / 2, 880, 175, '#fff', { hold: 1.75, glow: 'rgba(255,40,60,.9)' });
+  slam(t, 8.8, 'faqat roʻyxatdan oʻtish uchun', W / 2, 1060, 50, '#ffb4bc', { hold: 1.45 });
+  flash(t, 8.5, C.red, .4, .45);
+}
+
+// ---------- SCENE 2 — Yechim ----------
+const T6 = { start: 12.0, cmd: 12.15, bot: 12.6, login: 13.2, done: 13.5, home: 13.7, tiles: 14.2, tour: 15.3, cta: 17.2, slam: 18.5, sheet: 19.7 };
+const IMPACTS2 = [[11.0, 30], [T6.login, 8], [T6.slam, 34]];
+const START_BTN = { x: SX + 40, y: SY + SH - 140, w: SW - 80, h: 96 };
+const LOGIN_BTN = { x: SX + 60, y: SY + 640, w: SW - 200, h: 76 };
+const TILES = [
+  ['Kanallar bozori', 'vodiy kanallari', 'store', '#16c784'], ['Aniq auditoriya', 'hudud, yosh, qiziqish', 'target', '#3b82f6'],
+  ['Tekshirilgan', 'botlarsiz kanallar', 'shield', '#a855f7'], ['Avto kampaniya', 'bir necha soniyada', 'plane', '#f59e0b'],
+  ['Jonli statistika', 'real vaqtda', 'chart', '#ec4899'], ['Kafolatli toʻlov', 'pul himoyada', 'lock', '#06b6d4'],
+];
+const TW = (SW - 90) / 2, TH = 200;
+const tilePos = i => ({ x: SX + 30 + (i % 2) * (TW + 30), y: SY + 190 + Math.floor(i / 2) * 222 });
+function botScreen(t) {
+  ctx.fillStyle = '#17212b'; ctx.fillRect(SX, SY, SW, 150);
+  ctx.save(); ctx.beginPath(); ctx.arc(SX + 80, SY + 95, 36, 0, 7); ctx.clip(); ctx.fillStyle = '#0ea371'; ctx.fillRect(SX + 40, SY + 55, 80, 80); ctx.restore();
+  shield(SX + 80, SY + 96, .8, '#fff'); check(SX + 81, SY + 98, 18, '#0ea371', 4);
+  text('ADUZ', SX + 135, SY + 88, 34, '#fff', 800);
+  ctx.font = `800 34px ${F}`; const nw = ctx.measureText('ADUZ').width;
+  ctx.beginPath(); ctx.arc(SX + 135 + nw + 22, SY + 77, 13, 0, 7); ctx.fillStyle = '#4fa3ff'; ctx.fill(); check(SX + 135 + nw + 22, SY + 77, 11, '#fff', 3);
+  text('bot', SX + 135, SY + 126, 24, '#7f91a4', 500);
+  // stopwatch
+  const sec = Math.round(10 * clamp((t - 11.9) / (T6.done - 11.9))), done = t > T6.done;
+  scaled(SX + SW - 130, SY + 96, done ? 1 + .06 * Math.sin(t * 10) : 1, () => {
+    rr(SX + SW - 230, SY + 68, 190, 56, 28); ctx.fillStyle = done ? C.gold : 'rgba(255,255,255,.12)'; ctx.fill();
+    text(`00:${String(sec).padStart(2, '0')}`, SX + SW - 135, SY + 106, 30, done ? C.ink : '#fff', 900, 'center');
+  });
+  // /start
+  const cp = prog(t, T6.cmd, T6.cmd + .3);
+  if (cp > 0) withAlpha(cp, () => scaled(SX + SW - 30, SY + 270, lerp(.5, 1, eBack(cp)), () => {
+    rr(SX + SW - 190, SY + 190, 160, 76, 26); ctx.fillStyle = '#2b5278'; ctx.fill();
+    text('/start', SX + SW - 110, SY + 238, 31, '#e9eef3', 600, 'center');
+  }));
+  // bot welcome card with inline login button
+  const bp = prog(t, T6.bot, T6.bot + .35);
+  if (bp > 0) withAlpha(bp, () => scaled(SX + 30, SY + 740, lerp(.5, 1, eBack(bp)), () => {
+    rr(SX + 30, SY + 300, SW - 140, 440, 28); ctx.fillStyle = '#182533'; ctx.fill();
+    ctx.save(); rr(SX + 30, SY + 300, SW - 140, 180, 28); ctx.clip();
+    const g = ctx.createLinearGradient(SX + 30, SY + 300, SX + SW - 110, SY + 480); g.addColorStop(0, '#0b5a46'); g.addColorStop(1, '#16c784');
+    ctx.fillStyle = g; ctx.fillRect(SX + 30, SY + 300, SW - 140, 180); ctx.restore();
+    logo(SX + 150, SY + 342, .9);
+    text('Xush kelibsiz!', SX + 60, SY + 540, 34, '#fff', 800);
+    text('Telegram reklama ekotizimi.', SX + 60, SY + 584, 27, '#b6c2cf', 500);
+    const lp = prog(t, T6.login + .1, T6.login + .3), b = LOGIN_BTN, press = bump(t, T6.login, .22);
+    scaled(b.x + b.w / 2, b.y + b.h / 2, 1 - .05 * press, () => {
+      rr(b.x, b.y, b.w, b.h, 20); ctx.fillStyle = lp > 0 ? '#16c784' : '#2b5278'; ctx.fill();
+      if (lp > 0) check(b.x + 60, b.y + b.h / 2, 26, '#fff', 6, lp);
+      text(lp > 0 ? 'Kirildi' : 'Telegram orqali kirish', b.x + b.w / 2 + (lp > 0 ? 20 : 0), b.y + b.h / 2 + 10, 28, '#fff', 800, 'center');
+    });
+  }));
+  // START button
+  const sp = 1 - prog(t, T6.start + .1, T6.start + .3);
+  if (sp > 0) withAlpha(sp, () => {
+    const b = START_BTN, press = bump(t, T6.start, .22);
+    scaled(b.x + b.w / 2, b.y + b.h / 2, 1 - .05 * press, () => {
+      rr(b.x, b.y, b.w, b.h, 20); ctx.fillStyle = '#4fa3ff'; ctx.fill();
+      text('START', b.x + b.w / 2, b.y + b.h / 2 + 12, 36, '#fff', 900, 'center');
+    });
+  });
+}
+function homeScreen(t) {
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 160);
+  text('Salom!', SX + 50, SY + 92, 42, '#fff', 900);
+  text('Hammasi bitta joyda', SX + 50, SY + 132, 26, '#d1fae5', 600);
+  const k = t >= T6.tour && t < T6.tour + 6 * .45 ? Math.floor((t - T6.tour) / .45) : -1;
+  TILES.forEach(([title, sub, kind, col], i) => {
+    const p = eBack(prog(t, T6.tiles + i * .15, T6.tiles + .45 + i * .15));
+    if (p <= 0) return;
+    const { x, y } = tilePos(i), on = i === k, lit = t > T6.tour + i * .45;
+    scaled(x + TW / 2, y + TH / 2, p * (on ? 1.05 : 1), () => {
+      ctx.save(); ctx.shadowColor = on ? col : 'rgba(15,23,42,.1)'; ctx.shadowBlur = on ? 40 : 20; ctx.shadowOffsetY = on ? 0 : 6;
+      rr(x, y, TW, TH, 26); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+      if (on) { rr(x, y, TW, TH, 26); ctx.lineWidth = 5; ctx.strokeStyle = col; ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(x + 62, y + 62, 38, 0, 7); ctx.fillStyle = lit || on ? col : '#cbd5e1'; ctx.fill();
+      glyph(kind, x + 62, y + 62, .9);
+      if (lit && !on) { ctx.beginPath(); ctx.arc(x + TW - 36, y + 36, 15, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill(); check(x + TW - 36, y + 37, 14, '#fff', 4); }
+      text(title, x + 26, y + 146, 27, C.ink, 800);
+      text(sub, x + 26, y + 180, 21, C.grey, 600);
+    });
+  });
+  const cp = eBack(prog(t, T6.cta, T6.cta + .4));
+  if (cp > 0) scaled(SX + SW / 2, SY + SH - 100, cp, () => {
+    rr(SX + 40, SY + SH - 150, SW - 80, 100, 50); ctx.fillStyle = '#0ea371'; ctx.fill();
+    text('Birinchi kampaniya  →', SX + SW / 2, SY + SH - 88, 36, '#fff', 800, 'center');
+  });
+  const mp = eOut(prog(t, T6.sheet, T6.sheet + .45));
+  if (mp > 0) {
+    ctx.fillStyle = `rgba(4,20,16,${.55 * mp})`; ctx.fillRect(SX, SY, SW, SH);
+    const sy = lerp(SY + SH, SY + SH - 640, mp);
+    rr(SX, sy, SW, 700, 50); ctx.fillStyle = '#fff'; ctx.fill();
+    const c = eBack(prog(t, T6.sheet + .2, T6.sheet + .6));
+    ctx.beginPath(); ctx.arc(SX + SW / 2, sy + 150, 80 * c, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+    if (c > .5) check(SX + SW / 2, sy + 152, 70, '#fff', 13, prog(t, T6.sheet + .45, T6.sheet + .8));
+    withAlpha(prog(t, T6.sheet + .6, T6.sheet + .9), () => {
+      text('Xush kelibsiz!', SX + SW / 2, sy + 300, 44, C.ink, 800, 'center');
+      ['Roʻyxatdan oʻtish — 10 soniya', 'Ortiqcha hujjatlarsiz', 'Barcha imkoniyatlar bitta joyda'].forEach((s, i) =>
+        withAlpha(prog(t, T6.sheet + .9 + i * .25, T6.sheet + 1.15 + i * .25), () => {
+          check(SX + 90, sy + 380 + i * 70, 26, '#16c784', 6);
+          text(s, SX + 125, sy + 391 + i * 70, 29, '#334155', 600);
+        }));
+    });
+  }
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  camera(1.04 - .04 * eOut(prog(t, 11, 12)) + .025 * eInOut(prog(t, 12, 21.8)), sr, sx, sy, () => {
+    solutionBg(t, 'Bir bosishda ichkarida');
+    const enter = eBack(prog(t, 11.1, 11.75)), slide = eInOut(prog(t, T6.home, T6.home + .5));
+    scaled(W / 2, PY + PH / 2, lerp(.8, 1, enter), () => withAlpha(prog(t, 11.1, 11.35), () =>
+      phone(slide > .5 ? '#f4f7f6' : '#0e1621', 0, lerp(180, 0, enter), 0, () => {
+        if (slide < 1) { ctx.save(); ctx.translate(-SW * slide, 0); ctx.fillStyle = '#0e1621'; ctx.fillRect(SX, SY, SW, SH); botScreen(t); ctx.restore(); }
+        if (slide > 0) { ctx.save(); ctx.translate(SW * (1 - slide), 0); ctx.fillStyle = '#f4f7f6'; ctx.fillRect(SX, SY, SW, SH); homeScreen(t); ctx.restore(); }
+      })));
+    const sb = [START_BTN.x + START_BTN.w / 2 + 60, START_BTN.y + 48], lb = [LOGIN_BTN.x + LOGIN_BTN.w / 2 + 40, LOGIN_BTN.y + 40];
+    if (t > 11.5 && t < 13.6) {
+      const [cx, cy] = pathAt(t, [[11.5, W - 40, 1600], [T6.start, sb[0], sb[1]], [12.7, sb[0], sb[1]], [T6.login, lb[0], lb[1]]]);
+      withAlpha(Math.min(prog(t, 11.5, 11.7), 1 - prog(t, 13.35, 13.6)), () => cursor(cx, cy, Math.max(bump(t, T6.start, .22), bump(t, T6.login, .22))));
+    }
+    ripple(sb[0], sb[1], prog(t, T6.start, T6.start + .6), '#ffffff');
+    ripple(lb[0], lb[1], prog(t, T6.login, T6.login + .6), '#16c784');
+  });
+  const dim = prog(t, T6.slam - .05, T6.slam + .1) * (1 - prog(t, T6.sheet - .2, T6.sheet));
+  if (dim > 0) withAlpha(dim * .55, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, T6.slam, W / 2, 880, C.gold, 1100);
+  sparks(t, T6.slam, W / 2, 880, 67, [C.gold, '#fff3c4', '#22e39a'], 40, 1250);
+  slam(t, T6.slam, '1 BOSISH', W / 2, 840, 200, C.gold, { hold: 1.0, glow: 'rgba(255,200,61,.8)' });
+  slam(t, T6.slam + .15, 'va siz ichkaridasiz', W / 2, 1020, 64, '#fff', { hold: .85, glow: 'rgba(255,200,61,.6)' });
+  flash(t, T6.slam, '#fff3c4', .35, .5);
+}
+
+// ---------- SCENE 3 — Natija ----------
+const STEPS = [['Roʻyxatdan oʻtish', '10 soniya', 22.8], ['Kanallarni tanlash', '1 daqiqa', 23.5], ['Kampaniya ishga tushdi', '3 daqiqa', 24.2], ['Birinchi mijoz', '1-kun', 24.95]];
+function badge(bx, by, label, kind, p) {
+  scaled(bx, by, p, () => {
+    ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 40;
+    ctx.beginPath(); ctx.arc(bx, by, 92, 0, 7);
+    const gg = ctx.createLinearGradient(bx - 92, by - 92, bx + 92, by + 92);
+    gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(bx, by, 76, 0, 7); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+    glyph(kind, bx, by, 1.5);
+    text(label, bx, by + 145, 34, '#fff', 800, 'center');
+  });
+}
+const IMPACTS3 = [[22.0, 26], [25.0, 16]];
+function scene3(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera(1 + .03 * eInOut(prog(t, 22, 27)), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.3));
+    withAlpha(1 - out, () => {
+      withAlpha(prog(t, 22.3, 22.8), () => {
+        text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
+        text('Birinchi kundayoq', W / 2, 260, 60, '#fff', 800, 'center');
+      });
+      // journey card
+      const cp = eOut(prog(t, 22.4, 23.0)), x = 90, y = lerp(410, 340, cp), w = 900, h = 700;
+      withAlpha(cp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+        rr(x, y, w, h, 40); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+        const lx = x + 110, y0 = y + 110, gap = 160;
+        ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(lx, y0); ctx.lineTo(lx, y0 + gap * 3); ctx.lineWidth = 12; ctx.strokeStyle = '#e2e8f0'; ctx.stroke();
+        const fp = clamp((t - 22.6) / (24.95 - 22.6));
+        ctx.beginPath(); ctx.moveTo(lx, y0); ctx.lineTo(lx, y0 + gap * 3 * fp); ctx.lineWidth = 12; ctx.strokeStyle = '#16c784'; ctx.stroke();
+        STEPS.forEach(([title, time, at], i) => {
+          const sy2 = y0 + i * gap, reached = prog(t, at, at + .3), last = i === 3;
+          ctx.beginPath(); ctx.arc(lx, sy2, 40, 0, 7); ctx.fillStyle = reached > 0 ? (last ? C.gold : '#16c784') : '#e2e8f0'; ctx.fill();
+          if (reached > 0) scaled(lx, sy2, eBack(reached), () => check(lx, sy2 + 2, 34, last ? C.ink : '#fff', 8));
+          withAlpha(.35 + .65 * Math.min(1, reached * 2), () => {
+            text(title, lx + 80, sy2 + 2, 36, C.ink, 800);
+            text(time, x + w - 60, sy2 + 2, 34, last ? '#b45309' : '#059669', 900, 'right');
+          });
+        });
+      });
+      [['Oson', 'tap'], ['Tez', 'bolt'], ['Xavfsiz', 'shield']].forEach(([l, k], i) => {
+        const p = eBack(prog(t, 25.2 + i * .25, 25.65 + i * .25));
+        if (p > 0) badge(230 + i * 310, 1210, l, k, p);
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 900, C.gold, 900);
+  sparks(t, 25.0, 200, 1000, 69, [C.gold, '#fff', '#22e39a'], 34, 1100);
+  confetti(t, 25.0);
+  endCard(t, 27.0);
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.55, b: 11.0, fn: (t, a, b, A, B) => splitDoors(t, a, b, A, B, '#22e39a') },
+    { a: 21.75, b: 22.25, fn: zoomThrough },
+  ],
+  overlay: t => { filmLook(t); flash(t, 11.0, '#ffffff', .3, .55); },
+});
+</script>
+</body>
+</html>

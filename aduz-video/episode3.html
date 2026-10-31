@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 3-qism</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// ADUZ — 3-qism: "Soxta obunachilar va ishonchsizlik"
+// Scenes for this episode; shared helpers live in lib.js.
+
+const CAPTIONS = [
+  [0.4, 5.6, '250 ming obunachi — lekin reklamangizni deyarli hech kim koʻrmadi.'],
+  [5.8, 10.8, 'Obunachilar sotib olingan: botlar, oʻchirilgan akkauntlar, soxta koʻrishlar.'],
+  [11.4, 16.2, 'ADUZ har bir kanalni tekshiradi: botlar, soxta koʻrishlar, sunʼiy oʻsish.'],
+  [16.4, 21.8, 'Katalogda faqat haqiqiy va faol auditoriyali kanallar qoladi.'],
+  [22.4, 27.0, 'Endi har bir koʻrish ortida — haqiqiy odam va haqiqiy mijoz.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+
+const PEOPLE = ['#f59e0b', '#3b82f6', '#ec4899', '#16c784', '#a855f7', '#ef4444', '#06b6d4', '#84cc16'];
+// Round avatar: a bot (grey, square eyes), a deleted account (dark ghost) or a real person (colour + silhouette).
+function avatar(x, y, r, kind, col) {
+  ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.clip();
+  if (kind === 'real') {
+    ctx.fillStyle = col; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.beginPath(); ctx.arc(x, y - r * .2, r * .36, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x, y + r * .82, r * .62, r * .48, 0, 0, 7); ctx.fill();
+  } else if (kind === 'bot') {
+    ctx.fillStyle = '#475569'; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+    rr(x - r * .5, y - r * .35, r, r * .7, r * .15); ctx.fillStyle = '#94a3b8'; ctx.fill();
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(x - r * .32, y - r * .12, r * .18, r * .18); ctx.fillRect(x + r * .14, y - r * .12, r * .18, r * .18);
+    ctx.fillRect(x - r * .04, y - r * .62, r * .08, r * .27);
+  } else {
+    ctx.fillStyle = '#1f2937'; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+    ctx.fillStyle = '#4b5563';
+    ctx.beginPath(); ctx.arc(x, y - r * .1, r * .42, Math.PI, 0); ctx.lineTo(x + r * .42, y + r * .45);
+    for (let i = 0; i < 4; i++) ctx.lineTo(x + r * .42 - (i + .5) * r * .21, y + r * (i % 2 ? .45 : .3));
+    ctx.lineTo(x - r * .42, y + r * .45); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ---------- SCENE 1 — Muammo ----------
+const SUBS = [
+  ['user_83746251', 'hech qachon onlayn boʻlmagan', 'bot', 'BOT'],
+  ['Deleted Account', 'oʻchirilgan akkaunt', 'ghost', 'OʻCHIRILGAN'],
+  ['bot_5521x', 'hech qachon onlayn boʻlmagan', 'bot', 'BOT'],
+  ['Nigora_2291', 'hech qachon onlayn boʻlmagan', 'bot', 'BOT'],
+  ['Deleted Account', 'oʻchirilgan akkaunt', 'ghost', 'OʻCHIRILGAN'],
+  ['user_11029384', 'hech qachon onlayn boʻlmagan', 'bot', 'BOT'],
+];
+// 30-day subscriber history: flat, then +80 000 in a single day.
+const GROWTH = Array.from({ length: 30 }, (_, i) => i < 21 ? .18 + i * .004 : i === 21 ? .5 : .9 + (i - 22) * .003);
+const ERRORS = [
+  [6.6, 'Bot obunachilar', 40, 470, -.07],
+  [7.1, 'Sunʼiy koʻrishlar', 650, 640, .07],
+  [7.6, 'ERR 0,7%', 40, 1420, .05],
+  [8.1, 'Ishonch yoʻq', 680, 1470, -.06],
+];
+// Bot avatars drifting in the background.
+const GHOSTS = (() => {
+  const r = rnd(23);
+  return Array.from({ length: 22 }, (_, i) => ({ x: r() * W, y: r() * H, s: .6 + r() * .8, v: 20 + r() * 40, k: i % 3 ? 'bot' : 'ghost' }));
+})();
+function sofa(cx, cy, s) {
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.fillStyle = 'rgba(255,255,255,.92)';
+  rr(-110, -60, 220, 70, 20); ctx.fill();
+  rr(-140, -20, 60, 80, 18); ctx.fill(); rr(80, -20, 60, 80, 18); ctx.fill();
+  rr(-100, 0, 200, 50, 12); ctx.fill();
+  ctx.fillRect(-120, 60, 14, 22); ctx.fillRect(106, 60, 14, 22);
+  ctx.restore();
+}
+function scene1(t) {
+  const stress = prog(t, 5.5, 10);
+  problemBg(t, stress);
+  for (const g of GHOSTS) {
+    const y = ((g.y - g.v * t) % H + H) % H;
+    withAlpha(.13 + .1 * stress, () => avatar(g.x, y, 34 * g.s, g.k));
+  }
+  episodeTitle(t, '3-QISM', 'Soxta obunachilar va ishonchsizlik', 50);
+
+  // the 250 000 subscriber count deflates to the real number
+  const views = 1900 * eOut(prog(t, 1.2, 4.2));
+  const deflate = eInOut(prog(t, 9.0, 10.0));
+  const subs = lerp(250000, 3100, deflate);
+  counters(t, [
+    [fmt(subs), deflate > .5 ? 'haqiqiy obunachi' : 'obunachi', deflate > .5 ? C.red : '#fff'],
+    [fmt(views), 'koʻrish', t > 3.6 ? C.red : '#fff'],
+    ['1,5 mln', 'soʻm sarflandi', C.red],
+  ]);
+  if (deflate > 0 && deflate < 1) { // shrinking ring around the first tile
+    ctx.beginPath(); ctx.arc(200, 278, 60 + 120 * (1 - deflate), 0, 7);
+    ctx.lineWidth = 5; ctx.strokeStyle = `rgba(255,59,78,${1 - deflate})`; ctx.stroke();
+  }
+
+  const shake = t > 6.5 ? Math.sin(t * 47) * 7 * stress : 0;
+  const enter = eOut(prog(t, 0, .7));
+  phone('#0e1621', shake, lerp(120, 0, enter), shake * .002, () => {
+    ctx.fillStyle = '#17212b'; ctx.fillRect(SX, SY, SW, 150);
+    ctx.beginPath(); ctx.arc(SX + 80, SY + 95, 36, 0, 7); ctx.fillStyle = '#f97316'; ctx.fill();
+    text('BO', SX + 80, SY + 97, 28, '#fff', 800, 'center', 'middle');
+    text('Biznes Olami', SX + 135, SY + 88, 34, '#fff', 700);
+    text('250 000 obunachi', SX + 135, SY + 126, 24, '#7f91a4', 500);
+    // the ad post
+    const pp = eOut(prog(t, .6, 1.2));
+    const px = SX + 30, py = SY + 180 + lerp(60, 0, pp), pw = SW - 60;
+    withAlpha(pp, () => {
+      rr(px, py, pw, 470, 28); ctx.fillStyle = '#182533'; ctx.fill();
+      ctx.save(); rr(px, py, pw, 260, 28); ctx.clip();
+      const ig = ctx.createLinearGradient(px, py, px + pw, py + 260);
+      ig.addColorStop(0, '#b45309'); ig.addColorStop(1, '#78350f'); ctx.fillStyle = ig; ctx.fillRect(px, py, pw, 260);
+      sofa(px + pw / 2, py + 125, 1.1);
+      ctx.restore();
+      text('Fargʻona Mebel — yangi kolleksiya', px + 28, py + 315, 31, '#fff', 800);
+      text('Chegirmalar faqat shu hafta', px + 28, py + 360, 27, '#b6c2cf', 500);
+      eye(px + 40, py + 425, 1.3, t > 3.6 ? '#ff8a96' : '#7f91a4');
+      text(fmt(views), px + 70, py + 435, 26, t > 3.6 ? '#ff8a96' : '#7f91a4', 700);
+      text('0 reaksiya · 0 izoh', px + pw - 28, py + 435, 24, '#7f91a4', 500, 'right');
+    });
+    withAlpha(prog(t, 3.6, 4.0), () => {
+      rr(SX + 30, SY + 680, SW - 60, 150, 24); ctx.fillStyle = 'rgba(255,59,78,.14)'; ctx.fill();
+      text('Kutilgan: 50 000+ koʻrish', SX + 60, SY + 740, 30, '#b6c2cf', 600);
+      text('Haqiqatda: 1 900', SX + 60, SY + 795, 34, '#ff8a96', 800);
+    });
+    // subscriber audit sheet
+    const sp = eOut(prog(t, 4.8, 5.3));
+    if (sp > 0) {
+      ctx.fillStyle = `rgba(0,0,0,${.5 * sp})`; ctx.fillRect(SX, SY, SW, SH);
+      const sy = lerp(SY + SH, SY + 250, sp);
+      rr(SX, sy, SW, SH, 44); ctx.fillStyle = '#17212b'; ctx.fill();
+      rr(SX + SW / 2 - 50, sy + 18, 100, 8, 4); ctx.fillStyle = '#3a4a5c'; ctx.fill();
+      text('Obunachilar', SX + 40, sy + 90, 36, '#fff', 800);
+      text('250 000', SX + SW - 40, sy + 90, 30, '#7f91a4', 700, 'right');
+      SUBS.forEach(([name, status, kind, tag], i) => {
+        const ry = sy + 130 + i * 80;
+        avatar(SX + 72, ry + 38, 30, kind);
+        text(name, SX + 120, ry + 32, 27, '#e9eef3', 600);
+        text(status, SX + 120, ry + 62, 21, '#7f91a4', 500);
+        const tp = eBack(prog(t, 5.6 + i * .22, 5.9 + i * .22));
+        if (tp > 0) scaled(SX + SW - 100, ry + 38, tp, () => {
+          ctx.font = `800 20px ${F}`; const tw = ctx.measureText(tag).width + 28;
+          rr(SX + SW - 40 - tw, ry + 22, tw, 34, 17); ctx.fillStyle = 'rgba(255,59,78,.2)'; ctx.fill();
+          text(tag, SX + SW - 40 - tw / 2, ry + 40, 20, '#ff8a96', 800, 'center', 'middle');
+        });
+      });
+      // red scan line
+      const sc = prog(t, 5.3, 6.9);
+      if (sc > 0 && sc < 1) {
+        const ly = sy + 130 + sc * 480;
+        const lg = ctx.createLinearGradient(0, ly - 40, 0, ly);
+        lg.addColorStop(0, 'rgba(255,59,78,0)'); lg.addColorStop(1, 'rgba(255,59,78,.35)');
+        ctx.fillStyle = lg; ctx.fillRect(SX, ly - 40, SW, 40);
+        ctx.fillStyle = C.red; ctx.fillRect(SX, ly, SW, 4);
+      }
+      // growth chart with the bought spike
+      const cy0 = sy + 640, ch = 200, cx0 = SX + 40, cw = SW - 80;
+      text('Obunachilar oʻsishi · 30 kun', cx0, cy0 + 4, 24, '#7f91a4', 700);
+      const gp = eInOut(prog(t, 6.6, 8.0));
+      const n = Math.max(1, Math.round(gp * (GROWTH.length - 1)));
+      ctx.beginPath();
+      GROWTH.slice(0, n + 1).forEach((v, i) => {
+        const x = cx0 + i * cw / (GROWTH.length - 1), y = cy0 + 30 + ch - v * ch;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.lineWidth = 7; ctx.lineJoin = 'round'; ctx.strokeStyle = n > 21 ? C.red : '#7f91a4'; ctx.stroke();
+      withAlpha(prog(t, 7.6, 8.0), () => {
+        const x = cx0 + 21.5 * cw / 29;
+        rr(x - 250, cy0 + 50, 230, 56, 16); ctx.fillStyle = C.red; ctx.fill();
+        text('+80 000 bir kunda', x - 135, cy0 + 79, 24, '#fff', 800, 'center', 'middle');
+      });
+    }
+    ctx.fillStyle = `rgba(255,40,60,${.14 * stress})`; ctx.fillRect(SX, SY, SW, SH);
+  });
+  errorBadges(t, ERRORS);
+}
+function eye(x, y, s, color) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.beginPath(); ctx.moveTo(-14, 0); ctx.quadraticCurveTo(0, -12, 14, 0); ctx.quadraticCurveTo(0, 12, -14, 0);
+  ctx.lineWidth = 2.5; ctx.strokeStyle = color; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.restore();
+}
+
+// ---------- SCENE 2 — Yechim ----------
+const CHECKS = [
+  ['Faol obunachilar', '1,2%'],
+  ['Bot va oʻchirilgan akkauntlar', '78%'],
+  ['Koʻrishlar dinamikasi', 'sunʼiy'],
+  ['Oʻsish tarixi', '+80 ming / 1 kun'],
+];
+const VERIFIED = [
+  { name: 'Fargʻona Biznes', init: 'FB', col: '#16c784', real: 96, active: '31 ming', err: '31%', price: '320 000' },
+  { name: 'Vodiy Uy-Joy', init: 'VU', col: '#3b82f6', real: 94, active: '18 ming', err: '27%', price: '210 000' },
+  { name: 'Qoʻqon Bozori', init: 'QB', col: '#a855f7', real: 92, active: '42 ming', err: '24%', price: '380 000' },
+];
+const T2 = { type: 12.0, scan: 12.9, score: 15.0, stamp: 15.35, slide: 16.0, order: 17.6 };
+const BTN = { x: SX + 40, y: SY + SH - 150, w: SW - 80, h: 100 };
+const CHECK_BTN = { x: SX + SW - 230, y: SY + 196, w: 170, h: 64 };
+function shieldTick(x, y, s, fill) { shield(x, y, s, fill); check(x + s, y + 2 * s, 22 * s, '#fff', 4.5 * s); }
+function auditScreen(t) {
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 150);
+  text('Kanal tekshiruvi', SX + 50, SY + 112, 40, '#fff', 800);
+  rr(SX + 40, SY + 185, SW - 80, 86, 43); ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = t > T2.type && t < T2.scan ? '#16c784' : '#dbe3e0'; ctx.stroke();
+  const q = '@biznes_olami', n = Math.round(q.length * prog(t, T2.type, T2.type + .7));
+  text(n ? q.slice(0, n) : 'Kanal havolasi...', SX + 80, SY + 239, 32, n ? C.ink : '#94a3b8', n ? 700 : 500);
+  const b = CHECK_BTN, press = bump(t, T2.scan, .2);
+  scaled(b.x + b.w / 2, b.y + b.h / 2, 1 - .06 * press, () => {
+    rr(b.x, b.y, b.w, b.h, 32); ctx.fillStyle = '#0ea371'; ctx.fill();
+    text('Tekshirish', b.x + b.w / 2, b.y + b.h / 2 + 2, 26, '#fff', 800, 'center', 'middle');
+  });
+  // checklist
+  const cy = SY + 300;
+  withAlpha(prog(t, T2.scan, T2.scan + .3), () => {
+    rr(SX + 40, cy, SW - 80, 430, 28); ctx.fillStyle = '#fff'; ctx.fill();
+    CHECKS.forEach(([label, val], i) => {
+      const a = T2.scan + .15 + i * .5, done = t > a + .4, ry = cy + 60 + i * 100, ix = SX + 90;
+      if (t < a) { ctx.beginPath(); ctx.arc(ix, ry, 22, 0, 7); ctx.lineWidth = 4; ctx.strokeStyle = '#e2e8f0'; ctx.stroke(); }
+      else if (!done) {
+        ctx.beginPath(); ctx.arc(ix, ry, 22, t * 9, t * 9 + 4.5); ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.strokeStyle = '#16c784'; ctx.stroke();
+      } else {
+        const p = eBack(prog(t, a + .4, a + .65));
+        scaled(ix, ry, p, () => { ctx.beginPath(); ctx.arc(ix, ry, 24, 0, 7); ctx.fillStyle = C.red; ctx.fill(); cross(ix, ry, 9, '#fff', 5); });
+      }
+      text(label, SX + 135, ry + 9, 27, '#334155', 600);
+      if (done) withAlpha(prog(t, a + .4, a + .6), () => text(val, SX + SW - 70, ry + 9, 27, C.red, 800, 'right'));
+      if (i < 3) { ctx.fillStyle = '#eef2f1'; ctx.fillRect(SX + 70, ry + 50, SW - 140, 2); }
+    });
+  });
+  // trust score
+  const sp = eOut(prog(t, T2.score, T2.score + .4));
+  if (sp > 0) withAlpha(sp, () => {
+    const y = SY + 760;
+    rr(SX + 40, y, SW - 80, 190, 28); ctx.fillStyle = '#fef2f2'; ctx.fill();
+    text('Ishonch reytingi', SX + 80, y + 70, 30, '#7f1d1d', 700);
+    text(`${Math.round(12 * sp)}/100`, SX + SW - 80, y + 78, 64, C.red, 900, 'right');
+    rr(SX + 80, y + 125, SW - 160, 18, 9); ctx.fillStyle = '#fecaca'; ctx.fill();
+    rr(SX + 80, y + 125, (SW - 160) * .12 * sp, 18, 9); ctx.fillStyle = C.red; ctx.fill();
+  });
+  // stamp
+  const st = prog(t, T2.stamp, T2.stamp + .2);
+  if (st > 0) withAlpha(st, () => {
+    ctx.save(); ctx.translate(SX + SW / 2, SY + 520); ctx.rotate(-.18); ctx.scale(lerp(2.2, 1, eOut(st)), lerp(2.2, 1, eOut(st)));
+    rr(-250, -70, 500, 140, 18); ctx.lineWidth = 10; ctx.strokeStyle = C.red; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill();
+    text('KATALOGGA', 0, -14, 40, C.red, 900, 'center', 'middle');
+    text('KIRITILMADI', 0, 34, 40, C.red, 900, 'center', 'middle');
+    ctx.restore();
+  });
+}
+function verifiedScreen(t) {
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 150);
+  text('Tekshirilgan kanallar', SX + 50, SY + 112, 40, '#fff', 800);
+  rr(SX + 40, SY + 180, SW - 80, 110, 24); ctx.fillStyle = '#d1fae5'; ctx.fill();
+  shieldTick(SX + 95, SY + 232, 1, '#059669');
+  text('Har bir kanal har kuni', SX + 140, SY + 226, 27, '#065f46', 700);
+  text('avtomatik tekshiriladi', SX + 140, SY + 262, 27, '#065f46', 700);
+  VERIFIED.forEach((c, i) => {
+    const p = eOut(prog(t, T2.slide + .35 + i * .25, T2.slide + .9 + i * .25));
+    if (p <= 0) return;
+    const x = SX + 40 + lerp(SW, 0, p), y = SY + 320 + i * 205, w = SW - 80, h = 185;
+    ctx.save(); ctx.shadowColor = 'rgba(15,23,42,.12)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+    rr(x, y, w, h, 28); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+    if (i === 0) { const s = prog(t, 17.5, 17.8); if (s > 0) { rr(x, y, w, h, 28); ctx.lineWidth = 6 * s; ctx.strokeStyle = '#16c784'; ctx.stroke(); } }
+    ctx.beginPath(); ctx.arc(x + 70, y + 70, 42, 0, 7); ctx.fillStyle = c.col; ctx.fill();
+    text(c.init, x + 70, y + 72, 30, '#fff', 800, 'center', 'middle');
+    text(c.name, x + 132, y + 62, 33, C.ink, 800);
+    ctx.font = `800 33px ${F}`; shieldTick(x + 132 + ctx.measureText(c.name).width + 30, y + 50, .7, '#16c784');
+    text(`faol ${c.active} · ERR ${c.err}`, x + 132, y + 104, 24, C.grey, 600);
+    const bp = eOut(prog(t, T2.slide + .8 + i * .25, T2.slide + 1.6 + i * .25));
+    rr(x + 132, y + 132, w - 380, 16, 8); ctx.fillStyle = '#e2e8f0'; ctx.fill();
+    rr(x + 132, y + 132, Math.max(16, (w - 380) * c.real / 100 * bp), 16, 8); ctx.fillStyle = '#16c784'; ctx.fill();
+    text(`Haqiqiy ${Math.round(c.real * bp)}%`, x + w - 32, y + 150, 26, '#059669', 800, 'right');
+    text(`${c.price} soʻm`, x + w - 32, y + 104, 26, C.ink, 800, 'right');
+  });
+  const bp = eBack(prog(t, 16.8, 17.2));
+  if (bp > 0) {
+    const press = bump(t, T2.order);
+    scaled(BTN.x + BTN.w / 2, BTN.y + BTN.h / 2, bp * (1 - .05 * press), () => {
+      rr(BTN.x, BTN.y, BTN.w, BTN.h, 50); ctx.fillStyle = '#0ea371'; ctx.fill();
+      text('Buyurtma berish  →', BTN.x + BTN.w / 2, BTN.y + BTN.h / 2 + 2, 36, '#fff', 800, 'center', 'middle');
+    });
+  }
+  const mp = eOut(prog(t, 18.1, 18.6));
+  if (mp > 0) {
+    ctx.fillStyle = `rgba(4,20,16,${.55 * mp})`; ctx.fillRect(SX, SY, SW, SH);
+    const sy = lerp(SY + SH, SY + SH - 640, mp);
+    rr(SX, sy, SW, 700, 50); ctx.fillStyle = '#fff'; ctx.fill();
+    const cp = eBack(prog(t, 18.4, 18.9));
+    ctx.beginPath(); ctx.arc(SX + SW / 2, sy + 150, 80 * cp, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+    if (cp > .5) check(SX + SW / 2, sy + 152, 70, '#fff', 13, prog(t, 18.7, 19.1));
+    withAlpha(prog(t, 18.9, 19.3), () => {
+      text('Faqat haqiqiy koʻrishlar!', SX + SW / 2, sy + 300, 42, C.ink, 800, 'center');
+      ['96% auditoriya — haqiqiy odamlar', 'Kanal har kuni qayta tekshiriladi', 'Statistika real vaqtda'].forEach((s, i) =>
+        withAlpha(prog(t, 19.3 + i * .35, 19.6 + i * .35), () => {
+          check(SX + 90, sy + 380 + i * 70, 26, '#16c784', 6);
+          text(s, SX + 125, sy + 391 + i * 70, 29, '#334155', 600);
+        }));
+    });
+  }
+}
+function scene2(t) {
+  solutionBg(t, 'Faqat haqiqiy auditoriya');
+  const enter = eOut(prog(t, 11.3, 12)), slide = eInOut(prog(t, T2.slide, T2.slide + .5));
+  phone('#f4f7f6', 0, lerp(200, 0, enter), 0, () => {
+    if (slide < 1) { ctx.save(); ctx.translate(-SW * slide, 0); auditScreen(t); ctx.restore(); }
+    if (slide > 0) { ctx.save(); ctx.translate(SW * (1 - slide), 0); ctx.fillStyle = '#f4f7f6'; ctx.fillRect(SX, SY, SW, SH); verifiedScreen(t); ctx.restore(); }
+  });
+  const cb = [CHECK_BTN.x + CHECK_BTN.w / 2, CHECK_BTN.y + CHECK_BTN.h / 2], ob = [BTN.x + BTN.w / 2 + 40, BTN.y + 50];
+  if (t > 12.2 && t < 13.5) {
+    const [cx, cy] = pathAt(t, [[12.2, W - 40, 1560], [T2.scan, cb[0], cb[1]]]);
+    withAlpha(Math.min(prog(t, 12.2, 12.4), 1 - prog(t, 13.2, 13.5)), () => cursor(cx, cy, bump(t, T2.scan, .2)));
+  }
+  ripple(cb[0], cb[1], prog(t, T2.scan, T2.scan + .6), '#16c784');
+  if (t > 16.9 && t < 18.2) {
+    const [cx, cy] = pathAt(t, [[16.9, W - 60, 1560], [17.5, ob[0], ob[1]]]);
+    withAlpha(Math.min(prog(t, 16.9, 17.1), 1 - prog(t, 17.95, 18.2)), () => cursor(cx, cy, bump(t, T2.order, .25)));
+  }
+  ripple(ob[0], ob[1], prog(t, T2.order + .05, T2.order + .7), '#ffffff');
+}
+
+// ---------- SCENE 3 — Natija ----------
+const GRID = (() => {
+  const r = rnd(9);
+  return Array.from({ length: 50 }, (_, i) => ({ col: PEOPLE[Math.floor(r() * PEOPLE.length)], stays: i === 17 || i === 36 }));
+})();
+function scene3(t) {
+  resultBg(t);
+  const out = eInOut(prog(t, 26.6, 27.3));
+  withAlpha(1 - out, () => {
+    withAlpha(prog(t, 22.2, 22.7), () => {
+      text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
+      text('Haqiqiy auditoriya', W / 2, 260, 60, '#fff', 800, 'center');
+    });
+    // viewers grid: bots flip into real people
+    const cp = eOut(prog(t, 22.3, 22.9));
+    const x = 90, y = lerp(400, 330, cp), w = 900, h = 620;
+    withAlpha(cp, () => {
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+      rr(x, y, w, h, 40); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+      text('Reklamani koʻrganlar', x + 50, y + 80, 34, C.ink, 800);
+      const real = GRID.filter((g, i) => !g.stays && t > 22.8 + i * .036 + .1).length;
+      text(`haqiqiy ${Math.round(real / GRID.length * 100)}%`, x + w - 50, y + 82, 36, '#059669', 900, 'right');
+      GRID.forEach((g, i) => {
+        const cx = x + 90 + (i % 10) * 80, cy = y + 175 + Math.floor(i / 10) * 92;
+        const f = prog(t, 22.8 + i * .036, 22.8 + i * .036 + .2), sx = Math.abs(Math.cos(f * Math.PI));
+        const kind = f < .5 ? 'bot' : g.stays ? 'bot' : 'real';
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(Math.max(.02, sx), 1); ctx.translate(-cx, -cy);
+        withAlpha(kind === 'bot' && f >= .5 ? .25 : 1, () => avatar(cx, cy, 34, kind, g.col));
+        ctx.restore();
+      });
+    });
+    // stat tiles
+    const np = eOut(prog(t, 23.6, 25.0));
+    [[fmt(14200 * np), 'haqiqiy koʻrish'], [`${Math.round(31 * np)}%`, 'ERR'], [String(Math.round(47 * np)), 'mijoz']].forEach(([v, l], i) => {
+      const p = eBack(prog(t, 23.4 + i * .15, 23.8 + i * .15));
+      if (p <= 0) return;
+      const tx = 90 + i * 310, ty = 1010;
+      scaled(tx + 140, ty + 100, p, () => {
+        rr(tx, ty, 280, 200, 32); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill();
+        text(v, tx + 140, ty + 100, 56, '#059669', 900, 'center');
+        text(l, tx + 140, ty + 150, 26, C.grey, 600, 'center');
+      });
+    });
+    const pp = eBack(prog(t, 25.0, 25.4));
+    if (pp > 0) scaled(W / 2, 1300, pp, () => {
+      ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 40;
+      rr(W / 2 - 370, 1250, 740, 100, 50);
+      const gg = ctx.createLinearGradient(W / 2 - 370, 0, W / 2 + 370, 0);
+      gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+      shieldTick(W / 2 - 305, 1298, 1, '#0b5a46');
+      text('Ishonch reytingi 96/100', W / 2 + 30, 1302, 44, C.ink, 900, 'center', 'middle');
+    });
+  });
+  confetti(t, 24.9);
+  endCard(t, 27.0);
+}
+
+boot({ scene1, scene2, scene3, captions: CAPTIONS });
+</script>
+</body>
+</html>

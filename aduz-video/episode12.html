@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 12-qism</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// ADUZ — 12-qism: "Shaffof statistika va jonli tahlil" (7-qism uslubida)
+// Problem: "shooting in the dark" — darts thrown into a black room lit only by a wandering flashlight;
+// a lightning strobe reveals they all missed. Transition: lights on (fluorescent flicker, FLICKER_ON in lib.js).
+// Solution: live dashboard with a weekly heatmap, a city map and a one-tap recommendation. Sound: CUES_12.
+
+const CAPTIONS = [
+  [0.4, 4.8, 'Reklama berdingiz — lekin kim, qachon, qayerda koʻrdi? Qorongʻi.'],
+  [5.0, 9.4, 'Har bir reklama — qorongʻida otilgan oʻq.'],
+  [9.6, 10.4, '...tegdimi, yoʻqmi — nomaʼlum.'],
+  [11.4, 16.2, 'ADUZʼda hammasi jonli: issiqlik xaritasi qachon va qayerda koʻrishayotganini koʻrsatadi.'],
+  [16.4, 21.6, 'Tavsiyani bir bosishda qoʻllaysiz — koʻrishlar darhol oshadi.'],
+  [22.4, 27.0, 'Endi har bir reklama — nishonga.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+
+function glyph(kind, x, y, s = 1, col = '#fff') {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (kind === 'pulse') { ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(-14, 0); ctx.lineTo(-6, -20); ctx.lineTo(4, 22); ctx.lineTo(12, -8); ctx.lineTo(18, 0); ctx.lineTo(30, 0); ctx.stroke(); }
+  else if (kind === 'grid') { for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { ctx.globalAlpha = .45 + .55 * ((i + j) % 3) / 2; rr(-24 + i * 17, -24 + j * 17, 13, 13, 2); ctx.fill(); } ctx.globalAlpha = 1; }
+  else if (kind === 'bulb') { ctx.beginPath(); ctx.arc(0, -6, 18, 0, 7); ctx.fill(); rr(-9, 12, 18, 14, 3); ctx.fill(); }
+  else if (kind === 'eye') { ctx.beginPath(); ctx.moveTo(-26, 0); ctx.quadraticCurveTo(0, -22, 26, 0); ctx.quadraticCurveTo(0, 22, -26, 0); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 7, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+function dartboard(cx, cy, R) {
+  [['#111827', 1], ['#e5e7eb', .82], ['#111827', .64], ['#e5e7eb', .46], ['#16a34a', .28], ['#dc2626', .12]].forEach(([c, k]) => { ctx.beginPath(); ctx.arc(cx, cy, R * k, 0, 7); ctx.fillStyle = c; ctx.fill(); });
+  for (let i = 0; i < 20; i++) { const a = i * Math.PI / 10; ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * R * .12, cy + Math.sin(a) * R * .12); ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(148,163,184,.5)'; ctx.stroke(); }
+}
+function dart(x, y, ang, s = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.scale(s, s);
+  ctx.fillStyle = '#e5e7eb'; ctx.fillRect(-4, -70, 8, 70);
+  ctx.beginPath(); ctx.moveTo(0, -70); ctx.lineTo(-18, -100); ctx.lineTo(0, -88); ctx.lineTo(18, -100); ctx.closePath(); ctx.fillStyle = '#ef4444'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-3, 0); ctx.lineTo(0, 14); ctx.lineTo(3, 0); ctx.fill(); ctx.restore();
+}
+
+// ---------- SCENE 1 — Muammo: in the dark ----------
+const BOARD = [W / 2, 800, 290];
+const DARTS = [[1.4, 300, 560], [2.3, 840, 1010], [3.2, 470, 1120], [4.1, 760, 520], [5.0, 230, 940], [5.9, 640, 790], [6.8, 900, 700], [7.7, 380, 680]];
+const STROBE = [8.5, 8.62, 8.78];
+const IMPACTS1 = [[8.5, 46]];
+function flashlight(t) {
+  if (t > 9.4) return null;
+  const keys = [[0, 540, 820], [1.4, 300, 560], [2.3, 840, 1010], [3.2, 470, 1120], [4.1, 760, 520], [5.0, 230, 940], [6.0, 560, 1360], [7.0, 860, 700], [8.2, 420, 760]];
+  return pathAt(t, keys);
+}
+function postCard(t) {
+  const p = eOut(prog(t, .8, 1.3)); if (p <= 0) return;
+  withAlpha(p, () => {
+    rr(140, 1260, 800, 250, 30); ctx.fillStyle = '#182533'; ctx.fill();
+    ctx.beginPath(); ctx.arc(220, 1335, 40, 0, 7); ctx.fillStyle = '#ec4899'; ctx.fill(); text('FS', 220, 1337, 26, '#fff', 800, 'center', 'middle');
+    text('Fargʻona Style — reklama posti', 280, 1330, 30, '#fff', 800); text('kecha 19:00', 280, 1368, 23, '#7f91a4', 600);
+    glyph('eye', 210, 1450, .9, '#7f91a4'); text('?', 250, 1462, 40, '#ff8a96', 900);
+    text('Statistika mavjud emas', 900, 1462, 26, '#ff8a96', 700, 'right');
+  });
+}
+function scene1(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, W, H);
+  camera(1 + .05 * eInOut(prog(t, 0, 10.4)), sr, sx, sy, () => {
+    // the room (normally invisible)
+    const g = ctx.createRadialGradient(W / 2, 900, 100, W / 2, 900, 1100); g.addColorStop(0, '#1f2937'); g.addColorStop(1, '#0b0f17');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    dartboard(...BOARD);
+    DARTS.forEach(([at, x, y], i) => {
+      const p = prog(t, at - .35, at); if (p <= 0) return;
+      const sxx = W / 2 + (i % 2 ? 260 : -260), syy = H + 120, e = eIn(p);
+      const cx = lerp(sxx, x, e), cy = lerp(syy, y, e), ang = Math.atan2(y - syy, x - sxx) + Math.PI / 2;
+      const wob = t > at ? Math.sin((t - at) * 60) * .08 * Math.exp(-(t - at) * 6) : 0;
+      dart(cx, cy, ang + wob, p < 1 ? lerp(1.8, 1, e) : 1);
+    });
+    postCard(t);
+  });
+  // darkness with a flashlight hole; the strobe reveals everything
+  const strobe = Math.max(...STROBE.map(s => 1 - clamp((t - s) / .1) - (t < s ? 1 : 0)));
+  const fl = flashlight(t), dark = .94 * (1 - clamp(strobe));
+  if (fl) {
+    const [x, y] = fl, r = ctx.createRadialGradient(x, y, 40, x, y, 300);
+    r.addColorStop(0, 'rgba(0,0,0,0)'); r.addColorStop(1, `rgba(0,0,0,${dark})`);
+    ctx.fillStyle = r; ctx.fillRect(0, 0, W, H);
+    ctx.beginPath(); ctx.arc(x, y, 300, 0, 7); ctx.rect(W, 0, -W, H);
+  } else { withAlpha(dark, () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }); }
+  if (strobe > 0) withAlpha(strobe * .5, () => { ctx.fillStyle = '#e0f2fe'; ctx.fillRect(0, 0, W, H); });
+  // HUD stays visible
+  const hud = ctx.createLinearGradient(0, 0, 0, 380); hud.addColorStop(0, 'rgba(5,6,10,.95)'); hud.addColorStop(1, 'rgba(5,6,10,0)');
+  ctx.fillStyle = hud; ctx.fillRect(0, 0, W, 380);
+  episodeTitle(t, '12-QISM', 'Jonli tahlil', 66);
+  counters(t, [[`${DARTS.filter(d => d[0] <= t).length} ta`, 'reklama', '#fff'], ['?', 'natija', C.red], ['0', 'maʼlumot', C.red]]);
+  slam(t, 5.6, 'NATIJA?', 300, 560, 56, '#fff', { slab: C.red, rot: -.08, hold: 2.9 });
+  slam(t, 6.6, 'KIM KOʻRDI?', 790, 830, 52, '#fff', { slab: C.red, rot: .07, hold: 1.9 });
+  slam(t, 7.6, 'QACHON?', 320, 1440, 56, '#fff', { slab: C.red, rot: .05, hold: .9 });
+  shockwave(t, 8.5, W / 2, 800, '#e0f2fe', 1100);
+  slam(t, 8.5, 'QORONGʻIDA', W / 2, 880, 128, '#fff', { hold: .75, glow: 'rgba(224,242,254,.9)' });
+  slam(t, 8.7, 'natijani koʻrmay reklama', W / 2, 1040, 52, '#e0f2fe', { hold: .55 });
+  if (t > 9.4) withAlpha(prog(t, 9.4, 9.6), () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
+}
+
+// ---------- SCENE 2 — Yechim: lights on ----------
+const T12 = { heat: [12.0, 13.6], map: [13.8, 14.6], tip: 15.2, apply: 16.0, applied: 16.2, boost: [16.5, 17.5], slam: 18.5, sheet: 19.7 };
+const IMPACTS2 = [[11.0, 26], [T12.apply, 8], [T12.slam, 34]];
+const DAYS = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
+const heatVal = (d, h) => { const ev = Math.exp(-((h - 10) ** 2) / 2.2), lunch = Math.exp(-((h - 6.5) ** 2) / 1.2) * .45; const day = [.8, 1, .85, .95, .75, .9, .6][d]; return clamp((ev + lunch) * day + ((d * 7 + h * 3) % 5) * .03); };
+const HOT = [[1, 10], [3, 10], [5, 9]];
+const CITIES = [['Fargʻona', 31, .5, .55], ['Margʻilon', 27, .62, .66], ['Qoʻqon', 18, .2, .45], ['Andijon', 14, .86, .3], ['Namangan', 10, .55, .18]];
+const APPLY = { x: SX + SW - 230, y: SY + 1020, w: 180, h: 64 };
+const heatCol = v => { const s = [[0, [22, 101, 52]], [.5, [250, 204, 21]], [1, [239, 68, 68]]]; let i = 0; while (i < 1 && v > s[i + 1][0]) i++; const [a, ca] = s[i], [b, cb] = s[i + 1], k = (v - a) / (b - a); return `rgb(${ca.map((c, j) => Math.round(lerp(c, cb[j], k))).join(',')})`; };
+function liveScreen(t) {
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 150);
+  text('Jonli tahlil', SX + 50, SY + 112, 40, '#fff', 900);
+  const viewers = Math.round(1180 + (t - 11) * 14 + (t > T12.boost[0] ? 420 * eOut(prog(t, ...T12.boost)) : 0));
+  rr(SX + SW - 300, SY + 66, 260, 56, 28); ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(SX + SW - 270, SY + 94, 9 + 3 * Math.sin(t * 8), 0, 7); ctx.fillStyle = '#ff5a6b'; ctx.fill();
+  text(`${fmt(viewers)} hozir`, SX + SW - 60, SY + 104, 27, '#fff', 900, 'right');
+  // heatmap
+  text('Issiqlik xaritasi · hafta', SX + 40, SY + 200, 26, C.ink, 900);
+  const gx = SX + 100, gy = SY + 225, cw = (SW - 140) / 12, ch = 46;
+  DAYS.forEach((d, i) => text(d, SX + 40, gy + i * ch + 32, 22, C.grey, 800));
+  for (let d = 0; d < 7; d++) for (let h = 0; h < 12; h++) {
+    const at = T12.heat[0] + (d + h) / 18 * (T12.heat[1] - T12.heat[0]), p = eOut(prog(t, at, at + .25));
+    rr(gx + h * cw + 2, gy + d * ch + 2, cw - 4, ch - 4, 6); ctx.fillStyle = '#eef2f1'; ctx.fill();
+    if (p > 0) withAlpha(p, () => { rr(gx + h * cw + 2, gy + d * ch + 2, cw - 4, ch - 4, 6); ctx.fillStyle = heatCol(heatVal(d, h)); ctx.fill(); });
+  }
+  ['0', '4', '8', '12', '16', '20'].forEach((l, i) => text(l, gx + i * 2 * cw + 4, gy + 7 * ch + 26, 19, C.grey, 700));
+  HOT.forEach(([d, h], i) => { const p = prog(t, 13.7 + i * .12, 13.9 + i * .12); if (p <= 0) return;
+    rr(gx + h * cw, gy + d * ch, cw, ch, 8); ctx.lineWidth = 4 + 2 * Math.sin(t * 6); ctx.strokeStyle = '#7f1d1d'; ctx.stroke(); });
+  // city map
+  const mx = SX + 30, my = SY + 610, mw = SW - 60, mh = 290;
+  rr(mx, my, mw, mh, 24); ctx.fillStyle = '#ecfdf5'; ctx.fill();
+  text('Shaharlar', mx + 24, my + 44, 26, C.ink, 900);
+  CITIES.forEach(([n, v], i) => {
+    const p = eOut(prog(t, T12.map[0] + i * .14, T12.map[0] + .5 + i * .14)); if (p <= 0) return;
+    const ry = my + 70 + i * 44, bx = mx + 190, bw = (mw - 300) * v / 31 * p;
+    text(n, mx + 24, ry + 20, 23, C.ink, 800);
+    rr(bx, ry, mw - 300, 26, 13); ctx.fillStyle = '#d1fae5'; ctx.fill();
+    rr(bx, ry, Math.max(26, bw), 26, 13); ctx.fillStyle = i === 0 ? '#ef4444' : `rgba(239,68,68,${.35 + v / 50})`; ctx.fill();
+    text(`${Math.round(v * p)}%`, mx + mw - 24, ry + 21, 23, i === 0 ? '#b91c1c' : C.ink, 900, 'right');
+  });
+  // recommendation
+  const tp = eBack(prog(t, T12.tip, T12.tip + .4));
+  if (tp > 0) scaled(SX + SW / 2, SY + 1010, tp, () => {
+    rr(SX + 30, SY + 920, SW - 60, 190, 24); ctx.fillStyle = '#fef9c3'; ctx.fill();
+    glyph('bulb', SX + 80, SY + 970, .8, '#ca8a04');
+    text('Tavsiya: postni 20:00 ga koʻchiring', SX + 120, SY + 980, 27, '#713f12', 900);
+    const ap = t > T12.applied;
+    text(ap ? 'Vaqt: 19:00 → 20:00' : '≈ +38% koʻrish', SX + 120, SY + 1060, 28, ap ? '#065f46' : '#a16207', 900);
+    scaled(APPLY.x + APPLY.w / 2, APPLY.y + 32, 1 - .06 * bump(t, T12.apply, .25), () => {
+      rr(APPLY.x, APPLY.y, APPLY.w, APPLY.h, 32); ctx.fillStyle = ap ? '#065f46' : '#0ea371'; ctx.fill();
+      if (ap) check(APPLY.x + 34, APPLY.y + 32, 20, '#fff', 5, prog(t, T12.applied, T12.applied + .3));
+      text(ap ? 'Qoʻllandi' : 'Qoʻllash', APPLY.x + APPLY.w / 2 + (ap ? 16 : 0), APPLY.y + 42, 26, '#fff', 900, 'center');
+    });
+  });
+  const mp = eOut(prog(t, T12.sheet, T12.sheet + .45));
+  if (mp > 0) {
+    ctx.fillStyle = `rgba(4,20,16,${.55 * mp})`; ctx.fillRect(SX, SY, SW, SH);
+    const sy = lerp(SY + SH, SY + SH - 640, mp);
+    rr(SX, sy, SW, 700, 50); ctx.fillStyle = '#fff'; ctx.fill();
+    const c = eBack(prog(t, T12.sheet + .2, T12.sheet + .6));
+    ctx.beginPath(); ctx.arc(SX + SW / 2, sy + 150, 80 * c, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+    if (c > .5) check(SX + SW / 2, sy + 152, 70, '#fff', 13, prog(t, T12.sheet + .45, T12.sheet + .8));
+    withAlpha(prog(t, T12.sheet + .6, T12.sheet + .9), () => {
+      text('Hammasi koʻz oldingizda!', SX + SW / 2, sy + 300, 42, C.ink, 800, 'center');
+      ['Real vaqt statistikasi', 'Issiqlik xaritasi: qachon va qayerda', 'Bir bosishda qoʻllanadigan tavsiyalar'].forEach((s, i) =>
+        withAlpha(prog(t, T12.sheet + .9 + i * .25, T12.sheet + 1.15 + i * .25), () => {
+          check(SX + 90, sy + 380 + i * 70, 26, '#16c784', 6);
+          text(s, SX + 125, sy + 391 + i * 70, 29, '#334155', 600);
+        }));
+    });
+  }
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  camera(1.04 - .04 * eOut(prog(t, 11, 12)) + .025 * eInOut(prog(t, 12, 21.8)), sr, sx, sy, () => {
+    solutionBg(t, 'Chiroq yondi');
+    const enter = eBack(prog(t, 11.1, 11.75));
+    scaled(W / 2, PY + PH / 2, lerp(.8, 1, enter), () => withAlpha(prog(t, 11.1, 11.35), () =>
+      phone('#f4f7f6', 0, lerp(180, 0, enter), 0, () => liveScreen(t))));
+    const ax = APPLY.x + APPLY.w / 2 + 30, ay = APPLY.y + 36;
+    if (t > 15.4 && t < 16.5) {
+      const [cx, cy] = pathAt(t, [[15.4, W - 40, 1650], [T12.apply, ax, ay]]);
+      withAlpha(Math.min(prog(t, 15.4, 15.6), 1 - prog(t, 16.25, 16.5)), () => cursor(cx, cy, bump(t, T12.apply, .22)));
+    }
+    ripple(ax, ay, prog(t, T12.apply, T12.apply + .6), '#16c784');
+    // boost: green "+" floats up from the live counter
+    for (let k = 0; k < 6; k++) { const p = prog(t, T12.boost[0] + k * .15, T12.boost[0] + .7 + k * .15); if (p <= 0 || p >= 1) continue;
+      withAlpha(1 - p, () => text(`+${[64, 80, 72, 96, 58, 50][k]}`, SX + SW - 140 + (k % 2 ? 40 : -30), SY + 60 - p * 120, 30, '#22e39a', 900, 'center')); }
+  });
+  const dim = prog(t, T12.slam - .05, T12.slam + .1) * (1 - prog(t, T12.sheet - .2, T12.sheet));
+  if (dim > 0) withAlpha(dim * .55, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, T12.slam, W / 2, 880, C.gold, 1100);
+  sparks(t, T12.slam, W / 2, 880, 127, [C.gold, '#fff3c4', '#22e39a'], 40, 1250);
+  slam(t, T12.slam, 'CHIROQ YONDI', W / 2, 840, 150, C.gold, { hold: 1.0, glow: 'rgba(255,200,61,.8)' });
+  slam(t, T12.slam + .15, 'har bir koʻrish — jonli', W / 2, 1010, 60, '#fff', { hold: .85, glow: 'rgba(255,200,61,.6)' });
+  flash(t, T12.slam, '#fff3c4', .35, .5);
+}
+
+// ---------- SCENE 3 — Natija ----------
+const CMP = [['Qorongʻida otish', 'Jonli tahlil'], ['Qachon? — nomaʼlum', 'Eng faol: 20:00'], ['Qayerda? — nomaʼlum', 'Eng faol: Fargʻona']];
+const HITS = [[22.5, -14, 6], [22.8, 12, -10], [23.1, -4, 14], [23.4, 6, -2]];
+const IMPACTS3 = [[22.15, 22], [25.0, 16]];
+function badge(bx, by, label, kind, p) {
+  scaled(bx, by, p, () => {
+    ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 40;
+    ctx.beginPath(); ctx.arc(bx, by, 92, 0, 7);
+    const gg = ctx.createLinearGradient(bx - 92, by - 92, bx + 92, by + 92);
+    gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(bx, by, 76, 0, 7); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+    glyph(kind, bx, by, 1.5);
+    text(label, bx, by + 145, 32, '#fff', 800, 'center');
+  });
+}
+function scene3(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera(1 + .03 * eInOut(prog(t, 22, 27)), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.3));
+    withAlpha(1 - out, () => {
+      withAlpha(prog(t, 22.2, 22.6), () => {
+        text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
+        text('Har bir reklama — nishonga', W / 2, 260, 54, '#fff', 800, 'center');
+      });
+      const bp = eBack(prog(t, 22.2, 22.6));
+      scaled(W / 2, 470, bp, () => { ctx.save(); ctx.shadowColor = 'rgba(255,255,255,.6)'; ctx.shadowBlur = 50; dartboard(W / 2, 470, 160); ctx.restore(); });
+      HITS.forEach(([at, dx, dy], i) => { const p = prog(t, at - .25, at); if (p <= 0) return;
+        const e = eIn(p), x = lerp(W / 2 + (i % 2 ? 400 : -400), W / 2 + dx, e), y = lerp(1100, 470 + dy, e);
+        dart(x, y, Math.atan2(470 + dy - 1100, W / 2 + dx - (W / 2 + (i % 2 ? 400 : -400))) + Math.PI / 2, .7); });
+      const cp = eOut(prog(t, 23.0, 23.5)), x = 90, y = lerp(740, 680, cp), w = 900, h = 450;
+      withAlpha(cp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+        rr(x, y, w, h, 40); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+        text('Oldin', x + 60, y + 72, 30, C.grey, 800);
+        rr(x + 470, y + 38, 200, 50, 25); ctx.fillStyle = '#d1fae5'; ctx.fill();
+        text('ADUZ', x + 570, y + 72, 30, '#065f46', 900, 'center');
+        ctx.fillStyle = '#eef2f1'; ctx.fillRect(x + w / 2 - 20, y + 110, 2, h - 140);
+        CMP.forEach(([a, b], i) => {
+          const ry = y + 175 + i * 105, st = eInOut(prog(t, 23.5 + i * .35, 23.8 + i * .35)), ok = eBack(prog(t, 23.7 + i * .35, 24.0 + i * .35));
+          text(a, x + 60, ry, 28, st > 0 ? '#94a3b8' : '#334155', 700);
+          if (st > 0) { ctx.font = `700 28px ${F}`; const tw = ctx.measureText(a).width; ctx.beginPath(); ctx.moveTo(x + 55, ry - 10); ctx.lineTo(x + 55 + (tw + 10) * st, ry - 10); ctx.lineWidth = 5; ctx.strokeStyle = C.red; ctx.stroke(); }
+          if (ok > 0) scaled(x + 470, ry - 10, ok, () => {
+            ctx.beginPath(); ctx.arc(x + 490, ry - 10, 20, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill(); check(x + 490, ry - 9, 18, '#fff', 5);
+            text(b, x + 525, ry, 28, '#059669', 900);
+          });
+        });
+      });
+      [['Jonli', 'pulse'], ['Issiqlik xaritasi', 'grid'], ['Tavsiyalar', 'bulb']].forEach(([l, k], i) => {
+        const p = eBack(prog(t, 25.2 + i * .25, 25.65 + i * .25));
+        if (p > 0) badge(230 + i * 310, 1300, l, k, p);
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 900, C.gold, 900);
+  sparks(t, 25.0, W - 200, 900, 129, [C.gold, '#fff', '#22e39a'], 34, 1100);
+  confetti(t, 25.0);
+  endCard(t, 27.0);
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.4, b: 11.0, fn: lightsOn },
+    { a: 21.75, b: 22.15, fn: whipPan },
+  ],
+  overlay: t => { filmLook(t); },
+});
+</script>
+</body>
+</html>
