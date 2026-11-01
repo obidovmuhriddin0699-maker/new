@@ -41,7 +41,7 @@ video va muqova — GitHub raw havolalari (repo ochiq). Ovozli video: `instagram
 | 2026-11-01 | 21:00 | 22 (botga mos) | joylandi (media 17917273161496281) |
 | 2026-11-02 | 19:00 | S3 (qisqa) | foydalanuvchi ovozi kutilmoqda |
 | 2026-11-02 | 20:00 | 26 (botga mos) | joylandi (media 18080556008460599) |
-| 2026-11-02 | 21:00 | 27 (botga mos) | rejada (ovozli) |
+| 2026-11-02 | 21:00 | 27 (botga mos) | joylandi (media 18337730737272543) |
 
 **Botga mos versiyalar** (2, 3, 10, 11, 15, 18, 19, 20, 21, 22, 23, 26, 27): muammo qismi (0–10.9 s) asl qism bilan bir xil,
 yechim va natija esa Target reklama botining haqiqiy oqimini ko'rsatadi (`igbot.js`): asosiy menyu → reklama yaratish
