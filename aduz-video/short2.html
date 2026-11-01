@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ qisqa 2 — Instagram</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script src="reel.js"></script>
+<script src="igbot.js"></script>
+<script>
+// S2 — kanal egasi: Profil → Kanal egasi → kanal kartochkasi
+window.SHORT = {
+  hook: ['KANAL EGALARI', 'KANAL BOR,', 'DAROMAD YOʻQ?', 'reklama beruvchi sizni topsin'],
+  bot: { seq: [['menu', 11.0, 12.0, { tap: 'Profil' }], ['owner', 12.0, 16.5, {}], ['channel', 16.5, 23.1, { check: 99, confirm: 99 }]],
+    focus: [[12.6, 14.4, 'PROFIL', 'kanal egasi boʻlimi'], [17.0, 19.6, 'SIZNING KANALINGIZ', 'reklama beruvchilar shuni koʻradi']] },
+  caps: [[0.2, 2.2, 'Kanalingiz bor, lekin daromad yoʻqmi?'], [2.7, 7.6, 'Botda Profil → Kanal egasi boʻlimini oching va kanalingizni biriktiring.'], [8.0, 14.1, 'Reklama beruvchilar kanalingizni shu kartochkada koʻradi. Daromad va pul yechish — oʻsha profilda.'], [14.5, 17.7, 'Izohga BOT deb yozing va obuna boʻling!']],
+  cta: ['BOT', 'havolani yuboramiz'],
+};
+</script>
+<script src="shorts.js"></script>
+</body>
+</html>

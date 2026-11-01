@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 11-qism — Instagram</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// ADUZ — 11-qism: "Kafolatlangan xavfsizlik (Escrow)" (7-qism uslubida)
+// Problem: prepay the admin in chat → no post → blocked (sound vacuum on the block).
+// Solution: the money goes into a vault that locks and frosts over ("muzlatildi"), a time-lapse until the bot
+// verifies the post, then the ice melts and the coin moves on to the admin. Sound: CUES_11 in audio.py.
+
+const CAPTIONS = [
+  [0.4, 4.4, 'Admin: «Avval toʻlov, keyin post». Pulni oʻtkazdingiz...'],
+  [4.6, 9.4, 'Post chiqmadi. Admin javob bermaydi...'],
+  [9.6, 10.5, '...va sizni bloklaydi.'],
+  [11.4, 16.2, 'ADUZʼda pul toʻgʻridan-toʻgʻri adminga emas — kafolat hisobida muzlatiladi.'],
+  [16.4, 21.6, 'Post chiqib, tekshiruvdan oʻtgach pul adminga oʻtadi. Chiqmasa — qaytadi.'],
+  [22.4, 27.0, 'Pulingiz har doim himoyada.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+
+function glyph(kind, x, y, s = 1, col = '#fff') {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (kind === 'shield') { shield(0, 0, .95, col); check(1, 2, 21, 'rgba(0,0,0,.35)', 5); }
+  else if (kind === 'snow') { for (let k = 0; k < 6; k++) { ctx.save(); ctx.rotate(k * Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -28); ctx.moveTo(0, -16); ctx.lineTo(-8, -24); ctx.moveTo(0, -16); ctx.lineTo(8, -24); ctx.stroke(); ctx.restore(); } }
+  else if (kind === 'return') { ctx.beginPath(); ctx.arc(0, 4, 20, -Math.PI * .9, Math.PI * .6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-26, -16); ctx.lineTo(-20, 2); ctx.lineTo(-4, -8); ctx.stroke(); }
+  else if (kind === 'lock') { rr(-18, -4, 36, 28, 6); ctx.fill(); ctx.beginPath(); ctx.arc(0, -6, 12, Math.PI, 0); ctx.stroke(); }
+  ctx.restore();
+}
+function coin(x, y, r = 34) {
+  ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 20;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = '#fbbf24'; ctx.fill(); ctx.restore();
+  ctx.beginPath(); ctx.arc(x, y, r * .78, 0, 7); ctx.lineWidth = 3; ctx.strokeStyle = '#b45309'; ctx.stroke();
+  text('S', x, y + 2, r, '#b45309', 900, 'center', 'middle');
+}
+
+// ---------- SCENE 1 — Muammo ----------
+const MSGS = [
+  [0.9, 'in', 'Reklama 500 000. Avval toʻlov, keyin post.'],
+  [1.6, 'out', 'Mayli, kartangizni tashlang'],
+  [2.2, 'in', '8600 •••• •••• 4417'],
+  [2.9, 'bank', ''],
+  [3.6, 'in', 'Koʻrdim. Bugun 19:00 da chiqadi'],
+  [4.3, 'day', 'Ertasi kuni'],
+  [4.7, 'out', 'Post chiqmadi-ku?'],
+  [5.5, 'out', 'Javob bering!'],
+  [6.3, 'out', '???'],
+];
+const BLOCK = 9.55;
+const FALL = (() => { const r = rnd(111); return Array.from({ length: 26 }, (_, i) => ({ x: r() * W, at: 3.0 + i * .26, v: 160 + r() * 200, rot: r() * 6 })); })();
+const IMPACTS1 = [[2.9, 6], [5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46]];
+function chatScreen(t) {
+  ctx.fillStyle = '#0e1621'; ctx.fillRect(SX, SY, SW, SH);
+  const blocked = t > BLOCK;
+  ctx.fillStyle = '#17212b'; ctx.fillRect(SX, SY, SW, 150);
+  ctx.beginPath(); ctx.arc(SX + 80, SY + 95, 36, 0, 7); ctx.fillStyle = blocked ? '#475569' : '#f97316'; ctx.fill();
+  text(blocked ? '?' : 'VL', SX + 80, SY + 97, 26, '#fff', 800, 'center', 'middle');
+  text(blocked ? 'Deleted Account' : 'Reklama Admin · Vodiy Live', SX + 135, SY + 88, 30, '#fff', 700);
+  text(blocked ? '' : t > 7.0 ? 'uzoq vaqt oldin koʻrilgan' : 'onlayn', SX + 135, SY + 126, 23, t > 7.0 ? '#7f91a4' : '#4fa3ff', 500);
+  // stack messages; scroll up if they overflow
+  const items = [];
+  for (const [at, kind, s] of MSGS) {
+    if (t < at) break;
+    let h; if (kind === 'bank') h = 190; else if (kind === 'day') h = 60; else { ctx.font = `500 31px ${F}`; h = wrap(s, 470, 31, 500).length * 42 + 40; }
+    items.push([at, kind, s, h]);
+  }
+  const total = items.reduce((a, it) => a + it[3] + 22, 0), avail = SH - 190 - 140;
+  const off = Math.max(0, total - avail);
+  ctx.save(); ctx.beginPath(); ctx.rect(SX, SY + 150, SW, SH - 150); ctx.clip();
+  let y = SY + 180 - off;
+  for (const [at, kind, s, h] of items) {
+    const p = prog(t, at, at + .3);
+    withAlpha(p, () => {
+      if (kind === 'day') { rr(SX + SW / 2 - 110, y + 10, 220, 46, 23); ctx.fillStyle = '#1f2d3a'; ctx.fill(); text(s, SX + SW / 2, y + 41, 23, '#9fb3c8', 700, 'center'); }
+      else if (kind === 'bank') {
+        const x = SX + SW - 30 - 470;
+        scaled(x + 470, y + h, lerp(.5, 1, eBack(p)), () => {
+          rr(x, y, 470, h, 26); ctx.fillStyle = '#14532d'; ctx.fill();
+          text('Oʻtkazma', x + 30, y + 52, 26, '#bbf7d0', 700);
+          text('− 500 000 soʻm', x + 30, y + 112, 46, '#fff', 900);
+          check(x + 42, y + 152, 18, '#4ade80', 5); text('Bajarildi · 8600 ••4417', x + 66, y + 160, 23, '#bbf7d0', 600);
+        });
+      } else {
+        const lines = wrap(s, 470, 31, 500), bw = Math.min(520, Math.max(...lines.map(l => ctx.measureText(l).width)) + 56 + (kind === 'out' ? 40 : 0));
+        const x = kind === 'out' ? SX + SW - 30 - bw : SX + 30;
+        scaled(kind === 'out' ? x + bw : x, y + h, lerp(.5, 1, eBack(p)), () => {
+          rr(x, y, bw, h, 26); ctx.fillStyle = kind === 'out' ? '#2b5278' : '#182533'; ctx.fill();
+          lines.forEach((l, i) => text(l, x + 28, y + 20 + 42 * i + 31, 31, '#e9eef3', 500));
+          if (kind === 'out' && at > 4.5) { // single grey tick: not read; red "!" after the block
+            if (blocked) { const fp = eBack(prog(t, BLOCK + .15 + (at - 4.7) * .1, BLOCK + .4 + (at - 4.7) * .1)); scaled(x - 30, y + h / 2, fp, () => { ctx.beginPath(); ctx.arc(x - 30, y + h / 2, 18, 0, 7); ctx.fillStyle = '#ef4444'; ctx.fill(); text('!', x - 30, y + h / 2 + 2, 24, '#fff', 900, 'center', 'middle'); }); }
+            else check(x + bw - 30, y + h - 22, 14, '#7f91a4', 3);
+          }
+        });
+      }
+    });
+    y += h + 22;
+  }
+  ctx.restore();
+  if (blocked) {
+    const bp = eOut(prog(t, BLOCK + .1, BLOCK + .4));
+    withAlpha(bp, () => { rr(SX + 40, SY + SH - 130, SW - 80, 90, 20); ctx.fillStyle = '#3f1d1d'; ctx.fill(); text('Bu foydalanuvchi sizni blokladi', SX + SW / 2, SY + SH - 74, 27, '#fca5a5', 800, 'center'); });
+  }
+}
+function scene1(t) {
+  const stress = prog(t, 4.6, 9.4);
+  problemBg(t, stress);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  camera(1 + .06 * eInOut(prog(t, 0, 10.6)), sr, sx, sy, () => {
+    for (const c of FALL) { const d = t - c.at; if (d < 0) continue; const y = -60 + c.v * d; if (y > H + 60) continue;
+      withAlpha(.25 * (1 - y / H), () => { ctx.save(); ctx.translate(c.x, y); ctx.rotate(c.rot + d); ctx.scale(Math.cos(d * 3), 1); coin(0, 0, 26); ctx.restore(); }); }
+    episodeTitle(t, '11-QISM', 'Kafolatlangan xavfsizlik', 56);
+    counters(t, [[t > 2.9 ? '500 000' : '0', 'soʻm toʻlandi', t > 2.9 ? C.red : '#fff'], ['0', 'post', C.red], ['0', 'kafolat', C.red]]);
+    const enter = eOut(prog(t, 0, .7));
+    phone('#0e1621', 0, lerp(160, 0, enter), 0, () => { chatScreen(t); ctx.fillStyle = `rgba(255,40,60,${.08 * stress})`; ctx.fillRect(SX, SY, SW, SH); });
+    // the money leaves: a coin flies off the bank bubble
+    const fp = prog(t, 3.0, 3.8);
+    if (fp > 0 && fp < 1) { const e = eIn(fp); coin(lerp(SX + SW - 200, W + 80, e), lerp(SY + 560, 300, e) - Math.sin(e * Math.PI) * 120, 34 * (1 - .3 * e)); }
+    slam(t, 5.6, 'OLDINDAN TOʻLOV', 340, 560, 48, '#fff', { slab: C.red, rot: -.08, hold: 2.9 });
+    slam(t, 6.6, 'POST YOʻQ', 820, 830, 54, '#fff', { slab: C.red, rot: .07, hold: 1.9 });
+    slam(t, 7.6, 'JAVOB YOʻQ', 340, 1420, 54, '#fff', { slab: C.red, rot: .05, hold: .9 });
+  });
+  const dim = prog(t, 8.45, 8.6) * (1 - prog(t, 9.25, 9.45));
+  if (dim > 0) withAlpha(dim * .6, () => { ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, 8.5, W / 2, 900, C.red, 1100);
+  sparks(t, 8.5, W / 2, 900, 113, [C.red, '#ffb4bc', '#ffffff'], 36, 1200);
+  slam(t, 8.5, '500 000 → 0', W / 2, 880, 150, '#fff', { hold: .75, glow: 'rgba(255,40,60,.9)' });
+  slam(t, 8.7, 'pul ham, reklama ham yoʻq', W / 2, 1040, 52, '#ffb4bc', { hold: .55 });
+  flash(t, 8.5, C.red, .4, .45);
+  const vac = prog(t, 9.7, 10.1);
+  if (vac > 0) withAlpha(vac * .35, () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
+}
+
+// ---------- SCENE 2 — Yechim: the vault ----------
+const T11 = { order: 11.6, pay: 12.6, slide: 12.8, coinIn: [13.0, 13.5], lock: 13.6, frost: [13.7, 14.3], lapse: [14.3, 15.0], post: 15.0, day: 15.8, melt: [16.0, 16.4], coinOut: [16.2, 16.65], paid: 16.7, refund: 16.95, slam: 18.5, sheet: 19.7 };
+const IMPACTS2 = [[11.0, 26], [T11.lock, 12], [T11.slam, 34]];
+const PAY = { x: SX + 40, y: SY + SH - 150, w: SW - 80, h: 100 };
+const VX = SX + SW / 2, VY = SY + 360;
+const FROST = (() => { const r = rnd(117), out = []; for (let i = 0; i < 26; i++) { const a = r() * 6.28, len = 30 + r() * 70; const x0 = VX + Math.cos(a) * 110, y0 = VY + Math.sin(a) * 110; out.push([x0, y0, a + Math.PI + (r() - .5), len, r()]); } return out; })();
+function orderScreen(t) {
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 150);
+  text('Buyurtma', SX + 50, SY + 112, 42, '#fff', 900);
+  rr(SX + 40, SY + 190, SW - 80, 220, 28); ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.beginPath(); ctx.arc(SX + 110, SY + 260, 40, 0, 7); ctx.fillStyle = '#f97316'; ctx.fill(); text('VL', SX + 110, SY + 262, 26, '#fff', 800, 'center', 'middle');
+  text('Vodiy Live', SX + 170, SY + 254, 34, C.ink, 900); text('Bugun 19:00 · 1 post', SX + 170, SY + 292, 25, C.grey, 600);
+  text('500 000 soʻm', SX + 80, SY + 380, 44, '#059669', 900);
+  rr(SX + 40, SY + 440, SW - 80, 170, 28); ctx.fillStyle = '#ecfdf5'; ctx.fill();
+  glyph('shield', SX + 110, SY + 525, 1.4, '#0ea371');
+  text('Toʻlov ADUZ kafolatida', SX + 170, SY + 510, 30, '#065f46', 900);
+  text('Post chiqmaguncha admin olmaydi', SX + 170, SY + 552, 24, '#047857', 600);
+  const press = bump(t, T11.pay, .25);
+  scaled(PAY.x + PAY.w / 2, PAY.y + 50, 1 - .05 * press, () => {
+    rr(PAY.x, PAY.y, PAY.w, PAY.h, 50); ctx.fillStyle = '#0ea371'; ctx.fill();
+    glyph('lock', PAY.x + 140, PAY.y + 52, .9); text('Kafolat bilan toʻlash', PAY.x + PAY.w / 2 + 30, PAY.y + 63, 36, '#fff', 900, 'center');
+  });
+}
+function vault(t) {
+  const lock = eBack(prog(t, T11.lock, T11.lock + .3)), frost = eOut(prog(t, ...T11.frost)) * (1 - eIn(prog(t, ...T11.melt)));
+  ctx.save(); ctx.shadowColor = 'rgba(15,23,42,.35)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 12;
+  rr(VX - 130, VY - 130, 260, 260, 36); const g = ctx.createLinearGradient(VX - 130, VY - 130, VX + 130, VY + 130); g.addColorStop(0, '#94a3b8'); g.addColorStop(1, '#475569'); ctx.fillStyle = g; ctx.fill(); ctx.restore();
+  rr(VX - 108, VY - 108, 216, 216, 26); ctx.lineWidth = 6; ctx.strokeStyle = '#334155'; ctx.stroke();
+  const open = t < T11.lock ? 1 : 0;
+  ctx.beginPath(); ctx.arc(VX, VY, 62, 0, 7); ctx.fillStyle = '#1e293b'; ctx.fill();
+  const dial = (t - 12.8) * (t < T11.lock + .3 ? 4 : .2) + lock * 2;
+  for (let k = 0; k < 4; k++) { const a = dial + k * Math.PI / 2; ctx.beginPath(); ctx.moveTo(VX, VY); ctx.lineTo(VX + Math.cos(a) * 54, VY + Math.sin(a) * 54); ctx.lineWidth = 10; ctx.strokeStyle = '#cbd5e1'; ctx.stroke(); }
+  ctx.beginPath(); ctx.arc(VX, VY, 16, 0, 7); ctx.fillStyle = '#e2e8f0'; ctx.fill();
+  // lock badge
+  if (lock > 0) scaled(VX + 100, VY - 100, lock, () => { ctx.beginPath(); ctx.arc(VX + 100, VY - 100, 40, 0, 7); ctx.fillStyle = t > T11.melt[1] ? '#16c784' : '#0ea5e9'; ctx.fill(); glyph(t > T11.melt[1] ? 'shield' : 'lock', VX + 100, VY - 98, .9); });
+  // frost
+  if (frost > 0) {
+    withAlpha(frost * .45, () => { rr(VX - 130, VY - 130, 260, 260, 36); ctx.fillStyle = '#bae6fd'; ctx.fill(); });
+    ctx.lineCap = 'round';
+    for (const [x0, y0, a, len, k] of FROST) {
+      const L = len * frost; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + Math.cos(a) * L, y0 + Math.sin(a) * L);
+      ctx.moveTo(x0 + Math.cos(a) * L * .5, y0 + Math.sin(a) * L * .5); ctx.lineTo(x0 + Math.cos(a + .6) * L * .8, y0 + Math.sin(a + .6) * L * .8);
+      ctx.lineWidth = 3; ctx.strokeStyle = `rgba(255,255,255,${.85 * frost})`; ctx.stroke();
+    }
+    withAlpha(frost, () => { rr(VX - 150, VY + 150, 300, 56, 28); ctx.fillStyle = '#0ea5e9'; ctx.fill(); glyph('snow', VX - 110, VY + 178, .55); text('MUZLATILDI', VX + 16, VY + 188, 26, '#fff', 900, 'center'); });
+  }
+}
+function escrowScreen(t) {
+  ctx.fillStyle = '#fff'; ctx.fillRect(SX, SY, SW, 150);
+  text('Kafolat hisobi', SX + 50, SY + 106, 38, C.ink, 900);
+  // clock chip — time-lapse until the post time and the next day
+  const lp = prog(t, ...T11.lapse), mins = Math.round(lerp(18 * 60 + 52, 19 * 60, eInOut(lp)));
+  const clk = t < T11.post ? `Bugun ${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}` : t < T11.day ? 'Bugun 19:00 · post chiqdi' : 'Ertasi 19:00 · 24 soat';
+  rr(SX + SW - 330, SY + 70, 290, 52, 26); ctx.fillStyle = '#f1f5f9'; ctx.fill(); text(clk, SX + SW - 185, SY + 104, 21, '#334155', 800, 'center');
+  // you · vault · admin
+  ctx.beginPath(); ctx.arc(SX + 80, VY, 46, 0, 7); ctx.fillStyle = '#3b82f6'; ctx.fill(); text('Siz', SX + 80, VY + 2, 24, '#fff', 900, 'center', 'middle');
+  ctx.beginPath(); ctx.arc(SX + SW - 80, VY, 46, 0, 7); ctx.fillStyle = '#f97316'; ctx.fill(); text('VL', SX + SW - 80, VY + 2, 24, '#fff', 900, 'center', 'middle');
+  text('Admin', SX + SW - 80, VY + 80, 22, C.grey, 700, 'center');
+  ctx.setLineDash([10, 10]); ctx.lineWidth = 4; ctx.strokeStyle = '#cbd5e1';
+  ctx.beginPath(); ctx.moveTo(SX + 130, VY); ctx.lineTo(VX - 140, VY); ctx.moveTo(VX + 140, VY); ctx.lineTo(SX + SW - 130, VY); ctx.stroke(); ctx.setLineDash([]);
+  vault(t);
+  const ci = prog(t, ...T11.coinIn); if (ci > 0 && ci < 1) { const e = eInOut(ci); coin(lerp(SX + 80, VX, e), VY - Math.sin(e * Math.PI) * 110, 30); }
+  const co = prog(t, ...T11.coinOut); if (co > 0 && co < 1) { const e = eInOut(co); coin(lerp(VX, SX + SW - 80, e), VY - Math.sin(e * Math.PI) * 110, 30); }
+  if (t > T11.coinOut[1]) { const p = eBack(prog(t, T11.coinOut[1], T11.coinOut[1] + .3)); scaled(SX + SW - 80, VY - 60, p, () => coin(SX + SW - 80, VY - 60, 22)); }
+  // tracker
+  const steps = [['Pul muzlatildi', '500 000 soʻm ADUZ kafolatida', T11.lock + .1], ['Post chiqdi', 'ADUZ bot tekshirdi', T11.post], ['24 soat turdi', 'Post oʻchirilmadi', T11.day], ['Pul adminga oʻtdi', 'Hamma rozi', T11.paid]];
+  steps.forEach(([a, b, at], i) => {
+    const y = SY + 600 + i * 96, done = prog(t, at, at + .3), active = !done && (i === 0 ? t > T11.slide : t > steps[i - 1][2]);
+    if (i < 3) { ctx.fillStyle = '#e2e8f0'; ctx.fillRect(SX + 78, y + 30, 6, 66); if (done > 0) { ctx.fillStyle = '#16c784'; ctx.fillRect(SX + 78, y + 30, 6, 66 * prog(t, at, (steps[i + 1] || steps[i])[2])); } }
+    ctx.beginPath(); ctx.arc(SX + 81, y + 20, 22, 0, 7); ctx.fillStyle = done > 0 ? '#16c784' : '#e2e8f0'; ctx.fill();
+    if (done > 0) scaled(SX + 81, y + 20, eBack(done), () => check(SX + 81, y + 21, 20, '#fff', 5));
+    else if (active) { ctx.beginPath(); ctx.arc(SX + 81, y + 20, 22, t * 8, t * 8 + 4.5); ctx.lineWidth = 5; ctx.strokeStyle = '#0ea5e9'; ctx.stroke(); }
+    withAlpha(.4 + .6 * Math.max(done, active ? 1 : 0), () => { text(a, SX + 130, y + 22, 30, C.ink, 800); text(b, SX + 130, y + 58, 23, C.grey, 600); });
+  });
+  // refund rule
+  const rp = eBack(prog(t, T11.refund, T11.refund + .4));
+  if (rp > 0) scaled(SX + SW / 2, SY + 1050, rp, () => {
+    rr(SX + 30, SY + 1000, SW - 60, 100, 24); ctx.fillStyle = '#fef3c7'; ctx.fill();
+    glyph('return', SX + 90, SY + 1050, .9, '#b45309');
+    text('Post chiqmasa — pul avtomatik qaytadi', SX + 140, SY + 1062, 26, '#92400e', 800);
+  });
+  const mp = eOut(prog(t, T11.sheet, T11.sheet + .45));
+  if (mp > 0) {
+    ctx.fillStyle = `rgba(4,20,16,${.55 * mp})`; ctx.fillRect(SX, SY, SW, SH);
+    const sy = lerp(SY + SH, SY + SH - 640, mp);
+    rr(SX, sy, SW, 700, 50); ctx.fillStyle = '#fff'; ctx.fill();
+    const c = eBack(prog(t, T11.sheet + .2, T11.sheet + .6));
+    ctx.beginPath(); ctx.arc(SX + SW / 2, sy + 150, 80 * c, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+    if (c > .5) check(SX + SW / 2, sy + 152, 70, '#fff', 13, prog(t, T11.sheet + .45, T11.sheet + .8));
+    withAlpha(prog(t, T11.sheet + .6, T11.sheet + .9), () => {
+      text('Pulingiz himoyada!', SX + SW / 2, sy + 300, 44, C.ink, 800, 'center');
+      ['Pul ADUZ kafolatida muzlatiladi', 'Post tekshirilgach — adminga oʻtadi', 'Post chiqmasa — pul qaytadi'].forEach((s, i) =>
+        withAlpha(prog(t, T11.sheet + .9 + i * .25, T11.sheet + 1.15 + i * .25), () => {
+          check(SX + 90, sy + 380 + i * 70, 26, '#16c784', 6);
+          text(s, SX + 125, sy + 391 + i * 70, 29, '#334155', 600);
+        }));
+    });
+  }
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  camera(1.04 - .04 * eOut(prog(t, 11, 12)) + .025 * eInOut(prog(t, 12, 21.8)), sr, sx, sy, () => {
+    solutionBg(t, 'Kafolatlangan toʻlov');
+    const enter = eBack(prog(t, 11.1, 11.75)), sp = eInOut(prog(t, T11.slide, T11.slide + .4));
+    scaled(W / 2, PY + PH / 2, lerp(.8, 1, enter), () => withAlpha(prog(t, 11.1, 11.35), () =>
+      phone('#f4f7f6', 0, lerp(180, 0, enter), 0, () => {
+        if (sp < 1) { ctx.save(); ctx.translate(-SW * sp, 0); ctx.fillStyle = '#f4f7f6'; ctx.fillRect(SX, SY, SW, SH); orderScreen(t); ctx.restore(); }
+        if (sp > 0) { ctx.save(); ctx.translate(SW * (1 - sp), 0); ctx.fillStyle = '#f4f7f6'; ctx.fillRect(SX, SY, SW, SH); escrowScreen(t); ctx.restore(); }
+      })));
+    const px = PAY.x + PAY.w / 2 + 150, py = PAY.y + 50;
+    if (t > 11.9 && t < 13.0) {
+      const [cx, cy] = pathAt(t, [[11.9, W - 40, 1600], [T11.pay, px, py]]);
+      withAlpha(Math.min(prog(t, 11.9, 12.1), 1 - prog(t, 12.75, 13.0)), () => cursor(cx, cy, bump(t, T11.pay, .22)));
+    }
+    ripple(px, py, prog(t, T11.pay, T11.pay + .6), '#ffffff');
+  });
+  shockwave(t, T11.lock, VX, VY, '#7dd3fc', 420);
+  const dim = prog(t, T11.slam - .05, T11.slam + .1) * (1 - prog(t, T11.sheet - .2, T11.sheet));
+  if (dim > 0) withAlpha(dim * .55, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, T11.slam, W / 2, 880, C.gold, 1100);
+  sparks(t, T11.slam, W / 2, 880, 119, [C.gold, '#fff3c4', '#22e39a'], 40, 1250);
+  slam(t, T11.slam, 'PUL HIMOYADA', W / 2, 840, 150, C.gold, { hold: 1.0, glow: 'rgba(255,200,61,.8)' });
+  slam(t, T11.slam + .15, 'post chiqmaguncha — admin olmaydi', W / 2, 1010, 48, '#fff', { hold: .85, glow: 'rgba(255,200,61,.6)' });
+  flash(t, T11.slam, '#fff3c4', .35, .5);
+}
+
+// ---------- SCENE 3 — Natija ----------
+const CMP = [['Oldindan toʻlov', 'Kafolatli toʻlov'], ['Post yoʻq — pul ketdi', 'Post yoʻq — pul qaytadi'], ['Admin bloklaydi', 'ADUZ nazorat qiladi'], ['Qoʻrquv', 'Xotirjamlik']];
+const IMPACTS3 = [[22.15, 22], [25.0, 16]];
+function badge(bx, by, label, kind, p) {
+  scaled(bx, by, p, () => {
+    ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 40;
+    ctx.beginPath(); ctx.arc(bx, by, 92, 0, 7);
+    const gg = ctx.createLinearGradient(bx - 92, by - 92, bx + 92, by + 92);
+    gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(bx, by, 76, 0, 7); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+    glyph(kind, bx, by, 1.5);
+    text(label, bx, by + 145, 34, '#fff', 800, 'center');
+  });
+}
+function scene3(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera(1 + .03 * eInOut(prog(t, 22, 27)), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.3));
+    withAlpha(1 - out, () => {
+      withAlpha(prog(t, 22.2, 22.6), () => {
+        text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
+        text('Pulingiz himoyada', W / 2, 260, 60, '#fff', 800, 'center');
+      });
+      const cp = eOut(prog(t, 22.3, 22.9)), x = 90, y = lerp(410, 340, cp), w = 900, h = 640;
+      withAlpha(cp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+        rr(x, y, w, h, 40); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+        text('Oldin', x + 60, y + 80, 30, C.grey, 800);
+        rr(x + 470, y + 44, 200, 52, 26); ctx.fillStyle = '#d1fae5'; ctx.fill();
+        text('ADUZ', x + 570, y + 80, 30, '#065f46', 900, 'center');
+        ctx.fillStyle = '#eef2f1'; ctx.fillRect(x + w / 2 - 20, y + 120, 2, h - 160);
+        CMP.forEach(([a, b], i) => {
+          const ry = y + 190 + i * 115, st = eInOut(prog(t, 22.8 + i * .35, 23.1 + i * .35)), ok = eBack(prog(t, 23.0 + i * .35, 23.3 + i * .35));
+          text(a, x + 60, ry, 28, st > 0 ? '#94a3b8' : '#334155', 700);
+          if (st > 0) { ctx.font = `700 28px ${F}`; const tw = ctx.measureText(a).width; ctx.beginPath(); ctx.moveTo(x + 55, ry - 10); ctx.lineTo(x + 55 + (tw + 10) * st, ry - 10); ctx.lineWidth = 5; ctx.strokeStyle = C.red; ctx.stroke(); }
+          if (ok > 0) scaled(x + 470, ry - 10, ok, () => {
+            ctx.beginPath(); ctx.arc(x + 490, ry - 10, 20, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill(); check(x + 490, ry - 9, 18, '#fff', 5);
+            text(b, x + 525, ry, 28, '#059669', 900);
+          });
+        });
+      });
+      [['Kafolat', 'shield'], ['Muzlatish', 'snow'], ['Qaytarish', 'return']].forEach(([l, k], i) => {
+        const p = eBack(prog(t, 25.2 + i * .25, 25.65 + i * .25));
+        if (p > 0) badge(230 + i * 310, 1200, l, k, p);
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 800, C.gold, 900);
+  sparks(t, 25.0, W - 200, 820, 121, [C.gold, '#fff', '#22e39a'], 34, 1100);
+  confetti(t, 25.0);
+  endCard(t, 27.0);
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.55, b: 11.0, fn: (t, a, b, A, B) => circleWipe(t, a, b, A, B, '#fbbf24') },
+    { a: 21.75, b: 22.15, fn: whipPan },
+  ],
+  overlay: t => { filmLook(t); flash(t, 11.0, '#ffffff', .3, .5); },
+});
+</script>
+<script src="reel.js"></script>
+<script>window.IG_EP = 11; window.IG_CAPTIONS = CAPTIONS.slice(); CAPTIONS.length = 0;</script>
+<script src="ig_config.js"></script>
+<script src="igbot.js"></script>
+<script src="igwrap.js"></script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 8-qism</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// ADUZ — 8-qism: "Yagona Marketplace yechimi"
+// New look for this episode: no phone in the problem scene — a big scattered "desk" (8 apps and papers)
+// that the camera travels across and then pulls back to reveal; ADUZ then pulls every piece in like a
+// magnet and the pieces become the marketplace; the result is a live hub-and-spoke map.
+// Sound is built from the cue sheet in audio.py (CUES_8) — see SOUND_ARCHITECTURE_8.md.
+
+const CAPTIONS = [
+  [0.4, 5.0, 'Kanallar roʻyxati — Excelʼda, adminlar — chatda, narxlar — daftarda...'],
+  [5.2, 10.5, 'Har bir kanal alohida joyda. Bitta reklama uchun — sakkizta ilova.'],
+  [11.4, 16.2, 'ADUZ hammasini bitta marketplaceʼga jamlaydi: qidiring, tanlang, savatchaga qoʻshing.'],
+  [16.4, 21.7, 'Besh kanal — bitta buyurtma, bitta toʻlov, bitta chek.'],
+  [22.4, 27.0, 'Barcha kanallar, toʻlovlar va hisobotlar — bir joyda.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+
+function glyph(kind, x, y, s = 1, col = '#fff') {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const K = {
+    chat: () => { rr(-26, -20, 52, 36, 12); ctx.fill(); ctx.beginPath(); ctx.moveTo(-10, 16); ctx.lineTo(-18, 28); ctx.lineTo(4, 16); ctx.fill(); },
+    excel: () => { for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { rr(-24 + i * 17, -24 + j * 17, 13, 13, 2); ctx.fill(); } },
+    paper: () => { rr(-20, -26, 40, 52, 4); ctx.stroke(); for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-10, -10 + i * 11); ctx.lineTo(10, -10 + i * 11); ctx.stroke(); } },
+    sticky: () => { ctx.beginPath(); ctx.moveTo(-24, -24); ctx.lineTo(24, -24); ctx.lineTo(24, 10); ctx.lineTo(10, 24); ctx.lineTo(-24, 24); ctx.closePath(); ctx.fill(); },
+    browser: () => { rr(-28, -22, 56, 44, 6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-28, -8); ctx.lineTo(28, -8); ctx.stroke(); },
+    contacts: () => { ctx.beginPath(); ctx.arc(0, -8, 11, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(0, 18, 20, 12, 0, Math.PI, 0); ctx.fill(); },
+    receipt: () => { ctx.beginPath(); ctx.moveTo(-20, -26); ctx.lineTo(20, -26); ctx.lineTo(20, 22); for (let i = 0; i < 4; i++) { ctx.lineTo(15 - i * 10, 28 - (i % 2) * 6); } ctx.lineTo(-20, 22); ctx.closePath(); ctx.fill(); },
+    dm: () => { ctx.beginPath(); ctx.moveTo(26, -4); ctx.lineTo(-24, -20); ctx.lineTo(-12, 0); ctx.lineTo(-22, 20); ctx.closePath(); ctx.fill(); },
+    news: () => { rr(-26, -22, 52, 44, 6); ctx.stroke(); rr(-16, -12, 14, 12, 2); ctx.fill(); for (let i = 0; i < 2; i++) { ctx.beginPath(); ctx.moveTo(4, -10 + i * 10); ctx.lineTo(16, -10 + i * 10); ctx.stroke(); } ctx.beginPath(); ctx.moveTo(-16, 10); ctx.lineTo(16, 10); ctx.stroke(); },
+    fashion: () => { ctx.beginPath(); ctx.moveTo(-8, -26); ctx.lineTo(-14, -6); ctx.lineTo(-26, 26); ctx.lineTo(26, 26); ctx.lineTo(14, -6); ctx.lineTo(8, -26); ctx.closePath(); ctx.fill(); },
+    business: () => { rr(-26, -12, 52, 36, 6); ctx.fill(); rr(-10, -22, 20, 14, 4); ctx.stroke(); },
+    edu: () => { ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(30, -8); ctx.lineTo(0, 6); ctx.lineTo(-30, -8); ctx.closePath(); ctx.fill(); rr(-16, 0, 32, 16, 4); ctx.fill(); },
+    sport: () => { ctx.beginPath(); ctx.arc(0, 0, 24, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(-24, 0, 24, -.9, .9); ctx.stroke(); ctx.beginPath(); ctx.arc(24, 0, 24, Math.PI - .9, Math.PI + .9); ctx.stroke(); },
+    food: () => { ctx.beginPath(); ctx.arc(0, 4, 22, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(8, -22, 10, 5, -.6, 0, 7); ctx.fill(); },
+    cart: () => { ctx.beginPath(); ctx.moveTo(-28, -20); ctx.lineTo(-18, -20); ctx.lineTo(-10, 12); ctx.lineTo(22, 12); ctx.lineTo(28, -10); ctx.lineTo(-14, -10); ctx.stroke(); ctx.beginPath(); ctx.arc(-6, 22, 5, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(18, 22, 5, 0, 7); ctx.fill(); },
+  };
+  K[kind] && K[kind](); ctx.restore();
+}
+
+// ---------- SCENE 1 — Muammo: the scattered desk ----------
+const WORLD_H = 2700;
+const PIECES = [
+  { k: 'chat', x: 60, y: 420, w: 560, h: 430, r: -.05, at: .5 },
+  { k: 'dm', x: 660, y: 450, w: 380, h: 300, r: .06, at: .9 },
+  { k: 'excel', x: 470, y: 840, w: 560, h: 400, r: .04, at: 1.3 },
+  { k: 'paper', x: 50, y: 1250, w: 470, h: 470, r: -.07, at: 2.0 },
+  { k: 'sticky', x: 590, y: 1290, w: 230, h: 210, r: .1, at: 2.4, text: ['Adminga', 'qayta yoz!'] },
+  { k: 'sticky', x: 820, y: 1360, w: 200, h: 190, r: -.12, at: 2.6, text: ['Narx?', '???'] },
+  { k: 'browser', x: 420, y: 1660, w: 610, h: 380, r: .03, at: 3.0 },
+  { k: 'contacts', x: 70, y: 2060, w: 430, h: 480, r: -.04, at: 3.7 },
+  { k: 'receipt', x: 590, y: 2140, w: 360, h: 420, r: .08, at: 4.4 },
+  { k: 'sticky', x: 330, y: 2470, w: 230, h: 200, r: .07, at: 4.8, text: ['Chek', 'qayerda?'] },
+];
+const LINKS = [[0, 2], [1, 2], [2, 3], [3, 6], [4, 6], [6, 7], [7, 8], [5, 8], [0, 3], [2, 6], [8, 9]];
+const IMPACTS1 = [[5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46]];
+function chrome(w, h, title, bar, body, light = false) {
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+  rr(0, 0, w, h, 18); ctx.fillStyle = body; ctx.fill(); ctx.restore();
+  ctx.save(); rr(0, 0, w, h, 18); ctx.clip(); ctx.fillStyle = bar; ctx.fillRect(0, 0, w, 52); ctx.restore();
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => { ctx.beginPath(); ctx.arc(26 + i * 24, 26, 8, 0, 7); ctx.fillStyle = c; ctx.fill(); });
+  text(title, 110, 34, 21, light ? '#111827' : '#e5e7eb', 700);
+}
+function drawPiece(p, t) {
+  const { k, w, h } = p;
+  if (k === 'chat') {
+    chrome(w, h, 'Telegram — adminlar', '#17212b', '#0e1621');
+    [['AV', 'Admin Vodiy', 'Narxni ertaga aytaman', '#3b82f6'], ['F2', 'Fargʻona 24 admin', 'Joy yoʻq, keyingi oy', '#f59e0b'], ['AK', 'Akmal (reklama)', 'Rekvizit tashlang', '#ec4899'], ['?', 'Kanal egasi?', '...', '#64748b']].forEach(([i, n, m2, c], j) => {
+      const y = 80 + j * 88;
+      ctx.beginPath(); ctx.arc(52, y + 30, 28, 0, 7); ctx.fillStyle = c; ctx.fill(); text(i, 52, y + 31, 20, '#fff', 800, 'center', 'middle');
+      text(n, 98, y + 24, 23, '#fff', 700); text(m2, 98, y + 54, 20, '#8a9aab', 500);
+      ctx.beginPath(); ctx.arc(w - 40, y + 40, 15, 0, 7); ctx.fillStyle = '#3e8ee0'; ctx.fill(); text(String(j + 2), w - 40, y + 41, 17, '#fff', 800, 'center', 'middle');
+    });
+  } else if (k === 'dm') {
+    chrome(w, h, 'Direkt xabarlar', '#1f2937', '#111827');
+    rr(20, 80, 260, 60, 20); ctx.fillStyle = '#374151'; ctx.fill(); text('Reklama boʻladimi?', 40, 117, 20, '#e5e7eb', 600);
+    rr(w - 300, 160, 280, 60, 20); ctx.fillStyle = '#6d28d9'; ctx.fill(); text('Yozing, javob beraman', w - 284, 197, 20, '#fff', 600);
+    text('koʻrildi · 3 kun oldin', w - 24, 250, 17, '#6b7280', 600, 'right');
+  } else if (k === 'excel') {
+    chrome(w, h, 'kanallar_final_2.xlsx', '#107c41', '#ffffff');
+    const cols = [0, 170, 290, 400, w], rows = 7;
+    ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1.5;
+    for (let r = 0; r <= rows; r++) { ctx.beginPath(); ctx.moveTo(0, 60 + r * 46); ctx.lineTo(w, 60 + r * 46); ctx.stroke(); }
+    cols.forEach(cx => { ctx.beginPath(); ctx.moveTo(cx, 60); ctx.lineTo(cx, 60 + rows * 46); ctx.stroke(); });
+    const data = [['Kanal', 'Obuna', 'Narx', 'Admin'], ['Vodiy News', '120k?', '300k', '@...'], ['Fargʻona 24', '?', '350k', 'tel?'], ['Andijon B.', '80k', '#REF!', '—'], ['Qoʻqon TV', '?', '?', '?'], ['Margʻilon', '45k', '250k', 'DM'], ['...', '', '', '']];
+    data.forEach((row, r) => row.forEach((v, c) => text(v, cols[c] + 12, 60 + r * 46 + 31, 19, v === '#REF!' ? '#dc2626' : r === 0 ? '#111827' : '#374151', r === 0 ? 800 : 500)));
+  } else if (k === 'paper') {
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12; rr(0, 0, w, h, 6); ctx.fillStyle = '#fefce8'; ctx.fill(); ctx.restore();
+    ctx.strokeStyle = '#bfdbfe'; ctx.lineWidth = 2; for (let i = 0; i < 9; i++) { ctx.beginPath(); ctx.moveTo(0, 70 + i * 48); ctx.lineTo(w, 70 + i * 48); ctx.stroke(); }
+    ctx.strokeStyle = '#fca5a5'; ctx.beginPath(); ctx.moveTo(60, 0); ctx.lineTo(60, h); ctx.stroke();
+    ['Vodiy News — 300 ming?', 'Fargʻona 24 — kelishilmadi', 'Andijon — javob yoʻq', 'Qoʻqon — keyin yozaman', 'JAMI: ???'].forEach((s, i) => {
+      ctx.save(); ctx.translate(74, 108 + i * 48 + (i % 2) * 3); ctx.rotate((i % 2 ? .015 : -.01));
+      ctx.font = `italic 600 26px ${F}`; ctx.fillStyle = i === 4 ? '#dc2626' : '#1e3a8a'; ctx.fillText(s, 0, 0); ctx.restore();
+    });
+    ctx.beginPath(); ctx.moveTo(70, 147); ctx.lineTo(400, 145); ctx.lineWidth = 3; ctx.strokeStyle = '#1e3a8a'; ctx.stroke();
+  } else if (k === 'sticky') {
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h - 40); ctx.lineTo(w - 40, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fillStyle = '#fde047'; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.moveTo(w, h - 40); ctx.lineTo(w - 40, h - 40); ctx.lineTo(w - 40, h); ctx.closePath(); ctx.fillStyle = '#eab308'; ctx.fill();
+    p.text.forEach((s, i) => { ctx.font = `italic 800 30px ${F}`; ctx.fillStyle = '#713f12'; ctx.fillText(s, 22, 70 + i * 40); });
+  } else if (k === 'browser') {
+    chrome(w, h, '', '#e5e7eb', '#ffffff', true);
+    for (let i = 0; i < 14; i++) { rr(96 + i * 36, 12, 32, 30, 6); ctx.fillStyle = i === 9 ? '#fff' : '#d1d5db'; ctx.fill(); }
+    rr(20, 66, w - 40, 44, 22); ctx.fillStyle = '#f3f4f6'; ctx.fill(); text('t.me/vodiy_news_reklama', 44, 96, 20, '#374151', 600);
+    text('14 ta ochiq tab', w - 30, 96, 18, '#dc2626', 800, 'right');
+    for (let i = 0; i < 5; i++) { rr(20, 132 + i * 46, (w - 40) * (.5 + .4 * ((i * 37) % 10) / 10), 22, 8); ctx.fillStyle = '#e5e7eb'; ctx.fill(); }
+  } else if (k === 'contacts') {
+    chrome(w, h, 'Kontaktlar', '#f3f4f6', '#ffffff', true);
+    ['Admin 1', 'Admin (Vodiy)', 'Akmal reklama', 'Fargʻona kanal', 'Dilshod — reklama?', 'Nomaʼlum raqam'].forEach((s, i) => {
+      const y = 76 + i * 66;
+      ctx.beginPath(); ctx.arc(46, y + 26, 22, 0, 7); ctx.fillStyle = '#cbd5e1'; ctx.fill(); text(s[0], 46, y + 27, 18, '#475569', 800, 'center', 'middle');
+      text(s, 84, y + 34, 23, '#111827', 600);
+      ctx.fillStyle = '#f1f5f9'; ctx.fillRect(84, y + 58, w - 100, 2);
+    });
+  } else if (k === 'receipt') {
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(w, 0); ctx.lineTo(w, h - 20);
+    for (let i = 0; i <= 12; i++) ctx.lineTo(w - i * w / 12, h - (i % 2 ? 0 : 20));
+    ctx.closePath(); ctx.fillStyle = '#fafafa'; ctx.fill(); ctx.restore();
+    text('Chek_0412.jpg', w / 2, 50, 22, '#6b7280', 700, 'center');
+    text('TOʻLOV', w / 2, 110, 34, '#111827', 900, 'center');
+    for (let i = 0; i < 4; i++) { ctx.fillStyle = '#e5e7eb'; ctx.fillRect(30, 150 + i * 36, w - 60 - (i * 40) % 90, 14); }
+    text('300 000 soʻm', w / 2, 330, 32, '#111827', 900, 'center');
+    ctx.save(); ctx.translate(w / 2, 250); ctx.rotate(-.25);
+    rr(-120, -34, 240, 68, 10); ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(220,38,38,.8)'; ctx.stroke();
+    text('KIMGA?', 0, 14, 40, 'rgba(220,38,38,.85)', 900, 'center'); ctx.restore();
+  }
+}
+const center = p => [p.x + p.w / 2, p.y + p.h / 2];
+function desk(t, stress) {
+  // red dashed web between scattered pieces
+  ctx.setLineDash([14, 14]); ctx.lineDashOffset = -t * 40; ctx.lineWidth = 4;
+  for (const [a, b] of LINKS) {
+    const pa = PIECES[a], pb = PIECES[b], p = prog(t, Math.max(pa.at, pb.at) + .3, Math.max(pa.at, pb.at) + 1);
+    if (p <= 0) continue;
+    const [x1, y1] = center(pa), [x2, y2] = center(pb);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(lerp(x1, x2, p), lerp(y1, y2, p));
+    ctx.strokeStyle = `rgba(255,80,96,${.35 + .3 * stress})`; ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  for (const p of PIECES) {
+    const q = eBack(prog(t, p.at, p.at + .4));
+    if (q <= 0) continue;
+    const [cx, cy] = center(p), wob = Math.sin(t * 1.3 + p.x) * .01;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(p.r + wob); ctx.scale(q, q); ctx.translate(-p.w / 2, -p.h / 2);
+    drawPiece(p, t); ctx.restore();
+  }
+}
+// the hero's magnifier searching from piece to piece (world coordinates)
+const SEARCH = [[.6, 340, 640], [1.6, 760, 1030], [2.6, 280, 1480], [3.4, 720, 1850], [4.2, 290, 2300], [5.0, 760, 2350], [6.0, 450, 2560], [7.0, 300, 1500], [8.0, 700, 900]];
+function magnifier(x, y, t) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(.3 + Math.sin(t * 3) * .1);
+  ctx.beginPath(); ctx.arc(0, 0, 54, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill(); ctx.lineWidth = 12; ctx.strokeStyle = '#fff'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(40, 40); ctx.lineTo(96, 96); ctx.lineWidth = 18; ctx.lineCap = 'round'; ctx.stroke();
+  text('?', 0, 16, 56, '#fff', 900, 'center'); ctx.restore();
+}
+function scene1(t) {
+  const stress = prog(t, 5, 10);
+  problemBg(t, stress);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  // camera: dolly down the desk, then pull back to reveal all of it for the slam
+  const pan = (WORLD_H - H) * eInOut(prog(t, .6, 8.2)), rev = eInOut(prog(t, 8.25, 8.85));
+  const camY = lerp(pan, WORLD_H / 2 - H / 2, rev), z = lerp(1, .68, rev);
+  camera(1, sr, sx, sy, () => {
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -(camY + H / 2));
+    desk(t, stress);
+    if (t > .6 && t < 8.6) { const [mx, my] = pathAt(t, SEARCH); withAlpha(Math.min(prog(t, .6, .9), 1 - prog(t, 8.3, 8.6)), () => magnifier(mx, my, t)); }
+    ctx.restore();
+    // HUD over the desk
+    const hud = ctx.createLinearGradient(0, 0, 0, 380); hud.addColorStop(0, 'rgba(8,10,20,.95)'); hud.addColorStop(.75, 'rgba(8,10,20,.8)'); hud.addColorStop(1, 'rgba(8,10,20,0)');
+    ctx.fillStyle = hud; ctx.fillRect(0, 0, W, 380);
+    episodeTitle(t, '8-QISM', 'Yagona marketplace', 62);
+    const places = new Set(PIECES.filter(p => p.at <= t).map(p => p.k)).size;
+    counters(t, [[`${places} ta`, 'turli joy', '#fff'], ['14', 'ochiq tab', '#fff'], ['?', 'umumiy roʻyxat', C.red]]);
+    slam(t, 5.6, 'QAYSI EXCEL?', 320, 640, 50, '#fff', { slab: C.red, rot: -.08, hold: 2.6 });
+    slam(t, 6.6, 'QAYSI CHAT?', 780, 1000, 50, '#fff', { slab: C.red, rot: .07, hold: 1.6 });
+    slam(t, 7.6, 'CHEK QAYERDA?', 360, 1420, 50, '#fff', { slab: C.red, rot: .05, hold: .7 });
+  });
+  const dim = prog(t, 8.45, 8.6) * (1 - prog(t, 10.3, 10.55));
+  if (dim > 0) withAlpha(dim * .45, () => { ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, 8.5, W / 2, 960, C.red, 1100);
+  sparks(t, 8.5, W / 2, 960, 81, [C.red, '#ffb4bc', '#ffffff'], 36, 1200);
+  slam(t, 8.5, 'TARQOQ', W / 2, 940, 230, '#fff', { hold: 1.75, glow: 'rgba(255,40,60,.9)' });
+  slam(t, 8.8, '8 ta joyda — bitta reklama uchun', W / 2, 1110, 50, '#ffb4bc', { hold: 1.45 });
+  flash(t, 8.5, C.red, .4, .45);
+}
+
+// ---------- SCENE 2 — Yechim: the magnet, then the marketplace ----------
+const T8 = { pull: 11.25, morph: 12.3, chips: 12.8, tapChip: 13.6, cards: 13.8, add: [14.6, 15.0, 15.4, 15.8, 16.2], cart: 16.6, pay: 17.6, paid: 17.85, slam: 18.5, sheet: 19.7 };
+const IMPACTS2 = [[11.0, 24], [T8.morph + .2, 14], [T8.pay, 8], [T8.slam, 34]];
+const KINDS = ['chat', 'excel', 'paper', 'sticky', 'browser', 'contacts', 'receipt', 'dm'];
+const MCARDS = [['Ayollar Klubi', 'AK', '#ec4899', '34 ming', 320000], ['Moda Vodiy', 'MV', '#a855f7', '21 ming', 280000], ['Fargʻona Style', 'FS', '#f59e0b', '48 ming', 410000],
+  ['Margʻilon Moda', 'MM', '#3b82f6', '19 ming', 250000], ['Qoʻqon Shop', 'QS', '#06b6d4', '40 ming', 380000], ['Andijon Look', 'AL', '#84cc16', '15 ming', 190000]];
+const CW = (SW - 90) / 2, CH = 220;
+const cardPos = i => ({ x: SX + 30 + (i % 2) * (CW + 30), y: SY + 350 + Math.floor(i / 2) * 240 });
+const plusPos = i => { const c = cardPos(i); return [c.x + CW - 50, c.y + 168]; };
+const CART = [SX + SW - 80, SY + 92];
+const PAY = { x: SX + 40, y: SY + SH - 150, w: SW - 80, h: 100 };
+const CHIPS = ['Barchasi', 'Yangiliklar', 'Moda', 'Biznes', 'Taʼlim', 'Sport'];
+function chipX(i) { ctx.font = `700 26px ${F}`; let x = SX + 30; for (let k = 0; k < i; k++) x += ctx.measureText(CHIPS[k]).width + 60 + 12; return x; }
+function greenBg(t) {
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#04261f'); g.addColorStop(1, '#0b5a46'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 3; i++) {
+    const bx = 200 + i * 340 + Math.sin(t * .6 + i) * 60, by = 500 + i * 380;
+    const b = ctx.createRadialGradient(bx, by, 0, bx, by, 420);
+    b.addColorStop(0, 'rgba(34,227,154,.18)'); b.addColorStop(1, 'rgba(34,227,154,0)');
+    ctx.fillStyle = b; ctx.fillRect(0, 0, W, H);
+  }
+}
+function magnetPhase(t) {
+  const cx = W / 2, cy = 900, m = 1 - eIn(prog(t, T8.morph, T8.morph + .35));
+  if (m <= 0) return;
+  // field rings pulsing inward
+  for (let k = 0; k < 4; k++) {
+    const ph = ((t * .9 + k / 4) % 1), r = 700 * (1 - ph);
+    withAlpha((1 - ph) * .25 * m, () => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.lineWidth = 6; ctx.strokeStyle = '#22e39a'; ctx.stroke(); });
+  }
+  // the scattered pieces fly in and are absorbed
+  KINDS.forEach((k, i) => {
+    const at = T8.pull + i * .11, p = prog(t, at - .6, at);
+    if (p <= 0 || p >= 1) return;
+    const a0 = i / KINDS.length * 6.28 + .4, r = lerp(900, 0, eIn(p)), a = a0 + p * 2.2;
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 1.3;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(p * 4); ctx.scale(lerp(1.2, .2, p), lerp(1.2, .2, p));
+    rr(-60, -60, 120, 120, 26); ctx.fillStyle = 'rgba(30,41,59,.95)'; ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,90,107,.8)'; ctx.stroke(); glyph(k, 0, 0, 1.2, '#cbd5e1'); ctx.restore();
+  });
+  KINDS.forEach((_, i) => { const at = T8.pull + i * .11; shockwave(t, at, cx, cy, '#22e39a', 260); });
+  const pulse = 1 + .08 * Math.max(...KINDS.map((_, i) => bump(t, T8.pull + i * .11, .25)));
+  withAlpha(m, () => scaled(cx, cy, 2.1 * pulse * m, () => {
+    ctx.save(); ctx.shadowColor = '#22e39a'; ctx.shadowBlur = 50;
+    rr(cx - 48, cy - 48, 96, 96, 26); const g = ctx.createLinearGradient(cx - 48, cy - 48, cx + 48, cy + 48);
+    g.addColorStop(0, '#22e39a'); g.addColorStop(1, '#0ea371'); ctx.fillStyle = g; ctx.fill(); ctx.restore();
+    shield(cx, cy, 1, '#fff'); check(cx + 1, cy + 2, 26, '#0ea371', 7);
+  }));
+}
+function market(t) {
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 150);
+  text('Marketplace', SX + 50, SY + 112, 40, '#fff', 900);
+  // cart with badge
+  const n = T8.add.filter(a => t > a + .45).length, cb = Math.max(...T8.add.map(a => bump(t, a + .45, .3)));
+  scaled(CART[0], CART[1], 1 + .25 * cb, () => {
+    glyph('cart', CART[0], CART[1], 1, '#fff');
+    if (n > 0) { ctx.beginPath(); ctx.arc(CART[0] + 26, CART[1] - 24, 18, 0, 7); ctx.fillStyle = C.gold; ctx.fill(); text(String(n), CART[0] + 26, CART[1] - 23, 20, C.ink, 900, 'center', 'middle'); }
+  });
+  rr(SX + 30, SY + 172, SW - 60, 76, 38); ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.beginPath(); ctx.arc(SX + 80, SY + 208, 14, 0, 7); ctx.lineWidth = 5; ctx.strokeStyle = C.grey; ctx.stroke();
+  text('Kanal, mavzu yoki shahar...', SX + 110, SY + 219, 27, '#94a3b8', 500);
+  // category chips
+  const cp = eOut(prog(t, T8.chips, T8.chips + .5));
+  ctx.save(); ctx.beginPath(); ctx.rect(SX, SY + 262, SW, 70); ctx.clip(); ctx.translate(lerp(SW, 0, cp), 0);
+  CHIPS.forEach((s, i) => {
+    ctx.font = `700 26px ${F}`; const w = ctx.measureText(s).width + 60, x = chipX(i);
+    const on = (i === 2 && t > T8.tapChip) || (i === 0 && t <= T8.tapChip);
+    scaled(x + w / 2, SY + 296, i === 2 ? 1 + .15 * bump(t, T8.tapChip, .3) : 1, () => {
+      rr(x, SY + 268, w, 56, 28); ctx.fillStyle = on ? '#16c784' : '#fff'; ctx.fill();
+      text(s, x + w / 2, SY + 306, 26, on ? '#fff' : '#334155', 700, 'center');
+    });
+  });
+  ctx.restore();
+  // channel cards
+  MCARDS.forEach(([name, init, col, subs, price], i) => {
+    const p = eBack(prog(t, T8.cards + i * .1, T8.cards + .4 + i * .1));
+    if (p <= 0) return;
+    const { x, y } = cardPos(i), added = i < 5 && t > T8.add[i];
+    scaled(x + CW / 2, y + CH / 2, p, () => {
+      ctx.save(); ctx.shadowColor = 'rgba(15,23,42,.1)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6;
+      rr(x, y, CW, CH, 24); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+      if (added) { rr(x, y, CW, CH, 24); ctx.lineWidth = 4; ctx.strokeStyle = '#16c784'; ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(x + 52, y + 56, 34, 0, 7); ctx.fillStyle = col; ctx.fill(); text(init, x + 52, y + 57, 22, '#fff', 800, 'center', 'middle');
+      text(name, x + 98, y + 50, 24, C.ink, 800); text(`${subs} obunachi`, x + 98, y + 82, 20, C.grey, 600);
+      rr(x + 24, y + 108, 90, 32, 16); ctx.fillStyle = '#fce7f3'; ctx.fill(); text('Moda', x + 69, y + 131, 18, '#be185d', 800, 'center');
+      text(`${fmt(price)} soʻm`, x + 24, y + 185, 26, '#059669', 900);
+      const [px, py] = plusPos(i), b = i < 5 ? bump(t, T8.add[i], .25) : 0;
+      scaled(px, py, 1 + .25 * b, () => {
+        ctx.beginPath(); ctx.arc(px, py, 30, 0, 7); ctx.fillStyle = added ? '#065f46' : '#16c784'; ctx.fill();
+        if (added) check(px, py + 1, 24, '#fff', 6); else { ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(px - 12, py); ctx.lineTo(px + 12, py); ctx.moveTo(px, py - 12); ctx.lineTo(px, py + 12); ctx.stroke(); }
+      });
+    });
+  });
+  // cart sheet
+  const sp = eOut(prog(t, T8.cart, T8.cart + .45));
+  if (sp > 0) {
+    ctx.fillStyle = `rgba(4,20,16,${.5 * sp})`; ctx.fillRect(SX, SY, SW, SH);
+    const sy = lerp(SY + SH, SY + 330, sp);
+    rr(SX, sy, SW, SH, 44); ctx.fillStyle = '#fff'; ctx.fill();
+    text('Savatcha', SX + 40, sy + 80, 38, C.ink, 900); text('5 kanal', SX + SW - 40, sy + 80, 28, C.grey, 700, 'right');
+    MCARDS.slice(0, 5).forEach(([name, init, col, , price], i) => {
+      const y = sy + 120 + i * 78;
+      ctx.beginPath(); ctx.arc(SX + 70, y + 32, 26, 0, 7); ctx.fillStyle = col; ctx.fill(); text(init, SX + 70, y + 33, 18, '#fff', 800, 'center', 'middle');
+      text(name, SX + 112, y + 42, 27, C.ink, 700); text(fmt(price), SX + SW - 40, y + 42, 27, '#334155', 800, 'right');
+    });
+    ctx.fillStyle = '#e2e8f0'; ctx.fillRect(SX + 40, sy + 520, SW - 80, 2);
+    text('Jami', SX + 40, sy + 580, 32, C.grey, 700); text('1 640 000 soʻm', SX + SW - 40, sy + 580, 38, '#059669', 900, 'right');
+    const paid = t > T8.paid, press = bump(t, T8.pay, .25);
+    scaled(PAY.x + PAY.w / 2, PAY.y + PAY.h / 2, 1 - .05 * press, () => {
+      rr(PAY.x, PAY.y, PAY.w, PAY.h, 50); ctx.fillStyle = paid ? '#065f46' : '#0ea371'; ctx.fill();
+      if (paid) check(PAY.x + 150, PAY.y + 50, 30, '#fff', 8, prog(t, T8.paid, T8.paid + .3));
+      text(paid ? 'Toʻlandi' : 'Bitta toʻlov', PAY.x + PAY.w / 2 + (paid ? 30 : 0), PAY.y + 63, 38, '#fff', 900, 'center');
+    });
+  }
+  const mp = eOut(prog(t, T8.sheet, T8.sheet + .45));
+  if (mp > 0) {
+    ctx.fillStyle = `rgba(4,20,16,${.55 * mp})`; ctx.fillRect(SX, SY, SW, SH);
+    const sy = lerp(SY + SH, SY + SH - 640, mp);
+    rr(SX, sy, SW, 700, 50); ctx.fillStyle = '#fff'; ctx.fill();
+    const c = eBack(prog(t, T8.sheet + .2, T8.sheet + .6));
+    ctx.beginPath(); ctx.arc(SX + SW / 2, sy + 150, 80 * c, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+    if (c > .5) check(SX + SW / 2, sy + 152, 70, '#fff', 13, prog(t, T8.sheet + .45, T8.sheet + .8));
+    withAlpha(prog(t, T8.sheet + .6, T8.sheet + .9), () => {
+      text('Buyurtma qabul qilindi!', SX + SW / 2, sy + 300, 42, C.ink, 800, 'center');
+      ['5 kanal — bitta buyurtmada', 'Bitta toʻlov, bitta chek', 'Barcha hisobotlar bir joyda'].forEach((s, i) =>
+        withAlpha(prog(t, T8.sheet + .9 + i * .25, T8.sheet + 1.15 + i * .25), () => {
+          check(SX + 90, sy + 380 + i * 70, 26, '#16c784', 6);
+          text(s, SX + 125, sy + 391 + i * 70, 29, '#334155', 600);
+        }));
+    });
+  }
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  camera(1 + .02 * eInOut(prog(t, 12.6, 21.8)), sr, sx, sy, () => {
+    greenBg(t);
+    magnetPhase(t);
+    const lp = eBack(prog(t, 12.5, 13.1));
+    withAlpha(prog(t, 12.5, 12.8), () => { scaled(W / 2, 200, lp, () => logo(W / 2 - 205, 150, 1)); text('Yagona marketplace', W / 2, 310, 34, '#a7f3d0', 600, 'center'); });
+    const ph = eBack(prog(t, T8.morph, T8.morph + .55));
+    if (ph > 0) scaled(W / 2, 900, lerp(.15, 1, ph), () => withAlpha(prog(t, T8.morph, T8.morph + .2), () => phone('#f4f7f6', 0, 0, 0, () => market(t))));
+    // cursor
+    const keys = [[13.1, W - 40, 1600], [T8.tapChip, chipX(2) + 55, SY + 296], [14.0, chipX(2) + 55, SY + 296],
+      ...T8.add.map((a, i) => [a, ...plusPos(i)]), [16.4, ...plusPos(4)], [T8.pay, PAY.x + PAY.w / 2 + 80, PAY.y + 50]];
+    if (t > 13.1 && t < 18.0) {
+      const [cx, cy] = pathAt(t, keys);
+      const press = Math.max(...[T8.tapChip, ...T8.add, T8.pay].map(a => bump(t, a, .22)));
+      withAlpha(Math.min(prog(t, 13.1, 13.3), 1 - prog(t, 17.7, 18.0)), () => cursor(cx, cy, press));
+    }
+    for (const a of [T8.tapChip, ...T8.add, T8.pay]) {
+      const [x, y] = a === T8.tapChip ? [chipX(2) + 55, SY + 296] : a === T8.pay ? [PAY.x + PAY.w / 2 + 80, PAY.y + 50] : plusPos(T8.add.indexOf(a));
+      ripple(x, y, prog(t, a, a + .6), '#16c784');
+    }
+    // added channels fly into the cart
+    T8.add.forEach((a, i) => {
+      const p = prog(t, a + .05, a + .45);
+      if (p <= 0 || p >= 1) return;
+      const [x0, y0] = plusPos(i), e = eInOut(p), x = lerp(x0, CART[0], e), y = lerp(y0, CART[1], e) - Math.sin(e * Math.PI) * 220;
+      ctx.beginPath(); ctx.arc(x, y, lerp(34, 12, e), 0, 7); ctx.fillStyle = MCARDS[i][2]; ctx.fill();
+      ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
+    });
+  });
+  const dim = prog(t, T8.slam - .05, T8.slam + .1) * (1 - prog(t, T8.sheet - .2, T8.sheet));
+  if (dim > 0) withAlpha(dim * .55, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, T8.slam, W / 2, 880, C.gold, 1100);
+  sparks(t, T8.slam, W / 2, 880, 83, [C.gold, '#fff3c4', '#22e39a'], 40, 1250);
+  slam(t, T8.slam, 'BITTA JOY', W / 2, 840, 190, C.gold, { hold: 1.0, glow: 'rgba(255,200,61,.8)' });
+  slam(t, T8.slam + .15, 'barcha kanallar · bitta toʻlov', W / 2, 1020, 54, '#fff', { hold: .85, glow: 'rgba(255,200,61,.6)' });
+  flash(t, T8.slam, '#fff3c4', .35, .5);
+}
+
+// ---------- SCENE 3 — Natija: the hub ----------
+const HUB = [['Yangiliklar', 'news', '#3b82f6'], ['Moda', 'fashion', '#ec4899'], ['Biznes', 'business', '#f59e0b'], ['Taʼlim', 'edu', '#a855f7'], ['Sport', 'sport', '#16c784'], ['Oziq-ovqat', 'food', '#ef4444']];
+const IMPACTS3 = [[22.05, 18], [25.0, 16]];
+function scene3(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera(1 + .03 * eInOut(prog(t, 22, 27)), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.3));
+    withAlpha(1 - out, () => {
+      withAlpha(prog(t, 22.2, 22.6), () => {
+        text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
+        text('Hammasi bir joyda', W / 2, 260, 60, '#fff', 800, 'center');
+      });
+      const cx = W / 2, cy = 760, spin = (t - 22) * .08;
+      const nodes = HUB.map((h, i) => { const a = -Math.PI / 2 + i * Math.PI / 3 + spin; return [cx + Math.cos(a) * 340, cy + Math.sin(a) * 320]; });
+      // spokes + travelling pulses
+      nodes.forEach(([x, y], i) => {
+        const p = eOut(prog(t, 22.4 + i * .15, 22.9 + i * .15));
+        if (p <= 0) return;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(lerp(cx, x, p), lerp(cy, y, p)); ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.stroke();
+        for (let k = 0; k < 2; k++) {
+          const ph = ((t * .8 + i * .17 + k * .5) % 1), dir = k ? ph : 1 - ph;
+          if (p < 1) continue;
+          ctx.save(); ctx.shadowColor = C.gold; ctx.shadowBlur = 20;
+          ctx.beginPath(); ctx.arc(lerp(cx, x, dir), lerp(cy, y, dir), 9, 0, 7); ctx.fillStyle = k ? C.gold : '#fff'; ctx.fill(); ctx.restore();
+        }
+      });
+      nodes.forEach(([x, y], i) => {
+        const p = eBack(prog(t, 22.6 + i * .15, 23.0 + i * .15));
+        if (p <= 0) return;
+        const [l, k, col] = HUB[i];
+        scaled(x, y, p * (1 + .06 * Math.sin(t * 3 + i)), () => {
+          ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 30;
+          ctx.beginPath(); ctx.arc(x, y, 70, 0, 7); ctx.fillStyle = col; ctx.fill(); ctx.restore();
+          ctx.beginPath(); ctx.arc(x, y, 70, 0, 7); ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.stroke();
+          glyph(k, x, y, 1.1);
+          text(l, x, y + 112, 30, '#fff', 800, 'center');
+        });
+      });
+      const hp = eBack(prog(t, 22.3, 22.8));
+      scaled(cx, cy, hp * (1 + .05 * Math.sin(t * 4)), () => {
+        ctx.save(); ctx.shadowColor = '#22e39a'; ctx.shadowBlur = 60;
+        ctx.beginPath(); ctx.arc(cx, cy, 120, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+        shield(cx, cy - 18, 1.6, '#0ea371'); check(cx + 1, cy - 14, 40, '#fff', 9);
+        text('ADUZ', cx, cy + 74, 34, '#0b5a46', 900, 'center');
+      });
+      [['1', 'ilova'], ['1', 'toʻlov'], ['1', 'hisobot']].forEach(([n, l], i) => {
+        const p = eBack(prog(t, 24.6 + i * .2, 25.0 + i * .2));
+        if (p <= 0) return;
+        const x = 90 + i * 310, y = 1250;
+        scaled(x + 140, y + 60, p, () => {
+          ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.7)'; ctx.shadowBlur = 30;
+          rr(x, y, 280, 120, 60); const gg = ctx.createLinearGradient(x, y, x + 280, y + 120);
+          gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+          text(n, x + 70, y + 84, 70, C.ink, 900, 'center'); text(l, x + 115, y + 76, 34, C.ink, 800);
+        });
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 1310, C.gold, 900);
+  sparks(t, 25.0, W / 2, 1310, 85, [C.gold, '#fff', '#22e39a'], 34, 1100);
+  confetti(t, 25.0);
+  endCard(t, 27.0);
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.55, b: 11.0, fn: (t, a, b, A, B) => implode(t, a, b, A, B, '#22e39a') },
+    { a: 21.75, b: 22.15, fn: cardFlip },
+  ],
+  overlay: t => { filmLook(t); flash(t, 11.0, '#ffffff', .25, .45); },
+});
+</script>
+</body>
+</html>

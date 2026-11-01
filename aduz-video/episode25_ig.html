@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 25-qism — Instagram</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// Theme switcher (25-qism): all three design systems in one episode. Each theme script replaces the same
+// lib.js helpers, so a snapshot is taken after each one loads and useTheme() swaps them in per drawing pass.
+const THEMED = ['problemBg', 'episodeTitle', 'counters', 'solutionBg', 'logo', 'resultBg', 'captions', 'endCard'];
+function snapTheme() { return { fns: Object.fromEntries(THEMED.map(n => [n, window[n]])), C: { ...C }, F, FD, conf: CONFETTI.map(c => c.c) }; }
+function useTheme(th) { Object.assign(window, th.fns); Object.assign(C, th.C); F = th.F; FD = th.FD; CONFETTI.forEach((c, i) => { c.c = th.conf[i]; }); }
+const TH_CLASSIC = snapTheme();
+</script>
+<script src="neon.js"></script>
+<script>const TH_NEON = snapTheme();</script>
+<script src="reel.js"></script>
+<script>FD = null; const TH_REEL = snapTheme();</script>
+<script>
+// ADUZ — 25-qism: "Mutlaq erkinlik (mobil boshqaruv)". Uchala dizayn tizimi bitta qismda:
+// Problem (CLASSIC navy/red): the business lives on one office computer — orders pile up unanswered while the owner,
+// a pin on the map, is pulled back by a cable; OFISGA BOG'LIQ · BUYURTMA KUTMOQDA · KECH QOLDINGIZ; chains: QARAMLIK.
+// Vacuum: padlock, the monitor dies like an old TV. Transition (new): pocketZoom — the whole office shrinks into a phone.
+// Solution: the phone travels through three worlds, each in its own design system — Marg'ilon bazaar 10:15 (CLASSIC
+// green), the night road 22:40 (NEON), a choyxona 13:05 (MOTION REEL, HUD) → lime "ISTALGAN JOYDAN." → violet
+// keyframe card of the day. Result: a triptych of the three worlds, before/after card, gold badges. End: the three
+// logos stutter, then the reel identity card. Sound: CUES_25 in audio.py (every library at once).
+
+const CAPTIONS = [
+  [0.4, 4.4, 'Buyurtmalar kelyapti — lekin hammasi ofisdagi kompyuterda.'],
+  [4.6, 9.4, 'Siz tashqaridasiz — biznes esa stolga bogʻlangan.'],
+  [9.6, 10.3, '...ofis qulf.'],
+  [11.4, 14.2, 'ADUZ — biznesingiz choʻntagingizda. Bozorda ham.'],
+  [14.6, 17.5, 'Yoʻlda, kechasi ham.'],
+  [17.9, 21.6, 'Choy ustida ham. Bir telefon — butun biznes.'],
+  [22.4, 27.0, 'Mutlaq erkinlik: istalgan joydan boshqaring.'],
+  [27.6, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+// caption / theme per moment
+const capTheme = t => t < 14.45 ? TH_CLASSIC : t < 17.75 ? TH_NEON : t < 21.95 ? TH_REEL : t < 27.0 ? TH_CLASSIC : TH_REEL;
+
+function glyph(kind, x, y, s = 1, col = '#fff') {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (kind === 'pin') { ctx.beginPath(); ctx.moveTo(0, 30); ctx.quadraticCurveTo(-24, 4, -22, -10); ctx.arc(0, -10, 22, Math.PI, 0); ctx.quadraticCurveTo(24, 4, 0, 30); ctx.fill(); ctx.beginPath(); ctx.arc(0, -10, 8, 0, 7); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill(); }
+  else if (kind === 'phone') { rr(-16, -28, 32, 56, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 19, 3, 0, 7); ctx.fill(); }
+  else if (kind === 'eye') { ctx.beginPath(); ctx.moveTo(-28, 0); ctx.quadraticCurveTo(0, -24, 28, 0); ctx.quadraticCurveTo(0, 24, -28, 0); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 8, 0, 7); ctx.fill(); }
+  else if (kind === 'bell') { ctx.beginPath(); ctx.moveTo(-22, 14); ctx.quadraticCurveTo(-16, 8, -16, -4); ctx.quadraticCurveTo(-16, -24, 0, -26); ctx.quadraticCurveTo(16, -24, 16, -4); ctx.quadraticCurveTo(16, 8, 22, 14); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.arc(0, 20, 6, 0, 7); ctx.fill(); }
+  else if (kind === 'lock') { rr(-24, -4, 48, 38, 8); ctx.fill(); ctx.beginPath(); ctx.arc(0, -6, 16, Math.PI, 0); ctx.lineWidth = 8; ctx.stroke(); }
+  ctx.restore();
+}
+const curve = (t, keys) => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) if (t <= keys[i][0]) return lerp(keys[i - 1][1], keys[i][1], eInOut(clamp((t - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0])))); return keys[keys.length - 1][1]; };
+// Chain of links from (x0,y0) to (x1,y1); p = how much of it is laid (0..1).
+function chain(x0, y0, x1, y1, p, col = '#9aa3b2') {
+  const len = Math.hypot(x1 - x0, y1 - y0), n = Math.floor(len / 46), a = Math.atan2(y1 - y0, x1 - x0);
+  for (let i = 0; i < n * p; i++) { const k = i / n, x = lerp(x0, x1, k), y = lerp(y0, y1, k);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.lineWidth = 10; ctx.strokeStyle = '#2b3140';
+    rr(-30, i % 2 ? -8 : -15, 60, i % 2 ? 16 : 30, 15); ctx.stroke(); ctx.lineWidth = 6; ctx.strokeStyle = col; ctx.stroke(); ctx.restore(); }
+}
+
+// ---------- SCENE 1 — Muammo (CLASSIC): tied to the office computer ----------
+const NOTIF = [1.4, 2.3, 3.1, 3.9, 4.6, 5.3, 6.0, 6.7, 7.3, 7.9];
+const CHN = ['Fargʻona 24', 'Andijon Savdo', 'Vodiy Bozor', 'Namangan Shop', 'Qoʻqon Market'];
+const IMPACTS1 = [[5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46]];
+const MON = { x: 160, y: 430, w: 760, h: 500 };
+const pathP = s => [200 + 680 * s, 1300 + Math.sin(s * 3.4) * 110];
+const walk = t => clamp(curve(t, [[0, 0], [1.0, 0], [4.4, .86], [5.6, .86], [5.75, .8], [6.6, .8], [6.75, .73], [7.6, .73], [7.75, .62], [9.5, .62]]), 0, 1);
+function monitor(t, alive = 1) {
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+  rr(MON.x, MON.y, MON.w, MON.h, 26); ctx.fillStyle = '#11151c'; ctx.fill(); ctx.restore();
+  ctx.beginPath(); ctx.moveTo(500, MON.y + MON.h); ctx.lineTo(580, MON.y + MON.h); ctx.lineTo(620, 985); ctx.lineTo(460, 985); ctx.closePath(); ctx.fillStyle = '#1b2130'; ctx.fill();
+  rr(400, 980, 280, 18, 9); ctx.fillStyle = '#1b2130'; ctx.fill();
+  const sx = MON.x + 18, sy = MON.y + 18, sw = MON.w - 36, sh = MON.h - 36;
+  if (alive <= 0) { rr(sx, sy, sw, sh, 12); ctx.fillStyle = '#05070d'; ctx.fill(); return [sx, sy, sw, sh]; }
+  ctx.save(); rr(sx, sy, sw, sh, 12); ctx.clip();
+  ctx.fillStyle = '#f4f7f6'; ctx.fillRect(sx, sy, sw, sh);
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(sx, sy, sw, 70);
+  text('ADUZ · Boshqaruv paneli', sx + 30, sy + 47, 28, '#fff', 800);
+  const n = NOTIF.filter(a => t > a).length;
+  if (n) { const p = eBack(prog(t, NOTIF[n - 1], NOTIF[n - 1] + .25)); scaled(sx + sw - 50, sy + 35, .8 + .2 * p, () => { ctx.beginPath(); ctx.arc(sx + sw - 50, sy + 35, 24, 0, 7); ctx.fillStyle = C.red; ctx.fill(); text(String(n), sx + sw - 50, sy + 44, 26, '#fff', 900, 'center'); }); }
+  const shown = NOTIF.map((a, i) => [a, i]).filter(([a]) => t > a).reverse();
+  shown.slice(0, 6).forEach(([a, i], k) => {
+    const p = eOut(prog(t, a, a + .25)), y = sy + 90 + (k - (k === 0 ? 1 - p : 0)) * 64 + (k ? 64 * (1 - eOut(prog(t, shown[0][0], shown[0][0] + .25))) * 0 : 0);
+    withAlpha(k === 0 ? p : 1, () => {
+      rr(sx + 20, y, sw - 40, 54, 12); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#e2e8f0'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(sx + 48, y + 27, 9, 0, 7); ctx.fillStyle = C.red; ctx.fill();
+      text(`Yangi buyurtma · ${CHN[i % 5]}`, sx + 70, y + 36, 24, '#334155', 700);
+      const w = Math.max(0, t - a) * 340, mm = Math.floor(w / 60);
+      text(`javobsiz ${Math.floor(mm / 60)}:${String(mm % 60).padStart(2, '0')}`, sx + sw - 40, y + 36, 22, C.red, 800, 'right');
+    });
+  });
+  ctx.restore();
+  return [sx, sy, sw, sh];
+}
+function mapStrip(t, tense) {
+  rr(90, 1060, 900, 460, 30); ctx.fillStyle = '#0f1629'; ctx.fill();
+  ctx.save(); rr(90, 1060, 900, 460, 30); ctx.clip();
+  ctx.strokeStyle = 'rgba(148,163,184,.08)'; ctx.lineWidth = 2; for (let x = 90; x < 990; x += 60) { ctx.beginPath(); ctx.moveTo(x, 1060); ctx.lineTo(x, 1520); ctx.stroke(); } for (let y = 1060; y < 1520; y += 60) { ctx.beginPath(); ctx.moveTo(90, y); ctx.lineTo(990, y); ctx.stroke(); }
+  ctx.setLineDash([18, 14]); ctx.lineWidth = 8; ctx.strokeStyle = '#334155'; ctx.beginPath(); for (let s = 0; s <= 1.001; s += .02) { const [x, y] = pathP(s); s ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.setLineDash([]);
+  [[0, 'OFIS'], [.45, 'BOZOR'], [.86, 'TOʻY']].forEach(([s, l]) => { const [x, y] = pathP(s); ctx.beginPath(); ctx.arc(x, y, 12, 0, 7); ctx.fillStyle = s ? '#64748b' : '#94a3b8'; ctx.fill(); text(l, x, y + 48, 22, '#94a3b8', 800, 'center'); });
+  ctx.restore();
+  // cable from the monitor to the owner
+  const s = walk(t), [px, py] = pathP(s), jit = tense * Math.sin(t * 60) * 3;
+  ctx.save(); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(MON.x + 40, MON.y + MON.h - 20); ctx.quadraticCurveTo(lerp(60, (MON.x + px) / 2, tense), lerp(1250, (MON.y + MON.h + py) / 2, tense) + jit, px, py - 40);
+  ctx.lineWidth = 10 + 4 * tense; ctx.strokeStyle = tense > .5 ? C.red : '#475569'; ctx.shadowColor = C.red; ctx.shadowBlur = 30 * tense; ctx.stroke(); ctx.restore();
+  glyph('pin', px, py - 40, 1.6, '#fff');
+  const km = 14.2 * s; text(`Ofisdan: ${km.toFixed(1)} km`, px, py - 120, 26, tense > .5 ? '#fecaca' : '#e2e8f0', 800, 'center');
+}
+function scene1(t) {
+  useTheme(TH_CLASSIC);
+  const stress = prog(t, 4.0, 9.4), tense = prog(t, 4.0, 4.5);
+  problemBg(t, stress);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  camera((1 + .05 * eInOut(prog(t, 0, 10.4))) * punch(t, NOTIF, .015), sr, sx, sy, () => {
+    kText(t, .15, '25-QISM', W / 2, 105, 30, C.red, 'charsDown', { weight: 800 });
+    kText(t, .3, 'Mutlaq erkinlik', W / 2, 165, 56, '#fff', 'blurUp', { weight: 800 });
+    counters(t, [['9–18', 'ish vaqti', '#fff'], ['1', 'kompyuter', C.red], [String(NOTIF.filter(a => t > a + .5).length), 'javobsiz', C.red]]);
+    const enter = eOut(prog(t, 0, .7));
+    camera(1, 0, 0, lerp(140, 0, enter), () => { monitor(t); mapStrip(t, tense); });
+    const c = prog(t, 8.5, 8.85); if (c > 0) { chain(MON.x - 60, MON.y - 40, MON.x + MON.w + 60, MON.y + MON.h + 60, c); chain(MON.x + MON.w + 60, MON.y - 40, MON.x - 60, MON.y + MON.h + 60, c, '#b6bfcc'); }
+  });
+  slam(t, 5.6, 'OFISGA BOGʻLIQ', 330, 1000, 50, '#fff', { slab: C.red, rot: -.07, hold: 2.9 });
+  slam(t, 6.6, 'BUYURTMA KUTMOQDA', 680, 1580, 46, '#fff', { slab: C.red, rot: .06, hold: 1.9 });
+  slam(t, 7.6, 'KECH QOLDINGIZ', 330, 380, 50, '#fff', { slab: C.red, rot: .05, hold: .9 });
+  const dim = prog(t, 8.45, 8.6) * (1 - prog(t, 9.25, 9.45));
+  if (dim > 0) withAlpha(dim * .55, () => { ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, 8.5, W / 2, 680, C.red, 1100);
+  sparks(t, 8.5, W / 2, 680, 501, [C.red, '#ffb4bc', '#ffffff'], 36, 1200);
+  slam(t, 8.5, 'QARAMLIK', W / 2, 660, 150, '#fff', { hold: .75, glow: 'rgba(255,40,60,.9)' });
+  kText(t, 8.7, 'biznes — stolga zanjirband', W / 2, 820, 52, '#ffb4bc', 'blurUp', { weight: 700, hold: .55, stagger: .05 });
+  flash(t, 8.5, C.red, .4, .45);
+  // vacuum: chained monitor, padlock, dies like an old TV
+  if (t > 9.5) {
+    ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, W, H);
+    const off = prog(t, 9.8, 10.05);
+    const [sx2, sy2, sw2, sh2] = monitor(t, 1);
+    if (off > 0) { // CRT collapse
+      ctx.fillStyle = '#05070d'; ctx.fillRect(sx2, sy2, sw2, sh2);
+      const hh = sh2 * (1 - eIn(clamp(off * 2))), ww = sw2 * (1 - eIn(clamp(off * 2 - 1)));
+      if (off < 1) { ctx.save(); ctx.shadowColor = '#fff'; ctx.shadowBlur = 30; ctx.fillStyle = '#e8f6ff'; ctx.fillRect(sx2 + sw2 / 2 - ww / 2, sy2 + sh2 / 2 - Math.max(3, hh) / 2, Math.max(4, ww), Math.max(3, hh)); ctx.restore(); }
+    }
+    chain(MON.x - 60, MON.y - 40, MON.x + MON.w + 60, MON.y + MON.h + 60, 1); chain(MON.x + MON.w + 60, MON.y - 40, MON.x - 60, MON.y + MON.h + 60, 1, '#b6bfcc');
+    const lp = eBack(prog(t, 9.58, 9.8)); if (lp > 0) scaled(W / 2, MON.y + MON.h / 2 + 10, lp * 2.2, () => glyph('lock', W / 2, MON.y + MON.h / 2 + 10, 1, '#cbd5e1'));
+  }
+}
+
+// Transition (new): the office frame shrinks into the phone screen; the phone lights up.
+function pocketZoom(t, a, b, drawA, drawB) {
+  const p = prog(t, a, b), e = eInOut(clamp(p / .8));
+  drawB(t);
+  const s = lerp(1, SH / H, e), cx = lerp(W / 2, SX + SW / 2, e), cy = lerp(H / 2, SY + SH / 2, e), r = lerp(0, PR - SI, e);
+  const fade = 1 - clamp((p - .8) / .2);
+  if (fade > 0) withAlpha(fade, () => {
+    ctx.save(); rr(cx - W * s / 2, cy - H * s / 2, W * s, H * s, r); ctx.clip();
+    ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-W / 2, -H / 2); drawA(t); ctx.restore();
+    ctx.save(); rr(cx - W * s / 2 - 22 * e, cy - H * s / 2 - 22 * e, W * s + 44 * e, H * s + 44 * e, r + 22 * e); ctx.lineWidth = 44 * e; ctx.strokeStyle = '#11151c'; ctx.stroke(); ctx.restore();
+  });
+  withAlpha(Math.sin(Math.PI * clamp((p - .7) / .3)) * .7, () => { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); });
+}
+
+// ---------- SCENE 2 — Yechim: one phone, three worlds ----------
+const T25 = { note: 11.9, ok: 12.6, safe: 13.2, sw1: [14.3, 14.75], ping: 15.3, budget: 15.9, auto: 16.6, sw2: [17.6, 18.0], reply: 18.15, slam: 18.5, sheet: 19.7 };
+const IMPACTS2 = [[11.0, 20], [T25.ok, 10], [T25.budget, 8], [T25.slam, 34]];
+// --- world 1: Marg'ilon bazaar (CLASSIC) ---
+function world1(t) {
+  useTheme(TH_CLASSIC);
+  solutionBg(t, 'Margʻilon bozori · 10:15');
+  for (let i = 0; i < 6; i++) { // market awnings along the bottom
+    const x = i * 200 - 40, y = 1560 + Math.sin(t * 1.5 + i) * 4;
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, 200, 120); ctx.clip();
+    for (let k = 0; k < 6; k++) { ctx.fillStyle = k % 2 ? '#ffffff' : (i % 2 ? '#0ea371' : '#f2c14e'); ctx.fillRect(x + k * 34, y, 34, 120); }
+    ctx.restore(); ctx.beginPath(); for (let k = 0; k <= 5; k++) ctx.arc(x + 20 + k * 34, y + 120, 17, 0, Math.PI); ctx.fillStyle = i % 2 ? '#0ea371' : '#f2c14e'; ctx.fill();
+  }
+}
+function app1(t) {
+  ctx.fillStyle = '#f4f7f6'; ctx.fillRect(SX, SY, SW, SH);
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 150);
+  text('Buyurtmalar', SX + 50, SY + 108, 40, '#fff', 900); glyph('bell', SX + SW - 80, SY + 92, 1, 'rgba(255,255,255,.9)');
+  const np = eBack(prog(t, T25.note, T25.note + .35)), nq = prog(t, T25.note + 1.2, T25.note + 1.5);
+  if (np > 0 && nq < 1) withAlpha(1 - nq, () => { const y = SY + lerp(20, 170, Math.min(1, np)); rr(SX + 24, y, SW - 48, 96, 22); ctx.fillStyle = '#0f172a'; ctx.fill(); glyph('bell', SX + 74, y + 48, .7, '#ffc83d'); text('Yangi buyurtma!', SX + 120, y + 42, 26, '#fff', 800); text('Fargʻona 24 · hozirgina', SX + 120, y + 76, 22, '#94a3b8', 600); });
+  const cp = eOut(prog(t, 11.5, 11.9)), y0 = SY + 300;
+  withAlpha(cp, () => {
+    rr(SX + 30, y0, SW - 60, 600, 26); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#e2e8f0'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(SX + 100, y0 + 80, 40, 0, 7); ctx.fillStyle = '#14b8a6'; ctx.fill(); text('F24', SX + 100, y0 + 90, 26, '#fff', 900, 'center');
+    text('Fargʻona 24', SX + 160, y0 + 72, 34, C.ink, 800); text('128 000 obunachi', SX + 160, y0 + 108, 24, C.grey, 600);
+    [['Post', '1 ta · ertaga 09:00'], ['Narx', '290 000 soʻm'], ['Toʻlov', 'ADUZ kafolatida']].forEach(([a, b], i) => { text(a, SX + 70, y0 + 200 + i * 70, 26, C.grey, 700); text(b, SX + SW - 70, y0 + 200 + i * 70, 28, C.ink, 800, 'right'); });
+    const ok = t > T25.ok;
+    scaled(SX + SW / 2, y0 + 495, 1 - .05 * bump(t, T25.ok, .22), () => { rr(SX + 70, y0 + 450, SW - 140, 90, 45); ctx.fillStyle = ok ? '#065f46' : '#0ea371'; ctx.fill(); text(ok ? 'Tasdiqlandi ✓' : 'Tasdiqlash', SX + SW / 2, y0 + 507, 34, '#fff', 900, 'center'); shine(SX + 70, y0 + 450, SW - 140, 90, prog(t, T25.ok, T25.ok + .5), 45); });
+  });
+  const st = eBack(prog(t, T25.ok + .1, T25.ok + .45));
+  if (st > 0 && t < T25.sw1[1]) scaled(SX + SW / 2, SY + 1010, st, () => { ctx.beginPath(); ctx.arc(SX + SW / 2, SY + 1010, 56, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill(); check(SX + SW / 2, SY + 1012, 50, '#fff', 10, prog(t, T25.ok + .3, T25.ok + .6)); });
+}
+// --- world 2: night road (NEON) ---
+const SKY = (() => { const r = rnd(503); let x = -20; const out = []; while (x < W + 40) { const w = 70 + r() * 110, h = 180 + r() * 380; out.push([x, w, h, r()]); x += w + 6; } return out; })();
+function world2(t) {
+  useTheme(TH_NEON);
+  neonGround(t, .7, [W + 40, 300, '8,192,200', .3, 1000]);
+  SKY.forEach(([x, w, h, k]) => { ctx.fillStyle = '#0b0910'; ctx.fillRect(x, 1560 - h, w, h + 400);
+    for (let yy = 1560 - h + 24; yy < 1540; yy += 40) for (let xx = x + 14; xx < x + w - 14; xx += 30) { const on = Math.sin(xx * 7.1 + yy * 3.3 + k * 9) > .2; if (!on) continue; ctx.fillStyle = (xx + yy) % 3 ? 'rgba(248,120,136,.5)' : 'rgba(8,192,200,.5)'; ctx.fillRect(xx, yy, 12, 18); } });
+  ctx.fillStyle = '#08060c'; ctx.fillRect(0, 1560, W, 360);
+  for (let k = 0; k < 7; k++) { const z = ((t * 1.6 + k / 7) % 1), y = 1570 + z * z * 350, w2 = 8 + z * 40, l = 20 + z * 140; ctx.fillStyle = `rgba(248,64,88,${.3 + .6 * z})`; ctx.fillRect(W / 2 - w2 / 2, y, w2, l * .3); }
+  glowText('YOʻLDA · 22:40', W / 2, 190, 64, N.ink, 900, 'center', 'middle', 'rgba(252,252,252,.6)', .7);
+  text('Fargʻona — Toshkent', W / 2, 270, 38, N.muted, it(500), 'center');
+}
+function app2(t) {
+  ctx.fillStyle = '#151120'; ctx.fillRect(SX, SY, SW, SH);
+  ctx.fillStyle = '#0b5f66'; ctx.fillRect(SX, SY, SW, 150);
+  text('Kampaniya', SX + 50, SY + 108, 40, N.ink, 900);
+  chipCard(SX + 30, SY + 180, SW - 60, 430, 18);
+  text('Yozgi chegirma', SX + 60, SY + 240, 32, N.ink, 800);
+  ctx.beginPath(); ctx.arc(SX + SW - 150, SY + 230, 8, 0, 7); ctx.fillStyle = N.cyan; ctx.fill(); text('faol', SX + SW - 130, SY + 240, 24, N.cyan, it(600));
+  const k = eOut(prog(t, 14.6, 17.4)), pts = Array.from({ length: 13 }, (_, i) => [SX + 60 + i * 50, SY + 540 - (60 + i * 18 + Math.sin(i * 1.7) * 30) * (i / 12 < k ? 1 : 0)]);
+  ctx.save(); ctx.shadowColor = N.pink; ctx.shadowBlur = 20; ctx.beginPath(); pts.forEach(([x, y], i) => { if (i / 12 > k + .001) return; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.lineWidth = 6; ctx.strokeStyle = N.pinkSoft; ctx.stroke(); ctx.restore();
+  text(`Koʻrishlar: ${fmt(12400 + 6200 * k)}`, SX + 60, SY + 585, 26, N.muted, it(500));
+  // budget button + bar
+  const bk = eOut(prog(t, T25.budget, T25.budget + .8));
+  text('Byudjet', SX + 60, SY + 680, 26, N.muted, it(500)); text(`${fmt(150000 + 50000 * bk)} soʻm`, SX + SW - 60, SY + 680, 28, N.ink, 900, 'right');
+  rr(SX + 60, SY + 705, SW - 120, 16, 8); ctx.fillStyle = '#2a2235'; ctx.fill(); rr(SX + 60, SY + 705, (SW - 120) * lerp(.6, .85, bk), 16, 8); ctx.fillStyle = N.cyan; ctx.fill();
+  scaled(SX + SW / 2, SY + 800, 1 - .05 * bump(t, T25.budget, .22), () => { ctx.save(); ctx.shadowColor = 'rgba(8,192,200,.6)'; ctx.shadowBlur = 20; rr(SX + 60, SY + 760, SW - 120, 80, 40); ctx.fillStyle = t > T25.budget ? '#067f86' : N.cyan; ctx.fill(); ctx.restore(); text(t > T25.budget ? 'Byudjet oshirildi ✓' : 'Byudjet +50 000', SX + SW / 2, SY + 812, 30, N.ground, 900, 'center'); });
+  // auto toggle
+  chipCard(SX + 30, SY + 880, SW - 60, 110, 18);
+  text('Avto-optimallash', SX + 60, SY + 948, 30, N.ink, 800);
+  const on = eInOut(prog(t, T25.auto, T25.auto + .25)); rr(SX + SW - 190, SY + 905, 120, 60, 30); ctx.fillStyle = on > .5 ? N.cyan : '#3a3240'; ctx.fill(); ctx.beginPath(); ctx.arc(SX + SW - 160 + 60 * on, SY + 935, 24, 0, 7); ctx.fillStyle = N.ink; ctx.fill();
+  // notification
+  const np = eBack(prog(t, T25.ping, T25.ping + .3)), nq = prog(t, T25.ping + 1.0, T25.ping + 1.25);
+  if (np > 0 && nq < 1) { const y = SY + lerp(-120, 24, Math.min(1, np)) - 160 * eIn(nq); rr(SX + 24, y, SW - 48, 100, 22); ctx.fillStyle = N.paper; ctx.fill(); glyph('eye', SX + 80, y + 50, .8, N.pink); text('Andijon Savdo', SX + 130, y + 44, 26, N.ground, 800); text('koʻrishlar 2 barobar oshdi', SX + 130, y + 80, 22, '#5c5560', 500); }
+}
+// --- world 3: choyxona (MOTION REEL) ---
+function world3(t) {
+  useTheme(TH_REEL);
+  ctx.fillStyle = R.paper; ctx.fillRect(0, 0, W, H);
+  dotGrid(t, .1, .42, 1, W / 2, 900);
+  scramble(t, 17.75, 'CHOYXONA  13:05', W / 2, 190, 26, R.orange, { dur: .5 });
+  serif('Bir piyola choy ustida', W / 2, 268, 60, R.ink);
+  // tea-house pattern strip
+  for (let i = 0; i < 12; i++) { const x = i * 96 + ((t * 30) % 96) - 48; ctx.save(); ctx.translate(x, 1620); ctx.rotate(Math.PI / 4); ctx.fillStyle = i % 3 === 0 ? R.orange : i % 3 === 1 ? R.violet : R.lime; ctx.fillRect(-26, -26, 52, 52); ctx.restore(); }
+}
+function app3(t) {
+  ctx.fillStyle = R.paper; ctx.fillRect(SX, SY, SW, SH);
+  mono('ADUZ  /  BUGUN', SX + 50, SY + 100, 18, R.ink, 'left', .3, 700);
+  card(SX + 30, SY + 150, SW - 60, 250, R.card, 26);
+  mono('BUYURTMALAR', SX + 70, SY + 200, 15, R.grey, 'left', .3, 700);
+  const k = eOut(prog(t, 17.9, 18.9)); text(`+${Math.round(18 * k)}`, SX + 70, SY + 300, 110, R.ink, 900, 'left', 'middle');
+  serif('ofisga bormasdan', SX + SW - 70, SY + 350, 40, R.ink, 'right');
+  card(SX + 30, SY + 430, 330, 280, R.ink, 26); donut(SX + 195, SY + 545, 70, .72 * eOut(prog(t, 18.0, 19.0)), R.orange);
+  text(`${Math.round(72 * eOut(prog(t, 18.0, 19.0)))}%`, SX + 195, SY + 545, 44, R.off, 900, 'center', 'middle'); mono('BYUDJET', SX + 195, SY + 665, 14, R.grey, 'center', .3, 700);
+  card(SX + 380, SY + 430, SW - 410, 280, R.lime, 26); mono('QAMROV', SX + 410, SY + 475, 14, R.ink, 'left', .3, 700);
+  [3, 5, 4, 7, 6, 9, 8].forEach((v, i) => { const b = eBack(clamp((t - 18.0 - i * .05) / .35)); if (b <= 0) return; const bh = v * 18 * b; rr(SX + 410 + i * 40, SY + 680 - bh, 26, bh, 5); ctx.fillStyle = i === 6 ? R.orange : R.ink; ctx.fill(); });
+  card(SX + 30, SY + 740, SW - 60, 150, R.orange, 26);
+  text('Avto-javob', SX + 70, SY + 810, 40, R.ink, 900); mono('KECHA-KUNDUZ', SX + 72, SY + 850, 14, R.ink, 'left', .3, 700);
+  scaled(SX + SW - 135, SY + 815, 1 + .08 * bump(t, T25.reply, .22), () => toggle(SX + SW - 200, SY + 783, eInOut(prog(t, T25.reply, T25.reply + .25))));
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  const [a1, b1] = T25.sw1, [a2, b2] = T25.sw2;
+  const p1 = eInOut(prog(t, a1, b1)), p2 = prog(t, a2, b2);
+  camera((1.03 - .03 * eOut(prog(t, 11, 12)) + .02 * eInOut(prog(t, 12, 21.8))) * punch(t, [T25.ok, T25.budget, T25.auto, T25.reply], .02), sr, sx, sy, () => {
+    // worlds: circle reveal 1→2 (neon ring), tile wave 2→3
+    if (t < b1) world1(t);
+    if (p1 > 0 && t < b2) { ctx.save(); ctx.beginPath(); ctx.arc(W / 2, PY + PH / 2, p1 * 1300, 0, 7); ctx.clip(); world2(t); ctx.restore();
+      if (p1 < 1) { ctx.save(); ctx.shadowColor = '#08c0c8'; ctx.shadowBlur = 40; ctx.beginPath(); ctx.arc(W / 2, PY + PH / 2, p1 * 1300, 0, 7); ctx.lineWidth = 14; ctx.strokeStyle = '#08c0c8'; ctx.stroke(); ctx.restore(); } }
+    if (p2 > 0) { const maxD = Math.hypot(W / 2, H / 2); ctx.save(); ctx.beginPath(); let k = 0;
+      for (let j = 0; j * GRID_GAP < H + GRID_GAP; j++) for (let i = 0; i < GRID_COLS; i++, k++) { const x = (i + .5) * GRID_GAP, y = (j + .5) * GRID_GAP, d = Math.hypot(x - W / 2, y - H / 2) / maxD, q = eOut(clamp((p2 * 1.6 - d) / .5)), s = GRID_GAP * 1.05 * q; if (s > .5) ctx.rect(x - s / 2, y - s / 2, s, s); }
+      ctx.clip(); world3(t); ctx.restore(); }
+    // the phone travels through all three
+    useTheme(TH_CLASSIC);
+    const enter = eBack(prog(t, 10.95, 11.4));
+    scaled(W / 2, PY + PH / 2, lerp(.92, 1, enter), () => phone('#f4f7f6', 0, 0, Math.sin(t * 1.3) * .012, () => {
+      const s1 = eInOut(prog(t, a1 + .05, b1)), s2 = eInOut(prog(t, a2, b2 - .05));
+      if (s1 < 1) { ctx.save(); ctx.translate(-SW * s1, 0); useTheme(TH_CLASSIC); app1(t); ctx.restore(); }
+      if (s1 > 0 && s2 < 1) { ctx.save(); ctx.translate(SW * (1 - s1) - SW * s2, 0); useTheme(TH_NEON); app2(t); ctx.restore(); }
+      if (s2 > 0) { ctx.save(); ctx.translate(SW * (1 - s2), 0); useTheme(TH_REEL); app3(t); ctx.restore(); }
+    }));
+    useTheme(TH_CLASSIC);
+    const taps = [[T25.ok, SX + SW / 2 + 120, SY + 795], [T25.budget, SX + SW / 2 + 140, SY + 800], [T25.auto, SX + SW - 130, SY + 935], [T25.reply, SX + SW - 135, SY + 815]];
+    if (t > 12.0 && t < 18.6) {
+      const [cx, cy] = pathAt(t, [[12.0, W - 40, 1650], taps[0], [13.4, W - 40, 1600], [15.3, W - 40, 1600], taps[1], taps[2], [17.4, W - 60, 1500], taps[3], [18.6, W - 40, 1700]]);
+      withAlpha(Math.min(prog(t, 12.0, 12.2), 1 - prog(t, 18.4, 18.6)), () => cursor(cx, cy, Math.max(...taps.map(([a]) => bump(t, a, .22)))));
+    }
+    taps.forEach(([a, x, y], i) => ripple(x, y, prog(t, a, a + .6), ['#ffffff', '#08c0c8', '#08c0c8', '#f04a1e'][i]));
+    sparks(t, T25.ok, SX + SW / 2, SY + 1010, 509, ['#22e39a', '#ffffff', '#ffc83d'], 26, 600);
+  });
+  // 18.5: REEL lime full-bleed "ISTALGAN JOYDAN."
+  useTheme(TH_REEL);
+  if (t > T25.slam - .05 && t < T25.sheet + .3) {
+    const k = eOut(prog(t, T25.slam - .05, T25.slam + .12)), out = prog(t, T25.sheet - .15, T25.sheet + .25);
+    const rw = lerp(420, W + 40, k), rh = lerp(240, H + 40, k);
+    withAlpha(1 - out, () => {
+      rr(W / 2 - rw / 2, H / 2 - rh / 2, rw, rh, lerp(120, 0, k)); ctx.fillStyle = R.lime; ctx.fill();
+      dotGrid(t, .12, .5, 1, W / 2, 900);
+      heavy(t, T25.slam, 'ISTALGAN', W / 2, 760, 190, R.ink, { rot: .14, endRot: -.03 });
+      heavy(t, T25.slam + .1, 'JOYDAN.', W / 2, 960, 220, R.ink, { rot: -.14, endRot: .02 });
+      withAlpha(prog(t, T25.slam + .3, T25.slam + .55), () => serif('bir telefon — butun biznes', W / 2, 1140, 72, R.ink));
+    });
+  }
+  // 19.7: violet keyframe card — the day in three places
+  const mp = eOut(prog(t, T25.sheet, T25.sheet + .45));
+  if (mp > 0) {
+    withAlpha(.35 * mp, () => { ctx.fillStyle = R.ink; ctx.fillRect(0, 0, W, H); });
+    const y0 = lerp(H, 600, mp);
+    card(80, y0, 920, 760, R.violet, 34);
+    withAlpha(prog(t, T25.sheet + .3, T25.sheet + .6), () => { serif('Ofis — endi', W / 2, y0 + 120, 96, R.off); serif('choʻntagingizda.', W / 2, y0 + 225, 96, R.off); });
+    const rows = [['BOZOR 10:15', [.04, .12]], ['YOʻL 22:40', [.36, .44, .52]], ['CHOYXONA', [.7, .78, .86]]];
+    const ph = eInOut(prog(t, T25.sheet + .5, T25.sheet + 1.7)), x0 = 400, x1 = 940;
+    rows.forEach(([l, ks], i) => { const ry = y0 + 380 + i * 80; mono(l, 130, ry, 17, R.violetSoft, 'left', .25, 700);
+      ctx.fillStyle = 'rgba(239,236,228,.25)'; ctx.fillRect(x0, ry, x1 - x0, 2);
+      ks.forEach(k => { const x = lerp(x0, x1, k), lit = ph > k; ctx.save(); ctx.translate(x, ry); ctx.rotate(Math.PI / 4); ctx.fillStyle = lit ? R.lime : 'rgba(239,236,228,.5)'; ctx.fillRect(-11, -11, 22, 22); ctx.restore(); }); });
+    ctx.fillStyle = R.orange; ctx.fillRect(lerp(x0, x1, ph) - 2, y0 + 340, 4, 280);
+    const dn = eBack(prog(t, T25.sheet + 1.6, T25.sheet + 1.9)); if (dn > 0) scaled(780, y0 + 680, dn, () => { rr(620, y0 + 652, 320, 56, 28); ctx.fillStyle = R.lime; ctx.fill(); mono('HAMMASI NAZORATDA', 780, y0 + 681, 15, R.ink, 'center', .15, 800); });
+  }
+  useTheme(TH_CLASSIC);
+}
+
+// ---------- SCENE 3 — Natija: the three worlds together ----------
+const CMP = [['Faqat ofisda, 9–18', 'Istalgan joydan, 24/7'], ['Kompyutersiz — hech narsa', 'Bir telefon yetarli'], ['Javob: ertaga', 'Javob: hoziroq']];
+const IMPACTS3 = [[22.15, 22], [22.6, 10], [23.2, 10], [25.0, 16]];
+function panel(t, i, x, y, w, h) {
+  const p = eBack(prog(t, 22.15 + i * .15, 22.55 + i * .15)); if (p <= 0) return;
+  ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.scale(p, p); ctx.rotate((1 - p) * (i - 1) * .3); ctx.translate(-x - w / 2, -y - h / 2);
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16; rr(x, y, w, h, 28);
+  if (i === 0) { useTheme(TH_CLASSIC); const g = ctx.createLinearGradient(x, y, x, y + h); g.addColorStop(0, '#0b5a46'); g.addColorStop(1, '#16c784'); ctx.fillStyle = g; ctx.fill(); ctx.shadowColor = 'transparent';
+    text('BOZOR', x + w / 2, y + 60, 26, '#a7f3d0', 800, 'center'); text('+3', x + w / 2, y + 165, 96, '#fff', 900, 'center'); text('buyurtma', x + w / 2, y + 220, 28, '#e7fff5', 600, 'center'); }
+  else if (i === 1) { useTheme(TH_NEON); ctx.fillStyle = N.ground; ctx.fill(); ctx.shadowColor = 'transparent'; ctx.lineWidth = 3; ctx.strokeStyle = N.cyan; ctx.stroke();
+    glowText('YOʻL', x + w / 2, y + 55, 28, N.pink, 900); glowText('+50%', x + w / 2, y + 150, 76, N.cyan, 900, 'center', 'middle', N.cyan, .8); text('qamrov', x + w / 2, y + 220, 28, N.muted, it(500), 'center'); }
+  else { useTheme(TH_REEL); ctx.fillStyle = R.paper; ctx.fill(); ctx.shadowColor = 'transparent';
+    mono('CHOYXONA', x + w / 2, y + 55, 18, R.orange, 'center', .3, 800); heavy(t, 22.45, '0', x + w / 2, y + 150, 120, R.ink, {}); serif('kutish', x + w / 2, y + 220, 46, R.ink); }
+  ctx.restore(); useTheme(TH_CLASSIC);
+}
+function badge25(bx, by, label, kind, p) {
+  scaled(bx, by, p, () => {
+    ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 40;
+    ctx.beginPath(); ctx.arc(bx, by, 92, 0, 7);
+    const gg = ctx.createLinearGradient(bx - 92, by - 92, bx + 92, by + 92); gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(bx, by, 76, 0, 7); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+    glyph(kind, bx, by, 1.5); text(label, bx, by + 145, 34, '#fff', 800, 'center');
+  });
+}
+function scene3(t) {
+  useTheme(TH_CLASSIC);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera((1 + .03 * eInOut(prog(t, 22, 27))) * punch(t, [22.6, 23.2, 25.0], .03), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.0));
+    withAlpha(1 - out, () => {
+      kText(t, 22.2, 'NATIJA', W / 2, 160, 34, C.gold, 'charsDown', { weight: 800 });
+      kText(t, 22.3, 'Ofis — choʻntagingizda', W / 2, 235, 56, '#fff', 'wordRight', { weight: 800 });
+      [0, 1, 2].forEach(i => panel(t, i, 60 + i * 330, 320, 300, 270));
+      const cp = eOut(prog(t, 23.0, 23.5)), x = 90, y = lerp(700, 660, cp), w = 900, h = 450;
+      withAlpha(cp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20; rr(x, y, w, h, 40); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+        text('Oldin', x + 60, y + 72, 30, C.grey, 800);
+        rr(x + 470, y + 38, 200, 50, 25); ctx.fillStyle = '#d1fae5'; ctx.fill(); text('ADUZ', x + 570, y + 72, 30, '#065f46', 900, 'center');
+        ctx.fillStyle = '#eef2f1'; ctx.fillRect(x + w / 2 - 20, y + 110, 2, h - 140);
+        CMP.forEach(([a, b], i) => {
+          const ry = y + 175 + i * 105, st = eInOut(prog(t, 23.5 + i * .35, 23.8 + i * .35)), ok = eBack(prog(t, 23.7 + i * .35, 24.0 + i * .35));
+          text(a, x + 50, ry, 26, st > 0 ? '#94a3b8' : '#334155', 700);
+          if (st > 0) { ctx.font = fnt(700, 26); const tw = ctx.measureText(a).width; ctx.beginPath(); ctx.moveTo(x + 45, ry - 9); ctx.lineTo(x + 45 + (tw + 10) * st, ry - 9); ctx.lineWidth = 5; ctx.strokeStyle = C.red; ctx.stroke(); }
+          if (ok > 0) scaled(x + 470, ry - 10, ok, () => { ctx.beginPath(); ctx.arc(x + 480, ry - 10, 20, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill(); check(x + 480, ry - 9, 18, '#fff', 5); text(b, x + 512, ry, 26, '#059669', 900); });
+        });
+      });
+      [['Mobil', 'phone'], ['Istalgan joy', 'pin'], ['Nazorat', 'eye']].forEach(([l, k], i) => {
+        const p = eBack(prog(t, 25.2 + i * .25, 25.65 + i * .25));
+        if (p > 0) badge25(230 + i * 310, 1330, l, k, p);
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 1330, C.gold, 900);
+  sparks(t, 23.2, W / 2 + 240, 760, 511, [C.gold, '#fff', '#22e39a'], 26, 600);
+  sparks(t, 25.0, W - 200, 1100, 513, [C.gold, '#fff', '#22e39a'], 34, 1100);
+  confetti(t, 25.0);
+  // 27.0–27.45: the three logos stutter (classic → neon → reel), then the reel identity card
+  if (t >= 27.0) {
+    const k = Math.floor((t - 27.0) / .15);
+    if (k < 3) {
+      if (k === 0) { useTheme(TH_CLASSIC); ctx.fillStyle = '#0b5a46'; ctx.fillRect(0, 0, W, H); scaled(W / 2, 900, 1.8, () => logo(W / 2 - 205, 852, 1)); }
+      if (k === 1) { useTheme(TH_NEON); neonGround(t, 1); scaled(W / 2, 900, 1.8, () => logo(W / 2 - 205, 852, 1)); }
+      if (k === 2) { useTheme(TH_REEL); ctx.fillStyle = R.orange; ctx.fillRect(0, 0, W, H); scaled(W / 2, 900, 1.8, () => logo(W / 2 - 205, 852, 1, true)); }
+    } else { useTheme(TH_REEL); endCard(t, 27.45); }
+    useTheme(TH_CLASSIC);
+  }
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.3, b: 11.0, fn: pocketZoom },
+    { a: 21.75, b: 22.15, fn: whipPan },
+  ],
+  overlay: t => {
+    useTheme(TH_CLASSIC);
+    NOTIF.forEach((a, i) => i > 4 && rgbGlitch(t, a, .14, .25, i + 1));
+    [5.6, 6.6, 7.6].forEach((a, i) => rgbGlitch(t, a, .25, .8, i + 5));
+    rgbGlitch(t, 8.5, .42, 1.1, 9); flare(t, 8.5, W / 2, 660, '#ff8a9a');
+    pulseVignette(t, [9.6, 9.95, 10.2]);
+    flare(t, 10.95, W / 2, H / 2, '#ffffff', 1100, .5);
+    flare(t, T25.ok + .1, W / 2, SY + 1010, '#bbf7d0', 600, .5);
+    rgbGlitch(t, T25.sw1[0] + .2, .2, .35, 12); flare(t, T25.sw1[0] + .2, W / 2, PY + PH / 2, '#9ff6fa', 900, .5);
+    rgbGlitch(t, T25.sw2[0] + .15, .2, .35, 14);
+    rgbGlitch(t, T25.slam, .3, .5, 13); flare(t, T25.slam, W / 2, 860, '#fbffd8');
+    flare(t, 23.2, W / 2, 760, '#fff3c4', 500, .5); flare(t, 25.0, W / 2, 1330, '#fff3c4', 800, .6);
+    [27.0, 27.15, 27.3, 27.45].forEach((a, i) => rgbGlitch(t, a, .12, .6, 20 + i));
+    if (t > 17.75 && t < 21.95) { useTheme(TH_REEL); hud(t, [[17.6, '03', 'ISTALGAN JOY'], [19.7, '03', 'NAZORAT']], !(t > T25.slam - .05 && t < T25.slam) && !(t > T25.sheet + .2), '25-QISM'); }
+    if (t > 27.45) { useTheme(TH_REEL); hud(t, [[27, '06', 'ADUZ']], false, '25-QISM'); }
+    useTheme(TH_CLASSIC); filmLook(t, .05, .32);
+    useTheme(capTheme(t));
+  },
+});
+</script>
+<script>window.IG_EP = 25; window.IG_CAPTIONS = CAPTIONS.slice(); CAPTIONS.length = 0;</script>
+<script src="ig_config.js"></script>
+<script src="igwrap.js"></script>
+</body>
+</html>

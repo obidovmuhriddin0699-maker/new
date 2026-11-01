@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ qisqa 1 — Instagram</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script src="reel.js"></script>
+<script src="igbot.js"></script>
+<script>
+// S1 — reklama beruvchi: hudud → kategoriya → kanal kartochkasi → to'lov
+window.SHORT = {
+  hook: ['TELEGRAMDA REKLAMA', 'QAYERGA', 'BERASIZ?', '5 daqiqada mos kanal'],
+  bot: { seq: [['menu', 11.0, 11.8, {}], ['region', 11.8, 13.2, {}], ['category', 13.2, 14.6, {}], ['channel', 14.6, 16.8, { focusStat: [0, 1, 2] }], ['preview', 16.8, 17.9, {}], ['pay', 17.9, 23.1, { click: 18.4, sched: 19.6 }]],
+    focus: [[12.0, 13.1, '1-QADAM', 'hudud'], [13.4, 14.5, '2-QADAM', 'kategoriya'], [15.0, 16.6, '3-QADAM', 'narx · obunachi · ER']] },
+  caps: [[0.2, 2.2, 'Telegramda reklamani qayerga berasiz?'], [2.5, 5.8, 'Botda hudud va kategoriyani tanlaysiz.'], [5.9, 8.5, 'Narx, obunachi va faollik — kartochkada.'], [8.6, 14.1, 'Click yoki Payme bilan toʻlaysiz — reklama oʻzi rejalashtiriladi.'], [14.5, 17.7, 'Izohga BOT deb yozing va obuna boʻling!']],
+  cta: ['BOT', 'havolani yuboramiz'],
+};
+</script>
+<script src="shorts.js"></script>
+</body>
+</html>

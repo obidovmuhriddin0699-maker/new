@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>ADUZ 13-qism</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="lib.js"></script>
+<script>
+// ADUZ — 13-qism: "Ommaviy qamrov" (7-qism uslubida)
+// Problem: a wall of 50 channel chats, each needing copy → paste → send by hand; half a day later only 14 are done,
+// and the phone battery dies (sound vacuum). Solution: pick the filters, 54 channels tick in a cascade, one button
+// sends the post to all of them in a wave. Transition: the wall of tiles flips over (tileFlip). Sound: CUES_13.
+
+const CAPTIONS = [
+  [0.4, 4.4, '50 ta kanal — 50 ta chat. Har biriga nusxa, joylash, yuborish...'],
+  [4.6, 9.4, 'Yarim kun oʻtdi — hali 14 tasi ham tayyor emas.'],
+  [9.6, 10.5, '...telefon ham charchadi.'],
+  [11.4, 16.2, 'ADUZʼda kanallarni tanlaysiz — 54 tasi bir zumda belgilanadi.'],
+  [16.4, 21.6, 'Bitta tugma — reklama hammasiga birdan yuboriladi.'],
+  [22.4, 27.0, 'Bir bosishda — butun vodiy qamrovi.'],
+  [27.4, 31.6, 'ADUZ — biznesingiz himoyachisi!'],
+];
+
+function glyph(kind, x, y, s = 1, col = '#fff') {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (kind === 'grid') { for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { ctx.globalAlpha = .45 + .55 * ((i + j) % 3) / 2; rr(-24 + i * 17, -24 + j * 17, 13, 13, 2); ctx.fill(); } ctx.globalAlpha = 1; }
+  else if (kind === 'clock') { ctx.beginPath(); ctx.arc(0, 0, 24, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, 0); ctx.lineTo(10, 8); ctx.stroke(); }
+  else if (kind === 'up') { ctx.beginPath(); ctx.moveTo(-26, 18); ctx.lineTo(-8, 0); ctx.lineTo(4, 10); ctx.lineTo(24, -14); ctx.stroke(); ctx.beginPath(); ctx.moveTo(10, -16); ctx.lineTo(26, -16); ctx.lineTo(26, 0); ctx.stroke(); }
+  else if (kind === 'plane') { ctx.beginPath(); ctx.moveTo(-24, -2); ctx.lineTo(24, -20); ctx.lineTo(10, 22); ctx.lineTo(2, 6); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}
+const NAMES = ['VB', 'FS', 'MQ', 'QB', 'AN', 'NM', 'FT', 'VL', 'MR', 'QO', 'AS', 'FY', 'MB', 'NB', 'VS', 'FK', 'AT', 'QS', 'MZ', 'NK', 'VD', 'FM', 'AB', 'QT', 'ML'];
+const HUES = ['#f97316', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6', '#eab308', '#ef4444', '#22c55e', '#6366f1', '#0ea5e9'];
+const chan = i => [NAMES[(i * 7) % NAMES.length], HUES[(i * 3) % HUES.length]];
+
+// ---------- SCENE 1 — Muammo: the wall of 50 chats ----------
+const RITUAL = [[1.0, 0, false], [2.3, 1, true], [3.6, 2, false]];   // [start, tile, error]
+const RIT_D = 1.15;
+const MONT = Array.from({ length: 11 }, (_, k) => [4.8 + k * .32 + (k % 3) * .04, 3 + k, [2, 6, 9].includes(k)]);
+const DONE1 = [...RITUAL.map(([at, i, e]) => [at + RIT_D - .1, i, e]), ...MONT];
+const DIE = 9.55;
+const IMPACTS1 = [[5.6, 12], [6.6, 12], [7.6, 12], [8.5, 46]];
+const G1 = { x: SX + 30, y: SY + 200, c: 5, r: 10, w: (SW - 60 - 4 * 14) / 5, h: 70, gx: 14, gy: 10 };
+const tile1 = i => [G1.x + (i % G1.c) * (G1.w + G1.gx), G1.y + Math.floor(i / G1.c) * (G1.h + G1.gy)];
+function battery(x, y, lvl, col) {
+  rr(x, y, 52, 26, 6); ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke(); ctx.fillStyle = col; ctx.fillRect(x + 53, y + 8, 5, 10);
+  rr(x + 4, y + 4, Math.max(3, 44 * lvl), 18, 3); ctx.fillStyle = lvl < .2 ? C.red : col; ctx.fill();
+}
+function wallScreen(t) {
+  ctx.fillStyle = '#0e1621'; ctx.fillRect(SX, SY, SW, SH);
+  ctx.fillStyle = '#17212b'; ctx.fillRect(SX, SY, SW, 160);
+  text('Kanallar', SX + 40, SY + 92, 38, '#fff', 800);
+  text('Fargʻona vodiysi · 50 ta chat', SX + 40, SY + 132, 23, '#7f91a4', 600);
+  const mins = Math.round(lerp(9 * 60, 13 * 60 + 40, eIn(prog(t, .5, 9.4))));
+  text(`${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`, SX + SW - 120, SY + 92, 30, '#fff', 800, 'right');
+  battery(SX + SW - 100, SY + 70, 1 - .97 * eIn(prog(t, 0, 9.4)), '#cbd5e1');
+  const done = new Map(DONE1.filter(([at]) => t >= at).map(([at, i, e]) => [i, [at, e]]));
+  const active = RITUAL.find(([at]) => t >= at && t < at + RIT_D) || MONT.find(([at]) => t >= at - .3 && t < at);
+  for (let i = 0; i < 50; i++) {
+    const [x, y] = tile1(i), [nm, hue] = chan(i), d = done.get(i);
+    rr(x, y, G1.w, G1.h, 16); ctx.fillStyle = d ? (d[1] ? '#3b1720' : '#132a22') : '#182533'; ctx.fill();
+    if (active && active[1] === i) { rr(x, y, G1.w, G1.h, 16); ctx.lineWidth = 4; ctx.strokeStyle = `rgba(79,163,255,${.6 + .4 * Math.sin(t * 14)})`; ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(x + 38, y + G1.h / 2, 22, 0, 7); ctx.fillStyle = d ? hue : '#334155'; ctx.fill();
+    text(nm, x + 38, y + G1.h / 2 + 2, 17, '#fff', 800, 'center', 'middle');
+    if (d) { const p = eBack(prog(t, d[0], d[0] + .3)); scaled(x + G1.w - 30, y + G1.h / 2, p, () => {
+      ctx.beginPath(); ctx.arc(x + G1.w - 30, y + G1.h / 2, 16, 0, 7); ctx.fillStyle = d[1] ? C.red : '#22c55e'; ctx.fill();
+      if (d[1]) text('!', x + G1.w - 30, y + G1.h / 2 + 2, 22, '#fff', 900, 'center', 'middle'); else check(x + G1.w - 30, y + G1.h / 2 + 1, 13, '#fff', 4); }); }
+    else { ctx.fillStyle = '#26364a'; rr(x + 72, y + 26, G1.w - 90, 8, 4); ctx.fill(); rr(x + 72, y + 42, (G1.w - 90) * .6, 8, 4); ctx.fill(); }
+  }
+  // bottom bar: progress
+  const n = done.size, errs = [...done.values()].filter(d => d[1]).length;
+  rr(SX + 30, SY + SH - 110, SW - 60, 80, 22); ctx.fillStyle = '#17212b'; ctx.fill();
+  text(`Yuborildi: ${n} / 50`, SX + 60, SY + SH - 60, 28, '#fff', 800);
+  if (errs) text(`${errs} ta xato`, SX + SW - 60, SY + SH - 60, 26, '#fca5a5', 800, 'right');
+  // the copy → paste → send ritual card
+  for (const [at, i, err] of RITUAL) {
+    const p = eOut(prog(t, at, at + .25)) * (1 - eIn(prog(t, at + RIT_D - .2, at + RIT_D)));
+    if (p <= 0) continue;
+    const cy = lerp(SY + SH + 20, SY + SH - 470, p), [nm, hue] = chan(i);
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 40;
+    rr(SX + 20, cy, SW - 40, 360, 34); ctx.fillStyle = '#1c2a38'; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(SX + 90, cy + 70, 34, 0, 7); ctx.fillStyle = hue; ctx.fill(); text(nm, SX + 90, cy + 72, 22, '#fff', 800, 'center', 'middle');
+    text(`Kanal admini #${i + 1}`, SX + 145, cy + 64, 29, '#fff', 800); text('reklama boʻyicha', SX + 145, cy + 98, 22, '#7f91a4', 600);
+    ['Nusxa olish', 'Joylash', 'Yuborish'].forEach((s, k) => {
+      const q = eBack(prog(t, at + .25 + k * .22, at + .45 + k * .22)); if (q <= 0) return;
+      const bx = SX + 50 + k * 226;
+      scaled(bx + 100, cy + 190, q, () => { rr(bx, cy + 160, 206, 64, 32); ctx.fillStyle = '#2b5278'; ctx.fill(); text(s, bx + 103, cy + 201, 25, '#fff', 800, 'center'); });
+    });
+    const r = eOut(prog(t, at + .95, at + 1.1));
+    if (r > 0) withAlpha(r, () => text(err ? 'Admin: «Narx boshqacha, qayta yozing»' : 'Yuborildi · javob kutilmoqda...', SX + 50, cy + 300, 25, err ? '#fca5a5' : '#86efac', 700));
+  }
+  // dead phone
+  if (t > DIE) {
+    ctx.fillStyle = '#000'; ctx.fillRect(SX, SY, SW, SH);
+    if (t < 10.3 && Math.floor((t - DIE) * 4) % 2 === 0) {
+      ctx.save(); ctx.translate(SX + SW / 2 - 120, SY + SH / 2 - 60); ctx.scale(4.6, 4.6); battery(0, 0, .02, '#ef4444'); ctx.restore();
+      text('1%', SX + SW / 2, SY + SH / 2 + 150, 46, '#ef4444', 900, 'center');
+    }
+  }
+}
+function scene1(t) {
+  const stress = prog(t, 4.6, 9.4);
+  problemBg(t, stress);
+  const [sx, sy, sr] = shakeAt(t, IMPACTS1);
+  camera(1 + .06 * eInOut(prog(t, 0, 10.6)), sr, sx, sy, () => {
+    episodeTitle(t, '13-QISM', 'Ommaviy qamrov', 56);
+    const done = DONE1.filter(([at]) => t >= at), errs = done.filter(d => d[2]).length;
+    const hrs = Math.floor(lerp(0, 4.67, eIn(prog(t, .5, 9.4))));
+    counters(t, [[`${done.length}/50`, 'kanal', '#fff'], [`${hrs} soat`, 'sarflandi', hrs >= 3 ? C.red : '#fff'], [`${errs}`, 'xato', errs ? C.red : '#fff']]);
+    const enter = eOut(prog(t, 0, .7));
+    phone('#0e1621', 0, lerp(160, 0, enter), 0, () => { wallScreen(t); ctx.fillStyle = `rgba(255,40,60,${.06 * stress})`; ctx.fillRect(SX, SY, SW, SH); });
+    // the tired finger: taps each tile, then each ritual button
+    if (t > .7 && t < DIE) {
+      const taps = [];
+      for (const [at, i] of RITUAL) { const [x, y] = tile1(i); taps.push([at - .15, x + G1.w / 2, y + G1.h / 2]); [0, 1, 2].forEach(k => taps.push([at + .3 + k * .22, SX + 150 + k * 226, SY + SH - 280])); }
+      for (const [at, i] of MONT) { const [x, y] = tile1(i); taps.push([at - .12, x + G1.w / 2, y + G1.h / 2]); }
+      const keys = [[.7, W - 60, 1700], ...taps.map(([a, x, y]) => [a, x, y])];
+      const [cx, cy] = pathAt(t, keys);
+      const press = Math.max(...taps.map(([a]) => bump(t, a, .14)));
+      withAlpha(prog(t, .7, .9) * (1 - prog(t, 9.2, 9.45)), () => cursor(cx, cy, press));
+    }
+    slam(t, 5.6, '50 TA CHAT', 300, 560, 54, '#fff', { slab: C.red, rot: -.08, hold: 2.9 });
+    slam(t, 6.6, '50 MARTA NUSXA', 760, 830, 46, '#fff', { slab: C.red, rot: .07, hold: 1.9 });
+    slam(t, 7.6, 'YANA 36 TA...', 330, 1440, 54, '#fff', { slab: C.red, rot: .05, hold: .9 });
+  });
+  const dim = prog(t, 8.45, 8.6) * (1 - prog(t, 9.25, 9.45));
+  if (dim > 0) withAlpha(dim * .6, () => { ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, 8.5, W / 2, 900, C.red, 1100);
+  sparks(t, 8.5, W / 2, 900, 131, [C.red, '#ffb4bc', '#ffffff'], 36, 1200);
+  slam(t, 8.5, '14 / 50', W / 2, 880, 170, '#fff', { hold: .75, glow: 'rgba(255,40,60,.9)' });
+  slam(t, 8.7, 'yarim kun — hali 36 ta qoldi', W / 2, 1040, 50, '#ffb4bc', { hold: .55 });
+  flash(t, 8.5, C.red, .4, .45);
+  const vac = prog(t, 9.7, 10.2);
+  if (vac > 0) withAlpha(vac * .5, () => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); });
+}
+
+// ---------- SCENE 2 — Yechim: one button, 54 channels ----------
+const T13 = { chip: [12.1, 12.6], pick: [12.9, 13.9], total: 14.0, send: 15.2, wave: [15.4, 16.4], done: 16.6, slam: 18.5, sheet: 19.7 };
+const IMPACTS2 = [[11.0, 26], [T13.send, 10], [T13.slam, 34]];
+const G2 = { x: SX + 30, y: SY + 340, c: 6, r: 9, gx: 12, gy: 10, h: 54 }; G2.w = (SW - 60 - 5 * G2.gx) / 6;
+const tile2 = i => [G2.x + (i % G2.c) * (G2.w + G2.gx), G2.y + Math.floor(i / G2.c) * (G2.h + G2.gy)];
+const SEND = { x: SX + 40, y: SY + SH - 140, w: SW - 80, h: 100 };
+const CHIPS = [['Kiyim-kechak', SX + 40, 250], ['Fargʻona vodiysi', SX + 310, 290]];
+function bulkScreen(t) {
+  ctx.fillStyle = '#f4f7f6'; ctx.fillRect(SX, SY, SW, SH);
+  ctx.fillStyle = '#0ea371'; ctx.fillRect(SX, SY, SW, 150);
+  text('Ommaviy joylash', SX + 50, SY + 108, 40, '#fff', 900);
+  glyph('plane', SX + SW - 80, SY + 92, 1, 'rgba(255,255,255,.9)');
+  CHIPS.forEach(([s, x, w], k) => {
+    const on = t > T13.chip[k], p = eBack(prog(t, T13.chip[k], T13.chip[k] + .25));
+    scaled(x + w / 2, SY + 210, 1 + .06 * bump(t, T13.chip[k], .2), () => {
+      rr(x, SY + 180, w, 60, 30); ctx.fillStyle = on ? '#0ea371' : '#fff'; ctx.fill();
+      if (!on) { ctx.lineWidth = 3; ctx.strokeStyle = '#cbd5e1'; ctx.stroke(); }
+      if (on) check(x + 34, SY + 211, 14 * p, '#fff', 4);
+      text(s, x + (on ? 58 : 30), SY + 220, 26, on ? '#fff' : '#334155', 800);
+    });
+  });
+  const picked = Math.round(54 * clamp(prog(t, ...T13.pick)));
+  text('Kanallar', SX + 40, SY + 310, 28, C.ink, 900);
+  text(`${picked} tanlandi`, SX + SW - 40, SY + 310, 28, picked ? '#059669' : C.grey, 900, 'right');
+  const sentN = Math.round(54 * clamp(prog(t, ...T13.wave)));
+  for (let i = 0; i < 54; i++) {
+    const [x, y] = tile2(i), [nm, hue] = chan(i);
+    const pk = prog(t, T13.pick[0] + i / 54, T13.pick[0] + i / 54 + .15), d = (i % 6 + Math.floor(i / 6)) / 13;
+    const sw = prog(t, T13.wave[0] + d * .8, T13.wave[0] + d * .8 + .2);
+    rr(x, y, G2.w, G2.h, 14); ctx.fillStyle = sw > 0 ? '#dcfce7' : '#fff'; ctx.fill();
+    if (pk > 0) { rr(x, y, G2.w, G2.h, 14); ctx.lineWidth = 3; ctx.strokeStyle = `rgba(14,163,113,${pk})`; ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(x + 30, y + G2.h / 2, 19, 0, 7); ctx.fillStyle = pk > 0 ? hue : '#cbd5e1'; ctx.fill();
+    text(nm, x + 30, y + G2.h / 2 + 2, 15, '#fff', 800, 'center', 'middle');
+    if (pk > 0) scaled(x + G2.w - 24, y + G2.h / 2, eBack(sw > 0 ? 1 : pk), () => {
+      ctx.beginPath(); ctx.arc(x + G2.w - 24, y + G2.h / 2, 14, 0, 7); ctx.fillStyle = sw > 0 ? '#16c784' : '#e2e8f0'; ctx.fill();
+      check(x + G2.w - 24, y + G2.h / 2 + 1, 11, sw > 0 ? '#fff' : '#0ea371', 3.5);
+    });
+    if (sw > 0 && sw < 1) withAlpha(1 - sw, () => { rr(x - 4 * sw, y - 4 * sw, G2.w + 8 * sw, G2.h + 8 * sw, 16); ctx.lineWidth = 4; ctx.strokeStyle = '#22e39a'; ctx.stroke(); });
+  }
+  // reach summary
+  const tp = eOut(prog(t, T13.total, T13.total + .4));
+  if (tp > 0) withAlpha(tp, () => {
+    rr(SX + 30, SY + 922 - 30 * (1 - tp), SW - 60, 62, 20); ctx.fillStyle = '#ecfdf5'; ctx.fill();
+    text(`Qamrov ≈ ${fmt(186000 * eOut(prog(t, T13.total, T13.total + .9)))} obunachi`, SX + 60, SY + 963 - 30 * (1 - tp), 27, '#065f46', 900);
+  });
+  // the one button
+  const sending = t > T13.wave[0], sent = t > T13.done;
+  scaled(SEND.x + SEND.w / 2, SEND.y + 50, 1 - .05 * bump(t, T13.send, .25), () => {
+    rr(SEND.x, SEND.y, SEND.w, SEND.h, 50); ctx.fillStyle = sent ? '#065f46' : '#0ea371'; ctx.fill();
+    if (sending && !sent) { ctx.save(); rr(SEND.x, SEND.y, SEND.w, SEND.h, 50); ctx.clip(); ctx.fillStyle = '#047857'; ctx.fillRect(SEND.x, SEND.y, SEND.w * sentN / 54, SEND.h); ctx.restore(); }
+    const label = sent ? '54 / 54 yuborildi' : sending ? `Yuborilmoqda... ${sentN} / 54` : '54 kanalga yuborish';
+    if (sent) check(SEND.x + 90, SEND.y + 52, 22, '#fff', 6, prog(t, T13.done, T13.done + .3));
+    else glyph('plane', SEND.x + 90, SEND.y + 50, .8);
+    text(label, SEND.x + SEND.w / 2 + 30, SEND.y + 63, 34, '#fff', 900, 'center');
+  });
+  const mp = eOut(prog(t, T13.sheet, T13.sheet + .45));
+  if (mp > 0) {
+    ctx.fillStyle = `rgba(4,20,16,${.55 * mp})`; ctx.fillRect(SX, SY, SW, SH);
+    const sy = lerp(SY + SH, SY + SH - 640, mp);
+    rr(SX, sy, SW, 700, 50); ctx.fillStyle = '#fff'; ctx.fill();
+    const c = eBack(prog(t, T13.sheet + .2, T13.sheet + .6));
+    ctx.beginPath(); ctx.arc(SX + SW / 2, sy + 150, 80 * c, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill();
+    if (c > .5) check(SX + SW / 2, sy + 152, 70, '#fff', 13, prog(t, T13.sheet + .45, T13.sheet + .8));
+    withAlpha(prog(t, T13.sheet + .6, T13.sheet + .9), () => {
+      text('54 kanalga yuborildi!', SX + SW / 2, sy + 300, 44, C.ink, 800, 'center');
+      ['Bitta post — 54 kanal', 'Har bir kanal — alohida tasdiq', 'Hammasi — bitta hisobotda'].forEach((s, i) =>
+        withAlpha(prog(t, T13.sheet + .9 + i * .25, T13.sheet + 1.15 + i * .25), () => {
+          check(SX + 90, sy + 380 + i * 70, 26, '#16c784', 6);
+          text(s, SX + 125, sy + 391 + i * 70, 29, '#334155', 600);
+        }));
+    });
+  }
+}
+function scene2(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS2);
+  camera(1.04 - .04 * eOut(prog(t, 11, 12)) + .025 * eInOut(prog(t, 12, 21.8)), sr, sx, sy, () => {
+    solutionBg(t, 'Bitta tugma — 50+ kanal');
+    const enter = eBack(prog(t, 11.1, 11.75));
+    scaled(W / 2, PY + PH / 2, lerp(.8, 1, enter), () => withAlpha(prog(t, 11.1, 11.35), () =>
+      phone('#f4f7f6', 0, lerp(180, 0, enter), 0, () => bulkScreen(t))));
+    // post "paper planes" fly out of the phone during the send wave
+    for (let k = 0; k < 14; k++) {
+      const p = prog(t, T13.wave[0] + k * .07, T13.wave[0] + k * .07 + .7); if (p <= 0 || p >= 1) continue;
+      const a = -Math.PI / 2 + (k / 13 - .5) * 2.6, e = eOut(p), d = 120 + 560 * e;
+      withAlpha(1 - p, () => glyph('plane', W / 2 + Math.cos(a) * d, PY + PH / 2 + Math.sin(a) * d * .9, .9 - .4 * p, k % 2 ? '#bbf7d0' : '#ffffff'));
+    }
+    const taps = [[T13.chip[0], CHIPS[0][1] + CHIPS[0][2] / 2, SY + 210], [T13.chip[1], CHIPS[1][1] + CHIPS[1][2] / 2, SY + 210], [T13.send, SEND.x + SEND.w / 2 + 150, SEND.y + 50]];
+    if (t > 11.7 && t < 15.6) {
+      const [cx, cy] = pathAt(t, [[11.7, W - 40, 1650], ...taps, [15.6, W - 40, 1700]]);
+      withAlpha(Math.min(prog(t, 11.7, 11.9), 1 - prog(t, 15.35, 15.6)), () => cursor(cx, cy, Math.max(...taps.map(([a]) => bump(t, a, .22)))));
+    }
+    for (const [a, x, y] of taps) ripple(x, y, prog(t, a, a + .6), '#ffffff');
+  });
+  const dim = prog(t, T13.slam - .05, T13.slam + .1) * (1 - prog(t, T13.sheet - .2, T13.sheet));
+  if (dim > 0) withAlpha(dim * .55, () => { ctx.fillStyle = '#021a14'; ctx.fillRect(0, 0, W, H); });
+  shockwave(t, T13.slam, W / 2, 880, C.gold, 1100);
+  sparks(t, T13.slam, W / 2, 880, 137, [C.gold, '#fff3c4', '#22e39a'], 40, 1250);
+  slam(t, T13.slam, 'BITTA TUGMA', W / 2, 840, 130, C.gold, { hold: 1.0, glow: 'rgba(255,200,61,.8)' });
+  slam(t, T13.slam + .15, 'butun vodiyga — bir bosishda', W / 2, 1010, 52, '#fff', { hold: .85, glow: 'rgba(255,200,61,.6)' });
+  flash(t, T13.slam, '#fff3c4', .35, .5);
+}
+
+// ---------- SCENE 3 — Natija ----------
+const CMP = [['50 marta nusxa-joylash', 'Bitta tugma'], ['Yarim kun', '2 daqiqa'], ['14 / 50 kanal', '54 / 54 kanal']];
+const IMPACTS3 = [[22.15, 22], [24.0, 10], [25.0, 16]];
+const REACH = 186000;
+function badge(bx, by, label, kind, p) {
+  scaled(bx, by, p, () => {
+    ctx.save(); ctx.shadowColor = 'rgba(255,200,61,.8)'; ctx.shadowBlur = 40;
+    ctx.beginPath(); ctx.arc(bx, by, 92, 0, 7);
+    const gg = ctx.createLinearGradient(bx - 92, by - 92, bx + 92, by + 92);
+    gg.addColorStop(0, '#ffe08a'); gg.addColorStop(1, '#f5a524'); ctx.fillStyle = gg; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(bx, by, 76, 0, 7); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+    glyph(kind, bx, by, 1.5);
+    text(label, bx, by + 145, 34, '#fff', 800, 'center');
+  });
+}
+function scene3(t) {
+  const [sx, sy, sr] = shakeAt(t, IMPACTS3);
+  camera(1 + .03 * eInOut(prog(t, 22, 27)), sr, sx, sy, () => {
+    resultBg(t);
+    const out = eInOut(prog(t, 26.6, 27.3));
+    withAlpha(1 - out, () => {
+      withAlpha(prog(t, 22.2, 22.6), () => {
+        text('NATIJA', W / 2, 190, 34, C.gold, 800, 'center');
+        text('Bir bosishda — butun vodiy', W / 2, 260, 54, '#fff', 800, 'center');
+      });
+      // reach card with a growth curve
+      const rp = eOut(prog(t, 22.25, 22.75)), gp = eInOut(prog(t, 22.4, 24.0));
+      withAlpha(rp, () => {
+        const x = 90, y = lerp(360, 320, rp), w = 900, h = 290;
+        rr(x, y, w, h, 40); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.stroke();
+        text('Qamrov', x + 50, y + 70, 30, 'rgba(255,255,255,.8)', 700);
+        const pop = 1 + .12 * bump(t, 24.0, .3);
+        scaled(x + 50, y + 170, pop, () => text(fmt(REACH * gp), x + 50, y + 192, 100, '#fff', 900));
+        text('obunachi', x + 50, y + 252, 28, C.gold, 800);
+        const cx0 = x + 520, cy0 = y + 240, cw = 330, ch = 170, N = 40;
+        ctx.save(); ctx.beginPath(); ctx.rect(cx0, y, cw * gp + 4, h); ctx.clip();
+        ctx.beginPath(); ctx.moveTo(cx0, cy0);
+        for (let k = 0; k <= N; k++) { const u = k / N; ctx.lineTo(cx0 + cw * u, cy0 - ch * (u * u * .8 + .2 * u + .04 * Math.sin(u * 19))); }
+        ctx.lineTo(cx0 + cw, cy0); ctx.closePath();
+        const ag = ctx.createLinearGradient(0, cy0 - ch, 0, cy0); ag.addColorStop(0, 'rgba(255,200,61,.55)'); ag.addColorStop(1, 'rgba(255,200,61,0)'); ctx.fillStyle = ag; ctx.fill();
+        ctx.beginPath(); for (let k = 0; k <= N; k++) { const u = k / N; ctx.lineTo(cx0 + cw * u, cy0 - ch * (u * u * .8 + .2 * u + .04 * Math.sin(u * 19))); }
+        ctx.lineWidth = 6; ctx.strokeStyle = C.gold; ctx.stroke(); ctx.restore();
+      });
+      const cp = eOut(prog(t, 23.0, 23.5)), x = 90, y = lerp(740, 680, cp), w = 900, h = 450;
+      withAlpha(cp, () => {
+        ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+        rr(x, y, w, h, 40); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+        text('Oldin', x + 60, y + 72, 30, C.grey, 800);
+        rr(x + 470, y + 38, 200, 50, 25); ctx.fillStyle = '#d1fae5'; ctx.fill();
+        text('ADUZ', x + 570, y + 72, 30, '#065f46', 900, 'center');
+        ctx.fillStyle = '#eef2f1'; ctx.fillRect(x + w / 2 - 20, y + 110, 2, h - 140);
+        CMP.forEach(([a, b], i) => {
+          const ry = y + 175 + i * 105, st = eInOut(prog(t, 23.5 + i * .35, 23.8 + i * .35)), ok = eBack(prog(t, 23.7 + i * .35, 24.0 + i * .35));
+          text(a, x + 60, ry, 28, st > 0 ? '#94a3b8' : '#334155', 700);
+          if (st > 0) { ctx.font = `700 28px ${F}`; const tw = ctx.measureText(a).width; ctx.beginPath(); ctx.moveTo(x + 55, ry - 10); ctx.lineTo(x + 55 + (tw + 10) * st, ry - 10); ctx.lineWidth = 5; ctx.strokeStyle = C.red; ctx.stroke(); }
+          if (ok > 0) scaled(x + 470, ry - 10, ok, () => {
+            ctx.beginPath(); ctx.arc(x + 490, ry - 10, 20, 0, 7); ctx.fillStyle = '#16c784'; ctx.fill(); check(x + 490, ry - 9, 18, '#fff', 5);
+            text(b, x + 525, ry, 28, '#059669', 900);
+          });
+        });
+      });
+      [['Ommaviy', 'grid'], ['Tejamkor', 'clock'], ['Qamrov', 'up']].forEach(([l, k], i) => {
+        const p = eBack(prog(t, 25.2 + i * .25, 25.65 + i * .25));
+        if (p > 0) badge(230 + i * 310, 1300, l, k, p);
+      });
+    });
+  });
+  shockwave(t, 25.0, W / 2, 900, C.gold, 900);
+  sparks(t, 24.0, 300, 480, 139, [C.gold, '#fff'], 24, 700);
+  sparks(t, 25.0, W - 200, 900, 141, [C.gold, '#fff', '#22e39a'], 34, 1100);
+  confetti(t, 25.0);
+  endCard(t, 27.0);
+}
+
+boot({
+  scene1, scene2, scene3, captions: CAPTIONS,
+  transitions: [
+    { a: 10.35, b: 11.0, fn: tileFlip },
+    { a: 21.75, b: 22.15, fn: whipPan },
+  ],
+  overlay: t => { filmLook(t); },
+});
+</script>
+</body>
+</html>
